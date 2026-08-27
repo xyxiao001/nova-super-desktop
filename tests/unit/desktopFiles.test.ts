@@ -7,7 +7,9 @@ import {
   duplicateDesktopItem,
   permanentlyDeleteDesktopItems,
   recycleBinItems,
+  replaceDesktopImage,
   restoreDesktopItem,
+  restoreDesktopItems,
   trashDesktopItems,
   topLevelDesktopItemIds,
   visibleDesktopItems,
@@ -29,6 +31,20 @@ describe("desktopFiles", () => {
       "folder-b",
       "text-a",
     ]);
+  });
+
+  it("replaces only a visible image", () => {
+    const result = replaceDesktopImage(items, "image-a", "updated");
+
+    expect(result.changed).toBe(true);
+    expect(result.item?.name).toBe("封面.png");
+    expect(result.items.find((item) => item.id === "image-a")?.content).toBe("updated");
+    expect(replaceDesktopImage(items, "text-a", "updated").changed).toBe(false);
+    expect(replaceDesktopImage(
+      items.map((item) => item.id === "image-a" ? { ...item, deletedAt: 5 } : item),
+      "image-a",
+      "updated",
+    ).changed).toBe(false);
   });
 
   it("duplicates a folder tree with new ids and preserved relationships", () => {
@@ -128,6 +144,20 @@ describe("desktopFiles", () => {
       parentId: null,
       deletedAt: undefined,
     });
+  });
+
+  it("restores multiple items without overwriting visible name conflicts", () => {
+    const trashed: DesktopItem[] = [
+      ...items,
+      { id: "deleted-1", type: "text", name: "说明.txt", content: "old", parentId: null, createdAt: 5, deletedAt: 10 },
+      { id: "deleted-2", type: "text", name: "说明.txt", content: "older", parentId: null, createdAt: 6, deletedAt: 11 },
+      { id: "visible", type: "text", name: "说明.txt", content: "current", parentId: null, createdAt: 7 },
+    ];
+    const result = restoreDesktopItems(trashed, ["deleted-1", "deleted-2"]);
+
+    expect(result.resultIds).toEqual(["deleted-1", "deleted-2"]);
+    expect(result.items.find((item) => item.id === "deleted-1")?.name).toBe("说明 (已还原).txt");
+    expect(result.items.find((item) => item.id === "deleted-2")?.name).toBe("说明 (已还原 2).txt");
   });
 
   it("permanently deletes a folder and its complete subtree", () => {

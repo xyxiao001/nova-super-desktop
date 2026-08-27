@@ -5,6 +5,7 @@ import type { AppLaunchIntent } from "./appLaunch";
 import {
   chapterParagraphs,
   locationForOffset,
+  readerExcerpt,
   READER_DATA_VERSION,
   type CatalogBook,
   type ReaderChapter,
@@ -55,10 +56,12 @@ export default function ReaderApp({
   active,
   launchIntent,
   onLaunchHandled,
+  onCreateExcerpt,
 }: {
   active: boolean;
   launchIntent: Extract<AppLaunchIntent, { app: "reader" }> | null;
   onLaunchHandled: (requestId: number) => void;
+  onCreateExcerpt: (excerpt: { title: string; content: string }) => void;
 }) {
   const [catalog, setCatalog] = useState<CatalogBook[]>([]);
   const [catalogState, setCatalogState] = useState<"loading" | "ready" | "error">("loading");
@@ -92,6 +95,7 @@ export default function ReaderApp({
   const [locationJumpToken, setLocationJumpToken] = useState(0);
   const [turn, setTurn] = useState<{ direction: "forward" | "back"; token: number }>({ direction: "forward", token: 0 });
   const [message, setMessage] = useState("");
+  const [selectedExcerpt, setSelectedExcerpt] = useState("");
   const [preferences, setPreferences] = useState<ReaderPreferences>(readReaderPreferences);
   const importRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLElement>(null);
@@ -663,12 +667,24 @@ export default function ReaderApp({
   const finishPageGesture = (event: React.PointerEvent<HTMLElement>) => {
     const start = pagePointerRef.current;
     pagePointerRef.current = null;
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed && pageRef.current?.contains(selection.anchorNode)) {
+      setSelectedExcerpt(selection.toString().trim());
+      return;
+    }
+    setSelectedExcerpt("");
     if (!start || preferences.readingMode !== "page") return;
     const horizontal = event.clientX - start.x;
     const vertical = event.clientY - start.y;
     if (Math.abs(horizontal) < 44 || Math.abs(horizontal) <= Math.abs(vertical)) return;
     if (horizontal < 0) nextPage();
     else previousPage();
+  };
+  const createExcerpt = () => {
+    if (!activeBook || !chapter || !selectedExcerpt) return;
+    onCreateExcerpt(readerExcerpt(activeBook.title, chapter.title, selectedExcerpt));
+    window.getSelection()?.removeAllRanges();
+    setSelectedExcerpt("");
   };
   const jumpToLocation = (target: Pick<ReaderLocation, "chapterId" | "paragraphIndex" | "characterOffset">) => {
     const index = chapters.findIndex((item) => item.id === target.chapterId);
@@ -807,7 +823,7 @@ export default function ReaderApp({
   </div>;
 
   return <div className={`reader-reading theme-${preferences.theme} mode-${preferences.readingMode} ${immersive ? "immersive" : ""} ${chromeHidden ? "chrome-hidden" : ""}`} onPointerMove={revealChrome}>
-    <header className="reader-toolbar"><div><button onClick={goLibrary}>← 书架</button><button onClick={() => setSidebarOpen(!sidebarOpen)}>☰ 目录</button></div><div className="reader-book-heading"><strong>{activeBook.title}</strong><small>{chapter?.title}</small></div><div><button aria-label="搜索书内内容" title="搜索" onClick={() => setSearchOpen(!searchOpen)}>⌕</button><button aria-label="添加书签" title="添加书签" onClick={addBookmark}>☆</button><button aria-label={immersive ? "退出沉浸阅读" : "进入沉浸阅读"} title={immersive ? "退出沉浸阅读" : "沉浸阅读"} onClick={toggleImmersive}>⛶</button><span>{progress}%</span><button onClick={() => setSettingsOpen(!settingsOpen)}>Aa</button></div></header>
+    <header className="reader-toolbar"><div><button onClick={goLibrary}>← 书架</button><button onClick={() => setSidebarOpen(!sidebarOpen)}>☰ 目录</button></div><div className="reader-book-heading"><strong>{activeBook.title}</strong><small>{chapter?.title}</small></div><div><button aria-label="摘录到记事本" title="摘录到记事本" disabled={!selectedExcerpt} onClick={createExcerpt}>✎</button><button aria-label="搜索书内内容" title="搜索" onClick={() => setSearchOpen(!searchOpen)}>⌕</button><button aria-label="添加书签" title="添加书签" onClick={addBookmark}>☆</button><button aria-label={immersive ? "退出沉浸阅读" : "进入沉浸阅读"} title={immersive ? "退出沉浸阅读" : "沉浸阅读"} onClick={toggleImmersive}>⛶</button><span>{progress}%</span><button onClick={() => setSettingsOpen(!settingsOpen)}>Aa</button></div></header>
     <div className="reader-body">
       {sidebarOpen && <aside className="reader-chapters"><header><div><button className={sidebarTab === "chapters" ? "active" : ""} onClick={() => setSidebarTab("chapters")}>目录</button><button className={sidebarTab === "bookmarks" ? "active" : ""} onClick={() => setSidebarTab("bookmarks")}>书签</button></div><span>{sidebarTab === "chapters" ? `${chapters.length} 章` : `${bookmarks.length} 个`}</span></header>{sidebarTab === "chapters" ? <div>{chapters.map((item, index) => <button key={`${item.title}-${index}`} className={index === chapterIndex ? "active" : ""} onClick={() => selectChapter(index)}><span>{item.title}</span>{index === chapterIndex && <small>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1}/${pageCount}`}</small>}</button>)}</div> : <div className="reader-bookmarks">{bookmarks.map((bookmark) => <article key={bookmark.id}><button onClick={() => jumpToLocation(bookmark)}><strong>{bookmark.chapterTitle}</strong><span>{bookmark.excerpt}</span></button><button aria-label="删除书签" title="删除书签" onClick={() => removeBookmark(bookmark.id)}>×</button></article>)}{!bookmarks.length && <p>还没有书签</p>}</div>}</aside>}
       <main key={`${activeBook.id}-${chapterIndex}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture}>

@@ -68,6 +68,28 @@ export const visibleDesktopItems = (items: DesktopItem[]) => {
   return items.filter((item) => !item.deletedAt && !hasTrashedAncestor(itemsById, item));
 };
 
+export function replaceDesktopImage(
+  items: DesktopItem[],
+  id: string,
+  content: string,
+) {
+  const source = items.find((item) => (
+    item.id === id
+    && item.type === "image"
+    && isDesktopItemVisible(items, item)
+  ));
+  if (!source || source.content === content) {
+    return { items, changed: false, item: source ?? null };
+  }
+  return {
+    items: items.map((item) => (
+      item.id === id ? { ...item, content } : item
+    )),
+    changed: true,
+    item: source,
+  };
+}
+
 export const recycleBinItems = (items: DesktopItem[]) => {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   return items.filter((item) => item.deletedAt && !hasTrashedAncestor(itemsById, item));
@@ -84,16 +106,50 @@ export const trashDesktopItems = (
   ));
 };
 
+const restoredName = (
+  items: DesktopItem[],
+  source: DesktopItem,
+  parentId: string | null,
+) => {
+  const siblingNames = new Set(
+    visibleDesktopItems(items)
+      .filter((item) => item.parentId === parentId)
+      .map((item) => item.name),
+  );
+  if (!siblingNames.has(source.name)) return source.name;
+  const dot = source.type === "folder" ? -1 : source.name.lastIndexOf(".");
+  const base = dot > 0 ? source.name.slice(0, dot) : source.name;
+  const extension = dot > 0 ? source.name.slice(dot) : "";
+  let index = 1;
+  let name = `${base} (已还原)${extension}`;
+  while (siblingNames.has(name)) {
+    index += 1;
+    name = `${base} (已还原 ${index})${extension}`;
+  }
+  return name;
+};
+
+export const restoreDesktopItems = (items: DesktopItem[], ids: string[]) => {
+  let next = items;
+  const resultIds: string[] = [];
+  for (const id of ids) {
+    const source = next.find((item) => item.id === id && item.deletedAt);
+    if (!source) continue;
+    const parent = source.parentId
+      ? next.find((item) => item.id === source.parentId)
+      : null;
+    const parentId = parent && isDesktopItemVisible(next, parent) ? parent.id : null;
+    const name = restoredName(next, source, parentId);
+    next = next.map((item) => (
+      item.id === id ? { ...item, name, parentId, deletedAt: undefined } : item
+    ));
+    resultIds.push(id);
+  }
+  return { items: next, resultIds };
+};
+
 export const restoreDesktopItem = (items: DesktopItem[], id: string) => {
-  const source = items.find((item) => item.id === id && item.deletedAt);
-  if (!source) return items;
-  const parent = source.parentId
-    ? items.find((item) => item.id === source.parentId)
-    : null;
-  const parentId = parent && isDesktopItemVisible(items, parent) ? parent.id : null;
-  return items.map((item) => (
-    item.id === id ? { ...item, parentId, deletedAt: undefined } : item
-  ));
+  return restoreDesktopItems(items, [id]).items;
 };
 
 export const permanentlyDeleteDesktopItems = (items: DesktopItem[], ids: string[]) => {

@@ -19,6 +19,7 @@ import {
   type FileOperationMode,
 } from "./desktopFiles";
 import type { AppLaunchIntent } from "./appLaunch";
+import { fileOpenOptions, type FileOpenApp } from "./fileAssociations";
 
 type ExplorerLocation = "folder" | "recent" | "images" | "documents";
 type SortMode = "name" | "type" | "date";
@@ -34,6 +35,7 @@ type FileExplorerProps = {
   canUndo: boolean;
   onNavigate: (folderId: string | null) => void;
   onOpen: (item: DesktopItem) => void;
+  onOpenWith: (item: DesktopItem, app: FileOpenApp) => void;
   onCreateFolder: (parentId: string | null) => void;
   onCreateText: (parentId: string | null) => void;
   onRename: (item: DesktopItem) => void;
@@ -104,6 +106,7 @@ export default function FileExplorer({
   canUndo,
   onNavigate,
   onOpen,
+  onOpenWith,
   onCreateFolder,
   onCreateText,
   onRename,
@@ -599,6 +602,7 @@ export default function FileExplorer({
 
     {contextMenu && primarySelected && <div className="explorer-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
       {selectedItems.length === 1 && <button onClick={() => { activateItem(primarySelected); setContextMenu(null); }}>打开</button>}
+      {selectedItems.length === 1 && fileOpenOptions(primarySelected.type).filter((option) => !option.primary).map((option) => <button key={option.app} onClick={() => { onOpenWith(primarySelected, option.app); setContextMenu(null); }}>使用{option.label}打开</button>)}
       <button onClick={() => { onSetClipboard("move", selectedIds); setContextMenu(null); }}>剪切</button>
       <button onClick={() => { onSetClipboard("copy", selectedIds); setContextMenu(null); }}>复制</button>
       {selectedItems.length === 1 && <button onClick={() => { onRename(primarySelected); setContextMenu(null); }}>重命名</button>}

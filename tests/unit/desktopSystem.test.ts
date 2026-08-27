@@ -38,10 +38,10 @@ describe("desktop notifications", () => {
 
     expect(appendDesktopNotification(
       current,
-      { id: 3, message: "third", createdAt: 3 },
+      { id: 3, message: "third", createdAt: 3, itemId: "file-3" },
       2,
     )).toEqual([
-      { id: 3, message: "third", createdAt: 3 },
+      { id: 3, message: "third", createdAt: 3, itemId: "file-3" },
       { id: 2, message: "second", createdAt: 2 },
     ]);
   });

@@ -80,6 +80,18 @@ export function normalizeReaderText(content: string) {
   return content.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
 }
 
+export function readerExcerpt(
+  bookTitle: string,
+  chapterTitle: string,
+  text: string,
+) {
+  const excerpt = text.trim();
+  return {
+    title: `${bookTitle} 摘录`,
+    content: `${excerpt}\n\n摘自《${bookTitle}》 · ${chapterTitle}`,
+  };
+}
+
 function trimmedBounds(content: string, start: number, end: number) {
   while (start < end && /\s/.test(content[start])) start++;
   while (end > start && /\s/.test(content[end - 1])) end--;

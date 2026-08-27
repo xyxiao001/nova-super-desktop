@@ -2,6 +2,7 @@ export type DesktopNotification = {
   id: number;
   message: string;
   createdAt: number;
+  itemId?: string;
 };
 
 export type CalendarDay = {

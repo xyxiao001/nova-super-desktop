@@ -6,6 +6,7 @@ import {
   decodeReaderBuffer,
   locationForOffset,
   normalizeReaderText,
+  readerExcerpt,
   type ReaderChapter,
 } from "../../app/readerCore";
 
@@ -14,6 +15,13 @@ describe("readerCore", () => {
     expect(normalizeReaderText("\uFEFFfirst\r\nsecond\rlast")).toBe(
       "first\nsecond\nlast",
     );
+  });
+
+  it("formats a selected passage with its book and chapter source", () => {
+    expect(readerExcerpt("围城", "第一章", "  一段文字  ")).toEqual({
+      title: "围城 摘录",
+      content: "一段文字\n\n摘自《围城》 · 第一章",
+    });
   });
 
   it("indexes opening text and chapter bodies without copying titles into content", () => {
