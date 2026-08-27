@@ -43,7 +43,7 @@ type ReaderWorkerPayload = Partial<ReaderWorkerResult> & { results?: ReaderSearc
 type ReaderWorkerResponse = ReaderWorkerPayload & { requestId: number; error?: string };
 type ShelfFilter = "all" | "downloaded" | "local" | "cloud";
 
-const DOWNLOADS_KEY = "nova-reader-downloads";
+const LEGACY_DOWNLOADS_KEY = "nova-reader-downloads";
 const READING_ANCHOR_OFFSET = 72;
 const PAGE_GAP = 48;
 const timestamp = Date.now;
@@ -165,6 +165,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
 
   useEffect(() => {
     let cancelled = false;
+    localStorage.removeItem(LEGACY_DOWNLOADS_KEY);
     const catalogTimer = window.setTimeout(() => void loadCatalog(), 0);
     void getStoredBookSummaries().then((books) => {
       if (cancelled) return;
@@ -177,10 +178,6 @@ export default function ReaderApp({ active }: { active: boolean }) {
   useEffect(() => {
     saveReaderPreferences(preferences);
   }, [preferences]);
-
-  useEffect(() => {
-    localStorage.setItem(DOWNLOADS_KEY, JSON.stringify(downloads));
-  }, [downloads]);
 
   const chapter = chapters[chapterIndex];
   const chapterContent = useMemo(() => activeBook && chapter ? activeBook.content.slice(chapter.start, chapter.end) : "", [activeBook, chapter]);

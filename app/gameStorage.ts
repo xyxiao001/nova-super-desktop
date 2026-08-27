@@ -15,6 +15,7 @@ const RECORDS_KEY="nova-game-records";
 const PROGRESS_PREFIX="nova-game-progress:";
 const CHANGE_EVENT="nova-game-records-change";
 const RESET_EVENT="nova-game-reset";
+const GAME_AUXILIARY_KEYS=["nova-mines-difficulty","nova-mines-best"];
 const GAME_IDS:GameId[]=["mines","chess","gomoku","go"];
 const emptyRecord=():GameRecord=>({played:0,wins:0,losses:0,draws:0,lastPlayed:null,lastResult:null,hasProgress:false});
 
@@ -66,12 +67,15 @@ export const requestNewGame=(id:GameId)=>{
   clearGameProgress(id);
   window.dispatchEvent(new CustomEvent(RESET_EVENT,{detail:id}));
 };
-export const resetAllGameData=()=>{
+const clearStoredGameData=()=>{
   localStorage.removeItem(RECORDS_KEY);
-  for(const id of GAME_IDS){
-    localStorage.removeItem(`${PROGRESS_PREFIX}${id}`);
-    window.dispatchEvent(new CustomEvent(RESET_EVENT,{detail:id}));
-  }
+  for(const key of GAME_AUXILIARY_KEYS)localStorage.removeItem(key);
+  for(const id of GAME_IDS)localStorage.removeItem(`${PROGRESS_PREFIX}${id}`);
+};
+export const resetAllGameData=()=>{
+  clearStoredGameData();
+  for(const id of GAME_IDS)window.dispatchEvent(new CustomEvent(RESET_EVENT,{detail:id}));
+  clearStoredGameData();
   window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
 };
 export const subscribeGameRecords=(listener:()=>void)=>{
