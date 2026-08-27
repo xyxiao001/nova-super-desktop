@@ -16,11 +16,13 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@algorithm.ts/gomoku": "^4.0.5",
     "chess.js": "^1.4.0",
     "drizzle-orm": "0.45.2",
     "idb": "^8.0.3",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "tenuki": "^0.3.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",

@@ -3,6 +3,10 @@
 import { ChangeEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { openDB, type DBSchema } from "idb";
 import ChessGame from "./ChessGame";
+import DrawingApp from "./DrawingApp";
+import GameHall, { type GameAppId } from "./GameHall";
+import GoGame from "./GoGame";
+import GomokuGame from "./GomokuGame";
 import ReaderApp from "./ReaderApp";
 
 type Mode = "调整" | "滤镜" | "裁剪";
@@ -12,8 +16,12 @@ type Point = { x: number; y: number };
 type EditState = { values: Record<string, number>; filter: string; rotation: number; flipX: boolean; flipY: boolean; ratio: Ratio; crop: CropRect; redEyes: Point[] };
 type Control = { label: string; key: string; min?: number; max?: number };
 type DesktopItem = { id: string; type: "folder" | "text" | "image"; name: string; content: string; parentId: string | null; createdAt: number; deletedAt?: number };
-type AppId = "desktop" | "photo" | "notes" | "viewer" | "reader" | "folder" | "recycle" | "mines" | "chess" | "calculator";
-type ContextMenuState = { x: number; y: number; itemId?: string; appKey?: string };
+type WindowAppId = "photo" | "notes" | "viewer" | "reader" | "games" | "folder" | "recycle" | GameAppId | "calculator" | "drawing";
+type AppId = "desktop" | WindowAppId;
+type AppDefinition = { id:WindowAppId; label:string; icon:string; kind:string; launcher:boolean; taskbarPinned:boolean; windowIcon?:string; taskbarIcon?:string };
+type WindowState = { open:boolean; minimized:boolean; maximized:boolean };
+type WindowStateMap = Record<WindowAppId,WindowState>;
+type ContextMenuState = { x: number; y: number; itemId?: string; appKey?: WindowAppId };
 type PhotoSource = { name: string; content: string };
 type IconPosition = { x: number; y: number };
 type MineCell = { mine:boolean; revealed:boolean; flagged:boolean; nearby:number };
@@ -28,16 +36,24 @@ const DESKTOP_STORAGE_KEY = "nova-desktop-items";
 const POSITION_STORAGE_KEY = "nova-desktop-positions";
 const DESKTOP_DB_NAME = "nova-desktop";
 const WINDOW_GEOMETRY_PREFIX = "nova-window-geometry:";
-const APP_SHORTCUTS = [
-  {key:"photo",label:"照片实验室",icon:"✦",kind:"photo"},
-  {key:"notes",label:"记事本",icon:"▤",kind:"notes"},
-  {key:"viewer",label:"照片",icon:"▧",kind:"viewer"},
-  {key:"reader",label:"NOVA 阅读",icon:"阅",kind:"reader"},
-  {key:"recycle",label:"回收站",icon:"▥",kind:"recycle"},
-  {key:"mines",label:"扫雷",icon:"✹",kind:"mines"},
-  {key:"chess",label:"国际象棋",icon:"♞",kind:"chess"},
-  {key:"calculator",label:"计算器",icon:"＋",kind:"calculator"},
-] as const;
+const APP_REGISTRY:Record<WindowAppId,AppDefinition> = {
+  photo:{id:"photo",label:"照片实验室",icon:"✦",kind:"photo",launcher:true,taskbarPinned:true},
+  notes:{id:"notes",label:"记事本",icon:"▤",kind:"notes",launcher:true,taskbarPinned:true},
+  viewer:{id:"viewer",label:"照片",icon:"▧",kind:"viewer",launcher:true,taskbarPinned:true,windowIcon:"✿"},
+  reader:{id:"reader",label:"NOVA 阅读",icon:"阅",kind:"reader",launcher:true,taskbarPinned:true},
+  games:{id:"games",label:"游戏大厅",icon:"",kind:"games",launcher:true,taskbarPinned:false},
+  folder:{id:"folder",label:"文件夹",icon:"▱",kind:"folder",launcher:false,taskbarPinned:false},
+  recycle:{id:"recycle",label:"回收站",icon:"▥",kind:"recycle",launcher:true,taskbarPinned:false,windowIcon:"▨",taskbarIcon:"▨"},
+  mines:{id:"mines",label:"扫雷",icon:"✹",kind:"mines",launcher:false,taskbarPinned:false},
+  chess:{id:"chess",label:"国际象棋",icon:"♞",kind:"chess",launcher:false,taskbarPinned:false},
+  gomoku:{id:"gomoku",label:"五子棋",icon:"●",kind:"gomoku",launcher:false,taskbarPinned:false},
+  go:{id:"go",label:"围棋",icon:"◉",kind:"go",launcher:false,taskbarPinned:false},
+  calculator:{id:"calculator",label:"计算器",icon:"＋",kind:"calculator",launcher:true,taskbarPinned:false},
+  drawing:{id:"drawing",label:"NOVA 画板",icon:"✎",kind:"drawing",launcher:true,taskbarPinned:false},
+};
+const REGISTERED_APPS=Object.values(APP_REGISTRY);
+const LAUNCHER_APPS=REGISTERED_APPS.filter((app)=>app.launcher);
+const createInitialWindowState=()=>Object.fromEntries(REGISTERED_APPS.map((app)=>[app.id,{open:false,minimized:false,maximized:false}])) as WindowStateMap;
 
 const MINE_LEVELS:Record<MineDifficulty,{label:string;rows:number;columns:number;mines:number}> = {
   beginner:{label:"初级",rows:9,columns:9,mines:10},
@@ -85,7 +101,7 @@ const readBrowserFile=(file:File,mode:"text"|"data")=>new Promise<string>((resol
 const openDesktopDatabase=()=>openDB<NovaDesktopDatabase>(DESKTOP_DB_NAME,1,{upgrade(database){database.createObjectStore("items",{keyPath:"id"})}});
 const replaceDesktopItems=async(items:DesktopItem[])=>{const database=await openDesktopDatabase(),transaction=database.transaction("items","readwrite");await transaction.store.clear();await Promise.all(items.map((item)=>transaction.store.put(item)));await transaction.done;database.close()};
 const fitWindowGeometry=(geometry:WindowGeometry):WindowGeometry=>{const width=clamp(geometry.width,320,Math.max(320,window.innerWidth-8)),height=clamp(geometry.height,260,Math.max(260,window.innerHeight-57));return{x:clamp(geometry.x,0,Math.max(0,window.innerWidth-width)),y:clamp(geometry.y,0,Math.max(0,window.innerHeight-49-height)),width,height}};
-const readWindowGeometry=(app:AppId)=>{const saved=localStorage.getItem(`${WINDOW_GEOMETRY_PREFIX}${app}`);return saved?fitWindowGeometry(JSON.parse(saved) as WindowGeometry):null};
+const readWindowGeometry=(app:WindowAppId)=>{const saved=localStorage.getItem(`${WINDOW_GEOMETRY_PREFIX}${app}`);return saved?fitWindowGeometry(JSON.parse(saved) as WindowGeometry):null};
 
 function imageFilter(edit: EditState) {
   const v = edit.values;
@@ -103,15 +119,8 @@ function imageFilter(edit: EditState) {
 
 export default function Home() {
   const [items,setItems]=useState<DesktopItem[]>([]),[positions,setPositions]=useState<Record<string,IconPosition>>({}),[storageReady,setStorageReady]=useState(false),[selectedIds,setSelectedIds]=useState<string[]>([]);
-  const [photoOpen,setPhotoOpen]=useState(false),[photoMin,setPhotoMin]=useState(false),[photoMax,setPhotoMax]=useState(false),[photoSourceId,setPhotoSourceId]=useState<string|null>(null);
-  const [noteOpen,setNoteOpen]=useState(false),[noteMin,setNoteMin]=useState(false),[noteMax,setNoteMax]=useState(false),[activeNoteId,setActiveNoteId]=useState<string|null>(null);
-  const [viewerOpen,setViewerOpen]=useState(false),[viewerMin,setViewerMin]=useState(false),[viewerMax,setViewerMax]=useState(false),[activeImageId,setActiveImageId]=useState<string|null>(null);
-  const [folderOpen,setFolderOpen]=useState(false),[folderMin,setFolderMin]=useState(false),[folderMax,setFolderMax]=useState(false),[activeFolderId,setActiveFolderId]=useState<string|null>(null);
-  const [recycleOpen,setRecycleOpen]=useState(false),[recycleMin,setRecycleMin]=useState(false),[recycleMax,setRecycleMax]=useState(false);
-  const [minesOpen,setMinesOpen]=useState(false),[minesMin,setMinesMin]=useState(false),[minesMax,setMinesMax]=useState(false);
-  const [chessOpen,setChessOpen]=useState(false),[chessMin,setChessMin]=useState(false),[chessMax,setChessMax]=useState(false);
-  const [calculatorOpen,setCalculatorOpen]=useState(false),[calculatorMin,setCalculatorMin]=useState(false),[calculatorMax,setCalculatorMax]=useState(false);
-  const [readerOpen,setReaderOpen]=useState(false),[readerMin,setReaderMin]=useState(false),[readerMax,setReaderMax]=useState(false);
+  const [windowStates,setWindowStates]=useState<WindowStateMap>(createInitialWindowState);
+  const [photoSourceId,setPhotoSourceId]=useState<string|null>(null),[activeNoteId,setActiveNoteId]=useState<string|null>(null),[activeImageId,setActiveImageId]=useState<string|null>(null),[activeFolderId,setActiveFolderId]=useState<string|null>(null);
   const [focused,setFocused]=useState<AppId>("desktop"),[clock,setClock]=useState(""),[contextMenu,setContextMenu]=useState<ContextMenuState|null>(null),[startOpen,setStartOpen]=useState(false),[searchQuery,setSearchQuery]=useState(""),[toast,setToast]=useState("");
   const [renameItemId,setRenameItemId]=useState<string|null>(null),[renameValue,setRenameValue]=useState(""),[booting,setBooting]=useState(true),[draggingFiles,setDraggingFiles]=useState(false);
   const desktopUploadRef=useRef<HTMLInputElement>(null);
@@ -122,28 +131,28 @@ export default function Home() {
   useEffect(()=>{const update=()=>setClock(new Intl.DateTimeFormat("zh-CN",{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date()));update();const timer=setInterval(update,30000);return()=>clearInterval(timer)},[]);
   useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(""),1800);return()=>clearTimeout(timer)},[toast]);
 
+  const updateWindow=useCallback((app:WindowAppId,patch:Partial<WindowState>)=>setWindowStates((current)=>({...current,[app]:{...current[app],...patch}})),[]);
+  const openWindow=useCallback((app:WindowAppId)=>{updateWindow(app,{open:true,minimized:false});setFocused(app);setStartOpen(false);setContextMenu(null)},[updateWindow]);
+  const dismissWindow=useCallback((app:WindowAppId)=>updateWindow(app,{open:false}),[updateWindow]);
+  const closeWindow=useCallback((app:WindowAppId)=>{dismissWindow(app);if(app==="photo")setPhotoSourceId(null);setFocused("desktop")},[dismissWindow]);
+  const minimizeWindow=useCallback((app:WindowAppId)=>updateWindow(app,{minimized:true}),[updateWindow]);
+  const toggleMaximizeWindow=useCallback((app:WindowAppId)=>setWindowStates((current)=>({...current,[app]:{...current[app],maximized:!current[app].maximized}})),[]);
+
   const uniqueName=(base:string,extension="")=>{let index=1,name=`${base}${extension}`;while(items.some((item)=>!item.deletedAt&&item.name===name)){index+=1;name=`${base} ${index}${extension}`}return name};
   const createFolder=(parentId:string|null=null)=>{const item:DesktopItem={id:crypto.randomUUID(),type:"folder",name:uniqueName("新建文件夹"),content:"",parentId,createdAt:Date.now()};setItems((current)=>[...current,item]);setSelectedIds(parentId?[]:[item.id]);setContextMenu(null)};
-  const createText=(parentId:string|null=null)=>{const item:DesktopItem={id:crypto.randomUUID(),type:"text",name:uniqueName("未命名",".txt"),content:"",parentId,createdAt:Date.now()};setItems((current)=>[...current,item]);setActiveNoteId(item.id);setNoteOpen(true);setNoteMin(false);setFocused("notes");setContextMenu(null)};
+  const createText=(parentId:string|null=null)=>{const item:DesktopItem={id:crypto.randomUUID(),type:"text",name:uniqueName("未命名",".txt"),content:"",parentId,createdAt:Date.now()};setItems((current)=>[...current,item]);setActiveNoteId(item.id);openWindow("notes")};
   const updateItem=(id:string,patch:Partial<DesktopItem>)=>setItems((current)=>current.map((item)=>item.id===id?{...item,...patch}:item));
-  const openItem=(item:DesktopItem)=>{setSelectedIds([item.id]);setContextMenu(null);setStartOpen(false);if(item.type==="text"){setActiveNoteId(item.id);setNoteOpen(true);setNoteMin(false);setFocused("notes")}if(item.type==="image"){setActiveImageId(item.id);setViewerOpen(true);setViewerMin(false);setFocused("viewer")}if(item.type==="folder"){setActiveFolderId(item.id);setFolderOpen(true);setFolderMin(false);setFocused("folder")}};
-  const savePhoto=(name:string,content:string)=>{const finalName=items.some((item)=>item.name===name)?uniqueName(name.replace(/\.jpg$/i,""),".jpg"):name;const item:DesktopItem={id:crypto.randomUUID(),type:"image",name:finalName,content,parentId:null,createdAt:Date.now()};setItems((current)=>[...current,item]);setToast(`${finalName} 已存储到桌面`)};
-  const launchPhoto=()=>{setPhotoOpen(true);setPhotoMin(false);setFocused("photo");setStartOpen(false);setContextMenu(null)};
-  const editPhoto=(item:DesktopItem)=>{setPhotoSourceId(item.id);setPhotoOpen(true);setPhotoMin(false);setFocused("photo");setContextMenu(null)};
+  const openItem=(item:DesktopItem)=>{setSelectedIds([item.id]);if(item.type==="text"){setActiveNoteId(item.id);openWindow("notes")}if(item.type==="image"){setActiveImageId(item.id);openWindow("viewer")}if(item.type==="folder"){setActiveFolderId(item.id);openWindow("folder")}};
+  const savePhoto=(name:string,content:string)=>{const dot=name.lastIndexOf("."),base=dot>0?name.slice(0,dot):name,extension=dot>0?name.slice(dot):"";const finalName=items.some((item)=>!item.deletedAt&&item.name===name)?uniqueName(base,extension):name;const item:DesktopItem={id:crypto.randomUUID(),type:"image",name:finalName,content,parentId:null,createdAt:Date.now()};setItems((current)=>[...current,item]);setToast(`${finalName} 已存储到桌面`)};
+  const editPhoto=(item:DesktopItem)=>{setPhotoSourceId(item.id);openWindow("photo")};
   const downloadItem=(item:DesktopItem)=>{const link=document.createElement("a");let objectUrl="";if(item.type==="image")link.href=item.content;else{objectUrl=URL.createObjectURL(new Blob([item.content],{type:"text/plain;charset=utf-8"}));link.href=objectUrl}link.download=item.name;link.click();if(objectUrl)setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);setContextMenu(null)};
-  const closeAffected=(ids:Set<string>)=>{if(activeImageId&&ids.has(activeImageId)){setActiveImageId(null);setViewerOpen(false)}if(activeNoteId&&ids.has(activeNoteId)){setActiveNoteId(null);setNoteOpen(false)}if(activeFolderId&&ids.has(activeFolderId)){setActiveFolderId(null);setFolderOpen(false)}if(photoSourceId&&ids.has(photoSourceId)){setPhotoSourceId(null);setPhotoOpen(false)}};
+  const closeAffected=(ids:Set<string>)=>{if(activeImageId&&ids.has(activeImageId)){setActiveImageId(null);dismissWindow("viewer")}if(activeNoteId&&ids.has(activeNoteId)){setActiveNoteId(null);dismissWindow("notes")}if(activeFolderId&&ids.has(activeFolderId)){setActiveFolderId(null);dismissWindow("folder")}if(photoSourceId&&ids.has(photoSourceId)){setPhotoSourceId(null);dismissWindow("photo")}};
   const moveManyToRecycleBin=(ids:string[])=>{const affected=descendantIds(items,ids),now=Date.now();setItems((current)=>current.map((entry)=>ids.includes(entry.id)?{...entry,deletedAt:now}:entry));closeAffected(affected);setSelectedIds([]);setContextMenu(null);setFocused("desktop");setToast(`${ids.length} 个项目已移到回收站`)};
   const restoreItem=(item:DesktopItem)=>{setItems((current)=>current.map((entry)=>entry.id===item.id?{...entry,deletedAt:undefined}:entry));setToast(`${item.name} 已还原到桌面`)};
   const permanentlyDeleteMany=(ids:string[])=>{const removed=descendantIds(items,ids);setItems((current)=>current.filter((entry)=>!removed.has(entry.id)));closeAffected(removed);setSelectedIds([]);setContextMenu(null);setToast(`${ids.length} 个项目已永久删除`)};
   const permanentlyDelete=(item:DesktopItem)=>permanentlyDeleteMany([item.id]);
   const emptyRecycleBin=()=>{setItems((current)=>{const removed=descendantIds(current,current.filter((item)=>item.deletedAt).map((item)=>item.id));return current.filter((item)=>!removed.has(item.id))});setToast("回收站已清空")};
-  const launchNotes=()=>{setStartOpen(false);setContextMenu(null);if(activeNoteId&&items.some((item)=>item.id===activeNoteId)){setNoteOpen(true);setNoteMin(false);setFocused("notes")}else createText()};
-  const launchViewer=()=>{if(!viewerOpen)setActiveImageId(null);setViewerOpen(true);setViewerMin(false);setFocused("viewer");setStartOpen(false);setContextMenu(null)};
-  const launchRecycle=()=>{setRecycleOpen(true);setRecycleMin(false);setFocused("recycle");setStartOpen(false);setContextMenu(null)};
-  const launchMines=()=>{setMinesOpen(true);setMinesMin(false);setFocused("mines");setStartOpen(false);setContextMenu(null)};
-  const launchChess=()=>{setChessOpen(true);setChessMin(false);setFocused("chess");setStartOpen(false);setContextMenu(null)};
-  const launchCalculator=()=>{setCalculatorOpen(true);setCalculatorMin(false);setFocused("calculator");setStartOpen(false);setContextMenu(null)};
-  const launchReader=()=>{setReaderOpen(true);setReaderMin(false);setFocused("reader");setStartOpen(false);setContextMenu(null)};
+  const launchApp=(app:WindowAppId)=>{if(app==="notes"){if(activeNoteId&&items.some((item)=>item.id===activeNoteId))openWindow("notes");else createText();return}if(app==="viewer"&&!windowStates.viewer.open)setActiveImageId(null);openWindow(app)};
   const activeNote=items.find((item)=>!item.deletedAt&&item.id===activeNoteId&&item.type==="text")??null;
   const activeImage=items.find((item)=>!item.deletedAt&&item.id===activeImageId&&item.type==="image")??null;
   const activeFolder=items.find((item)=>!item.deletedAt&&item.id===activeFolderId&&item.type==="folder")??null;
@@ -151,15 +160,24 @@ export default function Home() {
   const contextItem=contextMenu?.itemId?items.find((item)=>!item.deletedAt&&item.id===contextMenu.itemId)??null:null;
   const rootItems=items.filter((item)=>!item.deletedAt&&item.parentId===null);
   const trashedItems=items.filter((item)=>item.deletedAt);
-  const appEntries=[
-    {...APP_SHORTCUTS[0],open:launchPhoto},{...APP_SHORTCUTS[1],open:launchNotes},{...APP_SHORTCUTS[2],open:launchViewer},
-    {...APP_SHORTCUTS[3],open:launchReader},{...APP_SHORTCUTS[4],icon:trashedItems.length?"▨":"▥",open:launchRecycle},{...APP_SHORTCUTS[5],open:launchMines},{...APP_SHORTCUTS[6],open:launchChess},{...APP_SHORTCUTS[7],open:launchCalculator},
-  ];
+  const appEntries=LAUNCHER_APPS.map((app)=>({...app,key:app.id,icon:app.id==="recycle"&&trashedItems.length?"▨":app.icon,open:()=>launchApp(app.id)}));
   const contextApp=contextMenu?.appKey?appEntries.find((app)=>app.key===contextMenu.appKey)??null:null;
   const contextTargets=contextItem?(selectedIds.includes(contextItem.id)?items.filter((item)=>selectedIds.includes(item.id)&&!item.deletedAt):[contextItem]):[];
   const searchText=searchQuery.trim().toLowerCase(),searchApps=searchText?appEntries.filter((app)=>app.label.toLowerCase().includes(searchText)):[],searchItems=searchText?items.filter((item)=>!item.deletedAt&&(item.name.toLowerCase().includes(searchText)||(item.type==="text"&&item.content.toLowerCase().includes(searchText)))):[];
+  const windowProps=(app:WindowAppId,title=APP_REGISTRY[app].label)=>{const definition=APP_REGISTRY[app],state=windowStates[app];return{app,title,icon:definition.windowIcon??definition.icon,minimized:state.minimized,maximized:state.maximized,focused:focused===app,onFocus:()=>setFocused(app),onClose:()=>closeWindow(app),onMinimize:()=>minimizeWindow(app),onMaximize:()=>toggleMaximizeWindow(app)}};
+  const taskbarApps=REGISTERED_APPS.filter((app)=>(app.taskbarPinned||windowStates[app.id].open)&&(app.id!=="folder"||activeFolder));
+  const taskbarLabel=(app:AppDefinition)=>app.id==="folder"&&activeFolder?activeFolder.name:app.label;
   const defaultPosition=(index:number):IconPosition=>({x:Math.floor(index/7)*89,y:index%7*90});
-  const positionFor=(id:string,index:number)=>positions[id]??defaultPosition(index);
+  const desktopEntryIds=[...appEntries.map((app)=>`app:${app.key}`),...rootItems.map((item)=>item.id)];
+  const resolvedPositions=desktopEntryIds.reduce<Record<string,IconPosition>>((result,id)=>{
+    const overlaps=(candidate:IconPosition)=>Object.values(result).some((position)=>Math.abs(position.x-candidate.x)<78&&Math.abs(position.y-candidate.y)<86);
+    if(positions[id]&&!overlaps(positions[id])){result[id]=positions[id];return result}
+    let slot=0;
+    while(overlaps(defaultPosition(slot)))slot++;
+    result[id]=defaultPosition(slot);
+    return result;
+  },{});
+  const positionFor=(id:string,index:number)=>resolvedPositions[id]??defaultPosition(index);
   const moveIcon=(id:string,position:IconPosition)=>setPositions((current)=>({...current,[id]:position}));
   const importFiles=async(fileList:FileList|File[])=>{const files=Array.from(fileList),accepted=files.filter((file)=>file.type.startsWith("image/")||file.type==="text/plain"||file.name.toLowerCase().endsWith(".txt"));if(!accepted.length){setToast("暂时只支持图片和 TXT 文件");setDraggingFiles(false);return}const records=await Promise.all(accepted.map(async(file)=>({type:(file.type.startsWith("image/")?"image":"text") as DesktopItem["type"],name:file.name,content:await readBrowserFile(file,file.type.startsWith("image/")?"data":"text")})));setItems((current)=>{const next=[...current];for(const record of records){const dot=record.name.lastIndexOf("."),base=dot>0?record.name.slice(0,dot):record.name,extension=dot>0?record.name.slice(dot):"";let name=record.name,index=2;while(next.some((item)=>!item.deletedAt&&item.name===name)){name=`${base} ${index}${extension}`;index++}next.push({id:crypto.randomUUID(),type:record.type,name,content:record.content,parentId:null,createdAt:Date.now()})}return next});setDraggingFiles(false);setToast(`${records.length} 个文件已上传到桌面`)};
   const selectItem=(id:string,event:ReactMouseEvent)=>{setFocused("desktop");if(event.ctrlKey||event.metaKey||event.shiftKey)setSelectedIds((current)=>current.includes(id)?current.filter((item)=>item!==id):[...current,id]);else setSelectedIds([id])};
@@ -168,23 +186,27 @@ export default function Home() {
   const finishRename=()=>{if(renameItemId&&renameValue.trim())updateItem(renameItemId,{name:renameValue.trim()});setRenameItemId(null)};
   const arrangeIcons=(mode:"name"|"type"|"clean")=>{const entries=[...appEntries.map((app)=>({id:`app:${app.key}`,label:app.label,type:"app"})),...rootItems.map((item)=>({id:item.id,label:item.name,type:item.type}))];if(mode==="name")entries.sort((a,b)=>a.label.localeCompare(b.label,"zh-CN"));if(mode==="type")entries.sort((a,b)=>a.type.localeCompare(b.type)||a.label.localeCompare(b.label,"zh-CN"));const rows=Math.max(1,Math.floor((window.innerHeight-78)/90));setPositions((current)=>({...current,...Object.fromEntries(entries.map((entry,index)=>[entry.id,{x:Math.floor(index/rows)*89,y:index%rows*90}]))}));setContextMenu(null);setToast(mode==="clean"?"桌面图标已整理":mode==="name"?"已按名称排序":"已按类型排序")};
 
-  useEffect(()=>{const shortcut=(event:KeyboardEvent)=>{const command=event.ctrlKey||event.metaKey,key=event.key.toLowerCase(),target=event.target as HTMLElement,typing=target.matches("input,textarea,[contenteditable=true]");if(command&&key==="w"){event.preventDefault();if(focused==="photo"){setPhotoOpen(false);setPhotoSourceId(null)}if(focused==="notes")setNoteOpen(false);if(focused==="viewer")setViewerOpen(false);if(focused==="reader")setReaderOpen(false);if(focused==="folder")setFolderOpen(false);if(focused==="recycle")setRecycleOpen(false);if(focused==="mines")setMinesOpen(false);if(focused==="chess")setChessOpen(false);if(focused==="calculator")setCalculatorOpen(false);setContextMenu(null);setStartOpen(false);setSearchQuery("");setFocused("desktop");return}if(typing&&!(focused==="notes"&&command&&(key==="s"||key==="n")))return;if(command&&key==="s"&&focused==="notes"&&activeNote){event.preventDefault();setToast(`${activeNote.name} 已保存到桌面`);return}if(command&&key==="n"&&focused==="notes"){event.preventDefault();createText();return}if(command&&key==="a"&&focused==="desktop"){event.preventDefault();setSelectedIds(rootItems.map((item)=>item.id));return}if(event.shiftKey&&event.key==="F10"&&focused==="desktop"&&!selectedIds.length){event.preventDefault();setContextMenu({x:48,y:48});setStartOpen(false);return}if(event.key==="F2"&&focused==="desktop"&&selectedIds.length===1){const item=items.find((entry)=>entry.id===selectedIds[0]);if(item){event.preventDefault();beginRename(item)}return}if(event.key==="Delete"&&focused==="desktop"&&selectedIds.length){event.preventDefault();moveManyToRecycleBin(selectedIds);return}if(event.altKey&&event.key==="F4"){event.preventDefault();if(focused==="photo"){setPhotoOpen(false);setPhotoSourceId(null)}if(focused==="notes")setNoteOpen(false);if(focused==="viewer")setViewerOpen(false);if(focused==="reader")setReaderOpen(false);if(focused==="folder")setFolderOpen(false);if(focused==="recycle")setRecycleOpen(false);if(focused==="mines")setMinesOpen(false);if(focused==="chess")setChessOpen(false);if(focused==="calculator")setCalculatorOpen(false);setFocused("desktop");return}if(event.key==="Escape"&&(contextMenu||startOpen)){event.preventDefault();setContextMenu(null);setStartOpen(false);setSearchQuery("")}};window.addEventListener("keydown",shortcut);return()=>window.removeEventListener("keydown",shortcut)},[activeNote,contextMenu,focused,items,selectedIds,startOpen]);
+  useEffect(()=>{const shortcut=(event:KeyboardEvent)=>{const command=event.ctrlKey||event.metaKey,key=event.key.toLowerCase(),target=event.target as HTMLElement,typing=target.matches("input,textarea,[contenteditable=true]");if(command&&key==="w"){event.preventDefault();if(focused!=="desktop")closeWindow(focused);setContextMenu(null);setStartOpen(false);setSearchQuery("");return}if(typing&&!(focused==="notes"&&command&&(key==="s"||key==="n")))return;if(command&&key==="s"&&focused==="notes"&&activeNote){event.preventDefault();setToast(`${activeNote.name} 已保存到桌面`);return}if(command&&key==="n"&&focused==="notes"){event.preventDefault();createText();return}if(command&&key==="a"&&focused==="desktop"){event.preventDefault();setSelectedIds(rootItems.map((item)=>item.id));return}if(event.shiftKey&&event.key==="F10"&&focused==="desktop"&&!selectedIds.length){event.preventDefault();setContextMenu({x:48,y:48});setStartOpen(false);return}if(event.key==="F2"&&focused==="desktop"&&selectedIds.length===1){const item=items.find((entry)=>entry.id===selectedIds[0]);if(item){event.preventDefault();beginRename(item)}return}if(event.key==="Delete"&&focused==="desktop"&&selectedIds.length){event.preventDefault();moveManyToRecycleBin(selectedIds);return}if(event.altKey&&event.key==="F4"){event.preventDefault();if(focused!=="desktop")closeWindow(focused);return}if(event.key==="Escape"&&(contextMenu||startOpen)){event.preventDefault();setContextMenu(null);setStartOpen(false);setSearchQuery("")}};window.addEventListener("keydown",shortcut);return()=>window.removeEventListener("keydown",shortcut)},[activeNote,closeWindow,contextMenu,focused,items,selectedIds,startOpen]);
   return <main className="super-desktop windows-desktop" onPointerDown={(event)=>{if(!(event.target as HTMLElement).closest(".desktop-item,.desktop-shortcut,.rename-dialog"))setSelectedIds([]);if(!(event.target as HTMLElement).closest(".desktop-menu"))setContextMenu(null);if(!(event.target as HTMLElement).closest(".start-menu,.start-button")){setStartOpen(false);setSearchQuery("")}}} onContextMenu={(event)=>{if((event.target as HTMLElement).closest(".desktop-window,.windows-taskbar,.desktop-item,.desktop-shortcut"))return;event.preventDefault();setContextMenu({x:Math.min(event.clientX,window.innerWidth-225),y:Math.min(event.clientY,window.innerHeight-250)});setFocused("desktop");setStartOpen(false)}} onDragOver={(event)=>{if((event.target as HTMLElement).closest(".desktop-window"))return;event.preventDefault();event.dataTransfer.dropEffect="copy";setDraggingFiles(true)}} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingFiles(false)}} onDrop={(event)=>{if((event.target as HTMLElement).closest(".desktop-window"))return;event.preventDefault();importFiles(event.dataTransfer.files)}}>
     <input ref={desktopUploadRef} className="desktop-upload-input" aria-label="上传桌面文件" type="file" accept="image/*,.txt,text/plain" multiple onChange={(event)=>{if(event.target.files?.length)importFiles(event.target.files);event.target.value=""}}/>
     <div className="windows-wallpaper"><i/><i/><i/></div>
     <section className="desktop-files" aria-label="桌面图标">{appEntries.map((app,index)=><DesktopShortcut key={app.key} id={`app:${app.key}`} label={app.label} icon={app.icon} kind={app.kind} position={positionFor(`app:${app.key}`,index)} move={moveIcon} open={app.open} onContextMenu={(x,y)=>{setContextMenu({x:Math.min(x,window.innerWidth-225),y:Math.min(y,window.innerHeight-100),appKey:app.key});setStartOpen(false)}}/>)}{rootItems.map((item,index)=><DesktopFile key={item.id} item={item} position={positionFor(item.id,appEntries.length+index)} move={moveIcon} selected={selectedIds.includes(item.id)} onSelect={(event)=>selectItem(item.id,event)} onOpen={()=>openItem(item)} onContextMenu={(x,y)=>openItemMenu(item,x,y)}/>)}</section>
     {contextMenu&&<div className="desktop-menu" style={{left:contextMenu.x,top:contextMenu.y}}>{contextApp?<button onClick={contextApp.open}>打开 {contextApp.label}</button>:contextItem?<>{contextTargets.length===1?<><button onClick={()=>openItem(contextItem)}>打开</button><button onClick={()=>beginRename(contextItem)}>重命名</button>{contextItem.type==="folder"&&<><button onClick={()=>createFolder(contextItem.id)}>在文件夹中新建文件夹</button><button onClick={()=>createText(contextItem.id)}>在文件夹中新建文本</button></>}{contextItem.type==="image"&&<button onClick={()=>editPhoto(contextItem)}>在照片实验室中编辑</button>}{contextItem.type!=="folder"&&<button onClick={()=>downloadItem(contextItem)}>保存到下载</button>}<span/></>:<p className="menu-summary">已选择 {contextTargets.length} 个项目</p>}<button className="danger" onClick={()=>moveManyToRecycleBin(contextTargets.map((item)=>item.id))}>移到回收站</button><button className="danger" onClick={()=>permanentlyDeleteMany(contextTargets.map((item)=>item.id))}>直接删除</button></>:<><button onClick={()=>createFolder()}>新建文件夹</button><button onClick={()=>createText()}>新建文本文稿</button><button onClick={()=>{desktopUploadRef.current?.click();setContextMenu(null)}}>上传图片或 TXT</button><span/><button onClick={()=>arrangeIcons("name")}>按名称排序</button><button onClick={()=>arrangeIcons("type")}>按类型排序</button><button onClick={()=>arrangeIcons("clean")}>整理图标</button></>}</div>}
-    {photoOpen&&<AppWindow app="photo" title="照片实验室" icon="✦" minimized={photoMin} maximized={photoMax} focused={focused==="photo"} onFocus={()=>setFocused("photo")} onClose={()=>{setPhotoOpen(false);setPhotoSourceId(null);setFocused("desktop")}} onMinimize={()=>setPhotoMin(true)} onMaximize={()=>setPhotoMax(!photoMax)}><PhotoEditor key={photoSourceItem?.id??"default-photo"} active={focused==="photo"&&!photoMin} initialImage={photoSourceItem?{name:photoSourceItem.name.replace(/\.[^.]+$/,"")||"照片",content:photoSourceItem.content}:null} onSaveToDesktop={savePhoto}/></AppWindow>}
-    {noteOpen&&activeNote&&<AppWindow app="notes" title={activeNote.name} icon="▤" minimized={noteMin} maximized={noteMax} focused={focused==="notes"} onFocus={()=>setFocused("notes")} onClose={()=>{setNoteOpen(false);setFocused("desktop")}} onMinimize={()=>setNoteMin(true)} onMaximize={()=>setNoteMax(!noteMax)}><Notepad item={activeNote} update={updateItem}/></AppWindow>}
-    {viewerOpen&&<AppWindow app="viewer" title={activeImage?.name??"照片"} icon="✿" minimized={viewerMin} maximized={viewerMax} focused={focused==="viewer"} onFocus={()=>setFocused("viewer")} onClose={()=>{setViewerOpen(false);setFocused("desktop")}} onMinimize={()=>setViewerMin(true)} onMaximize={()=>setViewerMax(!viewerMax)}><PhotoViewer images={items.filter((item)=>!item.deletedAt&&item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)}/></AppWindow>}
-    {readerOpen&&<AppWindow app="reader" title="NOVA 阅读" icon="阅" minimized={readerMin} maximized={readerMax} focused={focused==="reader"} onFocus={()=>setFocused("reader")} onClose={()=>{setReaderOpen(false);setFocused("desktop")}} onMinimize={()=>setReaderMin(true)} onMaximize={()=>setReaderMax(!readerMax)}><ReaderApp active={focused==="reader"&&!readerMin}/></AppWindow>}
-    {folderOpen&&activeFolder&&<AppWindow app="folder" title={activeFolder.name} icon="▱" minimized={folderMin} maximized={folderMax} focused={focused==="folder"} onFocus={()=>setFocused("folder")} onClose={()=>{setFolderOpen(false);setFocused("desktop")}} onMinimize={()=>setFolderMin(true)} onMaximize={()=>setFolderMax(!folderMax)}><FolderView folder={activeFolder} items={items.filter((item)=>!item.deletedAt&&item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else{setFolderOpen(false);setFocused("desktop")}}} context={openItemMenu}/></AppWindow>}
-    {recycleOpen&&<AppWindow app="recycle" title="回收站" icon="▨" minimized={recycleMin} maximized={recycleMax} focused={focused==="recycle"} onFocus={()=>setFocused("recycle")} onClose={()=>{setRecycleOpen(false);setFocused("desktop")}} onMinimize={()=>setRecycleMin(true)} onMaximize={()=>setRecycleMax(!recycleMax)}><RecycleBin items={trashedItems} restore={restoreItem} remove={permanentlyDelete} empty={emptyRecycleBin}/></AppWindow>}
-    {minesOpen&&<AppWindow app="mines" title="扫雷" icon="✹" minimized={minesMin} maximized={minesMax} focused={focused==="mines"} onFocus={()=>setFocused("mines")} onClose={()=>{setMinesOpen(false);setFocused("desktop")}} onMinimize={()=>setMinesMin(true)} onMaximize={()=>setMinesMax(!minesMax)}><Minesweeper/></AppWindow>}
-    {chessOpen&&<AppWindow app="chess" title="国际象棋" icon="♞" minimized={chessMin} maximized={chessMax} focused={focused==="chess"} onFocus={()=>setFocused("chess")} onClose={()=>{setChessOpen(false);setFocused("desktop")}} onMinimize={()=>setChessMin(true)} onMaximize={()=>setChessMax(!chessMax)}><ChessGame/></AppWindow>}
-    {calculatorOpen&&<AppWindow app="calculator" title="计算器" icon="＋" minimized={calculatorMin} maximized={calculatorMax} focused={focused==="calculator"} onFocus={()=>setFocused("calculator")} onClose={()=>{setCalculatorOpen(false);setFocused("desktop")}} onMinimize={()=>setCalculatorMin(true)} onMaximize={()=>setCalculatorMax(!calculatorMax)}><Calculator/></AppWindow>}
+    {windowStates.photo.open&&<AppWindow {...windowProps("photo")}><PhotoEditor key={photoSourceItem?.id??"default-photo"} active={focused==="photo"&&!windowStates.photo.minimized} initialImage={photoSourceItem?{name:photoSourceItem.name.replace(/\.[^.]+$/,"")||"照片",content:photoSourceItem.content}:null} onSaveToDesktop={savePhoto}/></AppWindow>}
+    {windowStates.notes.open&&activeNote&&<AppWindow {...windowProps("notes",activeNote.name)}><Notepad item={activeNote} update={updateItem}/></AppWindow>}
+    {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><PhotoViewer images={items.filter((item)=>!item.deletedAt&&item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)}/></AppWindow>}
+    {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><ReaderApp active={focused==="reader"&&!windowStates.reader.minimized}/></AppWindow>}
+    {windowStates.games.open&&<AppWindow {...windowProps("games")}><GameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open}} onLaunch={openWindow}/></AppWindow>}
+    {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><FolderView folder={activeFolder} items={items.filter((item)=>!item.deletedAt&&item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
+    {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><RecycleBin items={trashedItems} restore={restoreItem} remove={permanentlyDelete} empty={emptyRecycleBin}/></AppWindow>}
+    {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><Minesweeper/></AppWindow>}
+    {windowStates.chess.open&&<AppWindow {...windowProps("chess")}><ChessGame/></AppWindow>}
+    {windowStates.gomoku.open&&<AppWindow {...windowProps("gomoku")}><GomokuGame/></AppWindow>}
+    {windowStates.go.open&&<AppWindow {...windowProps("go")}><GoGame/></AppWindow>}
+    {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><Calculator/></AppWindow>}
+    {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><DrawingApp onSave={savePhoto}/></AppWindow>}
     {startOpen&&<section className="start-menu"><label className="start-search">⌕ <input autoFocus value={searchQuery} onChange={(event)=>setSearchQuery(event.target.value)} placeholder="搜索应用和文件"/></label>{searchText?<div className="start-results"><header><strong>搜索结果</strong><span>{searchApps.length+searchItems.length} 项</span></header>{[...searchApps.map((app)=>({key:`app:${app.key}`,label:app.label,icon:app.icon,detail:"应用",open:app.open})),...searchItems.map((item)=>({key:item.id,label:item.name,icon:item.type==="folder"?"▱":item.type==="image"?"▧":"TXT",detail:item.type==="folder"?"文件夹":item.type==="image"?"照片":"文本文稿",open:()=>openItem(item)}))].map((result)=><button key={result.key} onClick={result.open}><i>{result.icon}</i><span><strong>{result.label}</strong><small>{result.detail}</small></span></button>)}{!searchApps.length&&!searchItems.length&&<p>没有找到“{searchQuery}”</p>}</div>:<><header><strong>已固定</strong><span>所有应用</span></header><div className="start-apps">{appEntries.map((app)=><button key={app.key} onClick={app.open}><i className={`start-${app.kind}`}>{app.icon}</i><span>{app.label}</span></button>)}</div></>}<footer><span>◉</span><strong>NOVA 用户</strong><button onClick={()=>{setStartOpen(false);setSearchQuery("")}}>⏻</button></footer></section>}
-    <nav className="windows-taskbar" aria-label="任务栏"><div className="taskbar-center"><button className={`start-button ${startOpen?"selected":""}`} onClick={()=>{setStartOpen(!startOpen);setSearchQuery("");setContextMenu(null)}} aria-label="开始"><span><i/><i/><i/><i/></span></button><button className={`task-app photo-lab-app ${photoOpen?"active":""}`} onClick={launchPhoto} aria-label="打开照片实验室"><span>✦</span><small>照片实验室</small></button><button className={`task-app notes-app ${noteOpen?"active":""}`} onClick={launchNotes} aria-label="打开记事本"><span>▤</span><small>记事本</small></button><button className={`task-app viewer-app ${viewerOpen?"active":""}`} onClick={launchViewer} aria-label="打开照片"><span>▧</span><small>照片</small></button><button className={`task-app reader-app ${readerOpen?"active":""}`} onClick={launchReader} aria-label="打开NOVA阅读"><span>阅</span><small>NOVA 阅读</small></button>{folderOpen&&activeFolder&&<button className="task-app folder-app active" onClick={()=>{setFolderMin(false);setFocused("folder")}} aria-label={`打开${activeFolder.name}`}><span>▱</span><small>{activeFolder.name}</small></button>}{recycleOpen&&<button className="task-app recycle-app active" onClick={launchRecycle} aria-label="打开回收站"><span>▨</span><small>回收站</small></button>}{minesOpen&&<button className="task-app mines-app active" onClick={launchMines} aria-label="打开扫雷"><span>✹</span><small>扫雷</small></button>}{chessOpen&&<button className="task-app chess-app active" onClick={launchChess} aria-label="打开国际象棋"><span>♞</span><small>国际象棋</small></button>}{calculatorOpen&&<button className="task-app calculator-app active" onClick={launchCalculator} aria-label="打开计算器"><span>＋</span><small>计算器</small></button>}</div><div className="taskbar-tray"><span>⌃</span><span>⌁</span><span>▰</span><b>{clock}</b></div></nav>
+    <nav className="windows-taskbar" aria-label="任务栏"><div className="taskbar-center"><button className={`start-button ${startOpen?"selected":""}`} onClick={()=>{setStartOpen(!startOpen);setSearchQuery("");setContextMenu(null)}} aria-label="开始"><span><i/><i/><i/><i/></span></button>{taskbarApps.map((app)=>{const label=taskbarLabel(app);return <button key={app.id} className={`task-app ${app.id==="photo"?"photo-lab-app":`${app.kind}-app`} ${windowStates[app.id].open?"active":""}`} onClick={()=>launchApp(app.id)} aria-label={`打开${label}`}><span>{app.taskbarIcon??app.icon}</span><small>{label}</small></button>})}</div><div className="taskbar-tray"><span>⌃</span><span>⌁</span><span>▰</span><b>{clock}</b></div></nav>
     {renameItemId&&<div className="rename-layer"><form className="rename-dialog" onSubmit={(event)=>{event.preventDefault();finishRename()}}><strong>重命名</strong><input autoFocus value={renameValue} onChange={(event)=>setRenameValue(event.target.value)} onKeyDown={(event)=>{if(event.key==="Escape")setRenameItemId(null)}}/><div><button type="button" onClick={()=>setRenameItemId(null)}>取消</button><button type="submit">确定</button></div></form></div>}
     {draggingFiles&&<div className="desktop-drop-zone"><div><span>⇩</span><strong>释放以上传到桌面</strong><small>支持图片和 TXT 文本</small></div></div>}
     {toast&&<div className="desktop-toast">{toast}</div>}
@@ -192,7 +214,7 @@ export default function Home() {
   </main>
 }
 
-function AppWindow({app,title,icon,minimized,maximized,focused,onFocus,onClose,onMinimize,onMaximize,children}:{app:AppId;title:string;icon:string;minimized:boolean;maximized:boolean;focused:boolean;onFocus:()=>void;onClose:()=>void;onMinimize:()=>void;onMaximize:()=>void;children:React.ReactNode}){
+function AppWindow({app,title,icon,minimized,maximized,focused,onFocus,onClose,onMinimize,onMaximize,children}:{app:WindowAppId;title:string;icon:string;minimized:boolean;maximized:boolean;focused:boolean;onFocus:()=>void;onClose:()=>void;onMinimize:()=>void;onMaximize:()=>void;children:React.ReactNode}){
   const [geometry,setGeometry]=useState<WindowGeometry|null>(()=>readWindowGeometry(app));
   const windowRef=useRef<HTMLElement>(null);
   const drag=useRef<{startX:number;startY:number;originX:number;originY:number}|null>(null);
