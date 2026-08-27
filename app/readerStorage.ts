@@ -68,6 +68,28 @@ export async function getStoredBookSummaries() {
   return books;
 }
 
+export async function getAllStoredBooks() {
+  const database = await openDatabase();
+  const books = await database.getAll(BOOK_STORE);
+  database.close();
+  return books;
+}
+
+export async function replaceStoredBooks(books: StoredBook[]) {
+  const database = await openDatabase();
+  const transaction = database.transaction([BOOK_STORE, LIBRARY_STORE], "readwrite");
+  await Promise.all([
+    transaction.objectStore(BOOK_STORE).clear(),
+    transaction.objectStore(LIBRARY_STORE).clear(),
+  ]);
+  await Promise.all(books.flatMap((book) => [
+    transaction.objectStore(BOOK_STORE).put(book),
+    transaction.objectStore(LIBRARY_STORE).put(summarizeStoredBook(book)),
+  ]));
+  await transaction.done;
+  database.close();
+}
+
 export async function deleteStoredBook(id: string) {
   const database = await openDatabase();
   const transaction = database.transaction([BOOK_STORE, LIBRARY_STORE], "readwrite");

@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { resetAllGameData } from "./gameStorage";
+import {
+  createNovaBackup,
+  estimateNovaStorage,
+  parseNovaBackup,
+  restoreNovaBackup,
+  summarizeNovaBackup,
+  type NovaBackup,
+} from "./novaBackup";
 import type { NovaSettings, NovaTheme } from "./novaSettings";
 import { playNovaSound } from "./novaSettings";
 
@@ -11,9 +19,65 @@ const THEMES:{id:NovaTheme;label:string;sample:string}[]=[
   {id:"dark",label:"深色",sample:"●"},
 ];
 
+const formatBytes=(bytes:number)=>{
+  if(bytes<1024)return `${bytes} B`;
+  if(bytes<1024*1024)return `${Math.round(bytes/1024)} KB`;
+  if(bytes<1024*1024*1024)return `${(bytes/1024/1024).toFixed(1)} MB`;
+  return `${(bytes/1024/1024/1024).toFixed(1)} GB`;
+};
+
 export default function SettingsApp({settings,onChange}:{settings:NovaSettings;onChange:(next:NovaSettings)=>void}){
   const [confirmClear,setConfirmClear]=useState(false);
+  const [storage,setStorage]=useState({usage:0,quota:0});
+  const [backupState,setBackupState]=useState<"idle"|"exporting"|"restoring">("idle");
+  const [backupMessage,setBackupMessage]=useState("");
+  const [pendingBackup,setPendingBackup]=useState<NovaBackup|null>(null);
+  const backupInputRef=useRef<HTMLInputElement>(null);
   const update=(patch:Partial<NovaSettings>)=>onChange({...settings,...patch});
+  const refreshStorage=()=>void estimateNovaStorage().then(setStorage);
+  useEffect(refreshStorage,[]);
+  const exportBackup=async()=>{
+    setBackupState("exporting");
+    setBackupMessage("");
+    try{
+      const backup=await createNovaBackup();
+      const url=URL.createObjectURL(new Blob([JSON.stringify(backup)],{type:"application/json"}));
+      const link=document.createElement("a");
+      link.href=url;
+      link.download=`nova-backup-${backup.exportedAt.slice(0,10)}.json`;
+      link.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      setBackupMessage("本地备份已导出");
+    }catch{
+      setBackupMessage("备份导出失败");
+    }finally{
+      setBackupState("idle");
+      refreshStorage();
+    }
+  };
+  const chooseBackup=async(file:File)=>{
+    setBackupMessage("");
+    try{
+      setPendingBackup(parseNovaBackup(await file.text()));
+    }catch(error){
+      setPendingBackup(null);
+      setBackupMessage(error instanceof Error?error.message:"备份文件无法读取");
+    }
+  };
+  const confirmRestore=async()=>{
+    if(!pendingBackup)return;
+    setBackupState("restoring");
+    setBackupMessage("");
+    try{
+      await restoreNovaBackup(pendingBackup);
+      window.location.reload();
+    }catch{
+      setBackupState("idle");
+      setBackupMessage("恢复失败，本地数据未完全更新");
+    }
+  };
+  const backupSummary=pendingBackup?summarizeNovaBackup(pendingBackup):null;
+  const storagePercent=storage.quota?Math.min(100,storage.usage/storage.quota*100):0;
   return <main className="settings-app">
     <header><strong>个性化</strong><span>桌面外观与声音</span></header>
     <section className="settings-section">
@@ -30,5 +94,24 @@ export default function SettingsApp({settings,onChange}:{settings:NovaSettings;o
       <div><strong>本地游戏数据</strong><span>清除所有存档、最近游玩和胜负记录</span></div>
       <button className={confirmClear?"confirm":""} onClick={()=>{if(confirmClear){resetAllGameData();setConfirmClear(false)}else setConfirmClear(true)}}>{confirmClear?"确认清除":"清除游戏记录"}</button>
     </section>
+    <section className="settings-section backup-settings">
+      <div><strong>本地数据</strong><span>{formatBytes(storage.usage)} 已使用{storage.quota?` · ${formatBytes(storage.quota)} 可用空间`:""}</span></div>
+      <div className="storage-meter" aria-label={`存储空间已使用 ${Math.round(storagePercent)}%`}><i style={{width:`${storagePercent}%`}}/></div>
+      <div className="backup-actions">
+        <button disabled={backupState!=="idle"} onClick={()=>void exportBackup()}>⇩ 导出备份</button>
+        <button disabled={backupState!=="idle"} onClick={()=>backupInputRef.current?.click()}>⇧ 导入备份</button>
+        <input ref={backupInputRef} type="file" accept="application/json,.json" aria-label="选择 NOVA 备份" onChange={(event)=>{const file=event.target.files?.[0];if(file)void chooseBackup(file);event.target.value=""}}/>
+      </div>
+      {backupMessage&&<p className="settings-data-message" role="status">{backupMessage}</p>}
+    </section>
+    {pendingBackup&&backupSummary&&<div className="settings-restore-layer">
+      <section role="dialog" aria-modal="true" aria-label="确认恢复本地备份">
+        <strong>恢复本地备份？</strong>
+        <p>{new Intl.DateTimeFormat("zh-CN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(backupSummary.exportedAt))}</p>
+        <dl><div><dt>桌面项目</dt><dd>{backupSummary.desktopItems}</dd></div><div><dt>阅读书籍</dt><dd>{backupSummary.readerBooks}</dd></div><div><dt>设置与记录</dt><dd>{backupSummary.localSettings}</dd></div></dl>
+        <small>当前本地数据将被此备份替换。</small>
+        <footer><button onClick={()=>setPendingBackup(null)}>取消</button><button className="danger" disabled={backupState==="restoring"} onClick={()=>void confirmRestore()}>{backupState==="restoring"?"正在恢复":"确认恢复"}</button></footer>
+      </section>
+    </div>}
   </main>
 }

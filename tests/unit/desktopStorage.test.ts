@@ -7,6 +7,7 @@ import type { DesktopItem } from "../../app/desktopFiles";
 import {
   createDesktopSyncQueue,
   loadDesktopItems,
+  replaceDesktopItems,
 } from "../../app/desktopStorage";
 
 const DATABASE_NAME = "nova-desktop";
@@ -76,5 +77,16 @@ describe("desktopStorage", () => {
     await sync.enqueue([second]);
 
     await expect(loadDesktopItems(createStorage())).resolves.toEqual([second]);
+  });
+
+  it("serializes a full restore after previously queued incremental writes", async () => {
+    const sync = createDesktopSyncQueue([]);
+    const queuedWrite = sync.enqueue([item("stale")]);
+    const restoredItem = item("restored", "backup");
+    const restore = replaceDesktopItems([restoredItem]);
+
+    await Promise.all([queuedWrite, restore]);
+
+    await expect(loadDesktopItems(createStorage())).resolves.toEqual([restoredItem]);
   });
 });

@@ -13,6 +13,13 @@ interface NovaDesktopDatabase extends DBSchema {
 }
 
 type LegacyStorage = Pick<Storage, "getItem" | "removeItem">;
+let databaseWriteQueue: Promise<void> = Promise.resolve();
+
+const serializeDesktopWrite = (write: () => Promise<void>) => {
+  const operation = databaseWriteQueue.catch(() => undefined).then(write);
+  databaseWriteQueue = operation.catch(() => undefined);
+  return operation;
+};
 
 const openDesktopDatabase = () => openDB<NovaDesktopDatabase>(DATABASE_NAME, 1, {
   upgrade(database) {
@@ -38,6 +45,20 @@ export async function loadDesktopItems(storage: LegacyStorage = localStorage) {
   }
 }
 
+export async function replaceDesktopItems(items: DesktopItem[]) {
+  return serializeDesktopWrite(async () => {
+    const database = await openDesktopDatabase();
+    try {
+      const transaction = database.transaction("items", "readwrite");
+      await transaction.store.clear();
+      await Promise.all(items.map((item) => transaction.store.put(item)));
+      await transaction.done;
+    } finally {
+      database.close();
+    }
+  });
+}
+
 async function persistDesktopChanges(previous: DesktopItem[], next: DesktopItem[]) {
   const previousById = new Map(previous.map((item) => [item.id, item]));
   const nextIds = new Set(next.map((item) => item.id));
@@ -60,19 +81,13 @@ async function persistDesktopChanges(previous: DesktopItem[], next: DesktopItem[
 
 export function createDesktopSyncQueue(initialItems: DesktopItem[]) {
   let committedItems = initialItems;
-  let latestItems = initialItems;
-  let queue = Promise.resolve();
 
   return {
     enqueue(nextItems: DesktopItem[]) {
-      latestItems = nextItems;
-      const operation = queue.catch(() => undefined).then(async () => {
-        const targetItems = latestItems;
-        await persistDesktopChanges(committedItems, targetItems);
-        committedItems = targetItems;
+      return serializeDesktopWrite(async () => {
+        await persistDesktopChanges(committedItems, nextItems);
+        committedItems = nextItems;
       });
-      queue = operation;
-      return operation;
     },
   };
 }
