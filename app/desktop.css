@@ -224,11 +224,26 @@
 .settings-glyph { background:#586976; color:#fff; }
 
 .windows-controls { margin-left: auto; height: 100%; display: flex; gap: 0 !important; }
-.windows-desktop .windows-controls button,
-.windows-desktop .windows-controls button:nth-child(2),
-.windows-desktop .windows-controls button:nth-child(3) { width: 46px; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; color: #222; box-shadow: none; font-size: 14px; cursor: default; }
-.windows-desktop .windows-controls button:hover { background: #0001; }
-.windows-desktop .windows-controls button:last-child:hover { background: #e81123; color: #fff; }
+.windows-desktop .windows-controls > button,
+.windows-desktop .snap-control > button { width: 46px; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; color: #222; box-shadow: none; font-size: 14px; cursor: default; }
+.windows-desktop .windows-controls > button:hover,
+.windows-desktop .snap-control > button:hover { background: #0001; }
+.windows-desktop .windows-controls > .window-close:hover { background: #e81123; color: #fff; }
+.snap-control { position:relative; height:100%; }
+.snap-picker { position:absolute; z-index:12; top:38px; right:-47px; width:218px; padding:11px; border:1px solid #ffffffb8; border-radius:7px; background:#f3f6f8f2; color:#28343b; box-shadow:0 16px 42px #0006; backdrop-filter:blur(20px); }
+.snap-picker > strong { display:block; padding:0 2px 9px; font-size:10px; font-weight:650; }
+.snap-picker > div { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.windows-desktop .snap-picker button { width:60px; height:43px; padding:4px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; border:1px solid #aebbc3; border-radius:4px; background:#fff; }
+.windows-desktop .snap-picker button:hover { border-color:#1687d7; background:#e8f4fc; }
+.snap-picker button i { display:block; border-radius:1px; background:#a9b7c0; }
+.snap-picker button:nth-child(1) i:first-child,
+.snap-picker button:nth-child(2) i:last-child { grid-row:1 / 3; background:#1687d7; }
+.snap-picker button:nth-child(1) i:last-child,
+.snap-picker button:nth-child(2) i:first-child { grid-row:1 / 3; }
+.snap-picker button:nth-child(3) i:first-child,
+.snap-picker button:nth-child(4) i:nth-child(2),
+.snap-picker button:nth-child(5) i:nth-child(3),
+.snap-picker button:nth-child(6) i:nth-child(4) { background:#1687d7; }
 .windows-desktop .window-content { height: calc(100% - 38px); min-height: 0; background: #1c1c1c; }
 .windows-desktop .desktop-window .editor-shell { height: 100%; min-height: 0; }
 .windows-desktop .desktop-window .workspace { height: calc(100% - 72px); }
@@ -537,7 +552,8 @@
 .windows-desktop.taskbar-auto-hide.taskbar-revealed .windows-taskbar,
 .windows-desktop.taskbar-auto-hide .windows-taskbar:hover,
 .windows-desktop.taskbar-auto-hide .windows-taskbar:focus-within,
-.windows-desktop.taskbar-auto-hide.start-menu-open .windows-taskbar { transform:translateY(0); opacity:1; }
+.windows-desktop.taskbar-auto-hide.start-menu-open .windows-taskbar,
+.windows-desktop.taskbar-auto-hide.system-panel-open .windows-taskbar { transform:translateY(0); opacity:1; }
 
 .taskbar-center { grid-column: 2; display:flex; align-items:center; gap:4px; }
 .taskbar-entry { position:relative; width:42px; height:42px; }
@@ -566,7 +582,32 @@
 .task-app.active::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 3px; border-radius: 3px; background: #1687d7; }
 .taskbar-preview { position:absolute; z-index:5; left:50%; bottom:49px; width:210px; height:142px; overflow:hidden; border:1px solid #ffffffa8; border-radius:7px; background:#eef3f6ed; color:#24313a; box-shadow:0 16px 38px #0007; transform:translateX(-50%); backdrop-filter:blur(18px); }.taskbar-preview header { height:38px; padding:0 8px; display:flex; align-items:center; gap:7px; border-bottom:1px solid #bdc8cf; }.taskbar-preview header .app-glyph { width:23px; height:23px; font-size:12px; }.taskbar-preview header strong { min-width:0; flex:1; overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }.windows-taskbar .taskbar-preview header button { width:25px; height:25px; border-radius:3px; font-size:15px; }.windows-taskbar .taskbar-preview header button:hover { background:#d9483b; color:#fff; }.taskbar-preview > div { position:relative; height:104px; padding:10px; overflow:hidden; background:linear-gradient(145deg,#dfe8ed,#f8fafb); }.taskbar-preview > div span { position:relative; z-index:2; color:#64727b; font-size:9px; }.taskbar-preview > div i { position:absolute; right:16px; bottom:9px; color:#8d9ca5; font:normal 54px/1 Georgia,serif; opacity:.34; }
 .taskbar-tray { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 12px; padding-right: 15px; color: #263b49; font-size: 12px; }
-.taskbar-tray b { max-width: 120px; text-align: right; font-size: 11px; font-weight: 450; }
+.taskbar-tray .notification-mark { position:relative; }
+.taskbar-tray .notification-mark.active::after { content:""; position:absolute; top:-2px; right:-4px; width:5px; height:5px; border-radius:50%; background:#d8493f; box-shadow:0 0 0 2px #eaf4fa; }
+.windows-taskbar .taskbar-clock { width:auto; min-width:112px; height:35px; padding:0 6px; text-align:right; font-size:11px; font-weight:450; line-height:1.35; }
+.system-panel { position:absolute; z-index:131; right:10px; bottom:56px; width:min(640px,calc(100vw - 20px)); max-height:calc(100vh - 72px); display:grid; grid-template-columns:280px minmax(0,1fr); overflow:hidden; border:1px solid #ffffffa8; border-radius:8px; background:#eef3f6f2; color:#26323a; box-shadow:0 20px 54px #0008; backdrop-filter:blur(24px) saturate(140%); }
+.system-panel > section { min-width:0; padding:16px; }
+.calendar-panel { border-right:1px solid #c7d1d8; }
+.calendar-panel > header,.notification-panel > header { height:30px; display:flex; align-items:center; justify-content:space-between; }
+.calendar-panel > header strong,.notification-panel > header strong { font-size:13px; }
+.calendar-panel > header div { display:flex; }
+.calendar-panel button,.notification-panel > header button { height:26px; border:0; border-radius:4px; background:transparent; color:inherit; }
+.calendar-panel > header button { width:28px; padding:0; font-size:17px; }
+.calendar-panel button:hover,.notification-panel > header button:hover { background:#dce8ef; }
+.calendar-weekdays,.calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+.calendar-weekdays { margin-top:10px; color:#71808a; }
+.calendar-weekdays span,.calendar-grid span { height:31px; display:grid; place-items:center; font-size:10px; }
+.calendar-grid span { border-radius:50%; color:#34434c; }
+.calendar-grid span.outside { color:#9da9b0; }
+.calendar-grid span.today { background:#1687d7; color:#fff; font-weight:700; }
+.notification-panel > header button { padding:0 7px; color:#346b8f; font-size:9px; }
+.notification-panel > div { max-height:260px; margin-top:8px; overflow:auto; }
+.notification-panel article { min-height:48px; padding:8px 3px; display:flex; align-items:center; gap:9px; border-top:1px solid #d2dbe0; }
+.notification-panel article > i { width:27px; height:27px; display:grid; place-items:center; flex:none; border-radius:5px; background:#dcebf4; color:#247caf; font:normal 12px/1 serif; }
+.notification-panel article > span { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.notification-panel article strong { overflow:hidden; font-size:10px; font-weight:550; text-overflow:ellipsis; white-space:nowrap; }
+.notification-panel article small { color:#78858d; font-size:9px; }
+.notification-panel p { margin:56px 0; color:#7e8a92; text-align:center; font-size:10px; }
 .taskbar-window-menu { position:absolute; z-index:132; bottom:55px; width:184px; padding:7px; display:flex; flex-direction:column; border:1px solid #ffffffa8; border-radius:7px; background:#f3f6f8f2; color:#202a30; box-shadow:0 14px 36px #0007; backdrop-filter:blur(20px); }.taskbar-window-menu > strong { padding:7px 8px 8px; overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }.taskbar-window-menu button { height:31px; padding:0 9px; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; font-size:10px; }.taskbar-window-menu button:hover { background:#dce8ef; }.taskbar-window-menu > span { height:1px; margin:4px 3px; background:#cbd5db; }.taskbar-window-menu button.danger { color:#b92d2d; }
 .window-switcher { position:absolute; z-index:180; left:50%; top:44%; max-width:min(760px,90vw); padding:14px; display:flex; gap:10px; border:1px solid #ffffff70; border-radius:8px; background:#172029e8; box-shadow:0 24px 70px #000a; transform:translate(-50%,-50%); backdrop-filter:blur(24px); }.window-switcher > div { width:108px; min-width:0; height:94px; padding:13px 8px 9px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:8px; border:1px solid transparent; border-radius:6px; color:#d8e1e6; }.window-switcher > div.active { border-color:#65b8ef; background:#ffffff18; box-shadow:inset 0 0 0 1px #65b8ef55; }.window-switcher .app-glyph { width:42px; height:42px; font-size:20px; }.window-switcher strong { width:100%; overflow:hidden; font-size:9px; font-weight:500; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
 
@@ -574,6 +615,20 @@
 .windows-desktop.theme-dark .desktop-window { border-color:#71808b; box-shadow:0 22px 60px #000b; }
 .windows-desktop.theme-dark .window-chrome { border-bottom-color:#39434a; background:#20272c; color:#e8edf0; }
 .windows-desktop.theme-dark .windows-controls button { color:#e8edf0; }
+.windows-desktop.theme-dark .snap-picker,
+.windows-desktop.theme-dark .system-panel { border-color:#ffffff24; background:#222a30f2; color:#e7ecef; }
+.windows-desktop.theme-dark .snap-picker button { border-color:#52616a; background:#303940; }
+.windows-desktop.theme-dark .snap-picker button:hover { border-color:#54a9dc; background:#283f4d; }
+.windows-desktop.theme-dark .snap-picker button i { background:#71818b; }
+.windows-desktop.theme-dark .calendar-panel { border-color:#465159; }
+.windows-desktop.theme-dark .calendar-panel button:hover,
+.windows-desktop.theme-dark .notification-panel > header button:hover { background:#ffffff12; }
+.windows-desktop.theme-dark .calendar-grid span { color:#dce5ea; }
+.windows-desktop.theme-dark .calendar-grid span.outside { color:#69767e; }
+.windows-desktop.theme-dark .calendar-grid span.today { color:#fff; }
+.windows-desktop.theme-dark .notification-panel article { border-color:#3d4850; }
+.windows-desktop.theme-dark .notification-panel article > i { background:#263f4e; color:#75c2ef; }
+.windows-desktop.theme-dark .taskbar-tray .notification-mark.active::after { box-shadow:0 0 0 2px #151c22; }
 .windows-desktop.theme-dark .windows-taskbar { border-top-color:#ffffff24; background:#151c22db; color:#e8edf0; }
 .windows-desktop.theme-dark .taskbar-tray { color:#d1dbe0; }
 .windows-desktop.theme-dark .start-menu,
@@ -593,6 +648,7 @@
 .windows-desktop.theme-dark .settings-app { background:#1c2328; color:#e6ecef; }
 .windows-desktop.theme-dark .settings-app > header { border-color:#3b464d; background:#242c32; }
 .windows-desktop.theme-dark .settings-section { border-color:#3b464d; }
+.settings-section.search-focus { animation:settingsFocus 1.8s ease; }
 .windows-desktop.theme-dark .theme-options button,
 .windows-desktop.theme-dark .sound-settings > button,
 .windows-desktop.theme-dark .data-settings > button,
@@ -685,6 +741,9 @@
 @keyframes startOpen { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%); } }
 @keyframes bootDot { 0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)} }
 @keyframes bootFade { 0%,82%{opacity:1}100%{opacity:0} }
+@keyframes settingsFocus { 0%,100%{background:transparent}20%,70%{background:#dceffd} }
+.windows-desktop.theme-dark .settings-section.search-focus { animation-name:settingsFocusDark; }
+@keyframes settingsFocusDark { 0%,100%{background:transparent}20%,70%{background:#254354} }
 
 @media (max-width: 900px) {
   .photo-window { inset: 8px 6px 56px; }
@@ -714,7 +773,11 @@
   .windows-desktop .desktop-window { inset:3px 2px 51px!important; width:auto!important; height:auto!important; min-width:0; min-height:0; max-width:none; max-height:none; border-radius:5px; }
   .window-resize-handle { display:none; }
   .windows-desktop .desktop-window .workspace { height: calc(100% - 62px); }
-  .taskbar-tray { display: none; }
+  .taskbar-tray { display:flex; padding-right:4px; }
+  .windows-taskbar .taskbar-clock { min-width:76px; padding-inline:3px; font-size:9px; }
+  .system-panel { right:5px; width:calc(100vw - 10px); grid-template-columns:1fr; }
+  .calendar-panel { display:none; }
+  .snap-picker { display:none; }
   .windows-taskbar { grid-template-columns: 1fr auto 1fr; }
   .start-menu { bottom: 52px; height: 410px; padding-inline: 18px; }
   .start-apps { grid-template-columns: repeat(3, 1fr); }
@@ -726,5 +789,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .windows-desktop .desktop-window,
-  .start-menu { animation: none; }
+  .start-menu,
+  .settings-section.search-focus { animation: none; }
 }

@@ -18,6 +18,7 @@ import {
   type FileClipboard,
   type FileOperationMode,
 } from "./desktopFiles";
+import type { AppLaunchIntent } from "./appLaunch";
 
 type ExplorerLocation = "folder" | "recent" | "images" | "documents";
 type SortMode = "name" | "type" | "date";
@@ -27,6 +28,8 @@ type SelectionBox = { left: number; top: number; width: number; height: number }
 type FileExplorerProps = {
   items: DesktopItem[];
   folderId: string | null;
+  launchIntent: Extract<AppLaunchIntent, { app: "explorer" }> | null;
+  onLaunchHandled: (requestId: number) => void;
   clipboard: FileClipboard | null;
   canUndo: boolean;
   onNavigate: (folderId: string | null) => void;
@@ -95,6 +98,8 @@ function ItemIcon({ item }: { item: DesktopItem }) {
 export default function FileExplorer({
   items,
   folderId,
+  launchIntent,
+  onLaunchHandled,
   clipboard,
   canUndo,
   onNavigate,
@@ -157,6 +162,20 @@ export default function FileExplorer({
   useEffect(() => {
     if (folderId && !currentFolder) onNavigate(null);
   }, [currentFolder, folderId, onNavigate]);
+
+  useEffect(() => {
+    if (!launchIntent) return;
+    onLaunchHandled(launchIntent.requestId);
+    setLocation("folder");
+    setQuery("");
+    setSelectedIds([launchIntent.itemId]);
+    selectionAnchorRef.current = launchIntent.itemId;
+    requestAnimationFrame(() => {
+      contentRef.current
+        ?.querySelector<HTMLElement>(`[data-file-id="${CSS.escape(launchIntent.itemId)}"]`)
+        ?.scrollIntoView({ block: "nearest" });
+    });
+  }, [launchIntent, onLaunchHandled]);
 
   const requestNavigation = (next: string | null, mode: "push" | "history" = "push") => {
     setLocation("folder");

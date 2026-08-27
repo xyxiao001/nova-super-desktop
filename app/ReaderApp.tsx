@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { AppLaunchIntent } from "./appLaunch";
 import {
   chapterParagraphs,
   locationForOffset,
@@ -50,7 +51,15 @@ const timestamp = Date.now;
 
 const formatSize = (bytes: number) => bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
 
-export default function ReaderApp({ active }: { active: boolean }) {
+export default function ReaderApp({
+  active,
+  launchIntent,
+  onLaunchHandled,
+}: {
+  active: boolean;
+  launchIntent: Extract<AppLaunchIntent, { app: "reader" }> | null;
+  onLaunchHandled: (requestId: number) => void;
+}) {
   const [catalog, setCatalog] = useState<CatalogBook[]>([]);
   const [catalogState, setCatalogState] = useState<"loading" | "ready" | "error">("loading");
   const [downloads, setDownloads] = useState<DownloadMetadata>({});
@@ -102,6 +111,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
   const requestedBookRef = useRef<string | null>(null);
   const downloadControllersRef = useRef(new Map<string, AbortController>());
   const chromeTimerRef = useRef<number | null>(null);
+  const lastLaunchRequestRef = useRef(0);
 
   const getReaderWorker = useCallback(() => {
     if (workerRef.current) return workerRef.current;
@@ -370,6 +380,26 @@ export default function ReaderApp({ active }: { active: boolean }) {
       setOpeningBookId((current) => current === book.id ? null : current);
     }
   };
+
+  useEffect(() => {
+    if (!launchIntent || lastLaunchRequestRef.current === launchIntent.requestId) return;
+    lastLaunchRequestRef.current = launchIntent.requestId;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const book = await getStoredBook(launchIntent.bookId);
+        if (cancelled) return;
+        if (book) await openBook(book);
+        else setMessage("这本书已不在本地书库中");
+      } catch {
+        if (!cancelled) setMessage("本地书库读取失败");
+      }
+      if (!cancelled) onLaunchHandled(launchIntent.requestId);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [launchIntent, onLaunchHandled]);
 
   const readDownload = async (response: Response, book: CatalogBook) => {
     if (!response.body) return response.arrayBuffer();
