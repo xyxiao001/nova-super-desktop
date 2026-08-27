@@ -9,6 +9,25 @@ export type DesktopItem = {
   deletedAt?: number;
 };
 
+export type FileOperationMode = "copy" | "move";
+export type FileConflictStrategy = "cancel" | "keep-both" | "replace";
+export type FileClipboard = { mode: FileOperationMode; ids: string[] };
+export type FileOperationConflict = {
+  sourceId: string;
+  sourceName: string;
+  targetId: string;
+  targetName: string;
+  self: boolean;
+};
+export type FileOperationResult = {
+  items: DesktopItem[];
+  changed: boolean;
+  resultIds: string[];
+  removedIds: Set<string>;
+};
+
+export const NOVA_FILE_DRAG_TYPE = "application/x-nova-desktop-items";
+
 export const descendantIds = (items: DesktopItem[], roots: string[]) => {
   const ids = new Set(roots);
   let changed = true;
@@ -167,5 +186,181 @@ export function moveDesktopItem(
   return {
     items: items.map((item) => item.id === sourceId ? { ...item, parentId } : item),
     moved: true,
+  };
+}
+
+export const topLevelDesktopItemIds = (items: DesktopItem[], ids: string[]) => {
+  const visibleIds = new Set(visibleDesktopItems(items).map((item) => item.id));
+  const selected = new Set(ids.filter((id) => visibleIds.has(id)));
+  return [...selected].filter((id) => {
+    let parentId = items.find((item) => item.id === id)?.parentId;
+    const visited = new Set<string>();
+    while (parentId && !visited.has(parentId)) {
+      if (selected.has(parentId)) return false;
+      visited.add(parentId);
+      parentId = items.find((item) => item.id === parentId)?.parentId;
+    }
+    return true;
+  });
+};
+
+const sameFileName = (left: string, right: string) => (
+  left.localeCompare(right, "zh-CN", { sensitivity: "accent" }) === 0
+);
+
+const fileNameParts = (item: DesktopItem) => {
+  const dot = item.type === "folder" ? -1 : item.name.lastIndexOf(".");
+  return {
+    base: dot > 0 ? item.name.slice(0, dot) : item.name,
+    extension: dot > 0 ? item.name.slice(dot) : "",
+  };
+};
+
+const availableFileName = (
+  item: DesktopItem,
+  usedNames: string[],
+  duplicate = false,
+) => {
+  if (!usedNames.some((name) => sameFileName(name, item.name))) return item.name;
+  const { base, extension } = fileNameParts(item);
+  let index = duplicate ? 1 : 2;
+  let name = duplicate
+    ? `${base} - 副本${extension}`
+    : `${base} (${index})${extension}`;
+  while (usedNames.some((entry) => sameFileName(entry, name))) {
+    index += 1;
+    name = duplicate
+      ? `${base} - 副本 (${index})${extension}`
+      : `${base} (${index})${extension}`;
+  }
+  return name;
+};
+
+const operationRoots = (
+  items: DesktopItem[],
+  ids: string[],
+  parentId: string | null,
+  mode: FileOperationMode,
+) => {
+  const liveItems = visibleDesktopItems(items);
+  const roots = topLevelDesktopItemIds(items, ids)
+    .map((id) => liveItems.find((item) => item.id === id))
+    .filter((item): item is DesktopItem => !!item);
+  const target = parentId
+    ? liveItems.find((item) => item.id === parentId && item.type === "folder")
+    : null;
+  if (parentId && !target) return [];
+  if (roots.some((item) => (
+    item.type === "folder"
+    && parentId !== null
+    && descendantIds(items, [item.id]).has(parentId)
+  ))) return [];
+  return mode === "move"
+    ? roots.filter((item) => item.parentId !== parentId)
+    : roots;
+};
+
+export function desktopFileOperationConflicts(
+  items: DesktopItem[],
+  ids: string[],
+  parentId: string | null,
+  mode: FileOperationMode,
+) {
+  const roots = operationRoots(items, ids, parentId, mode);
+  const siblings = visibleDesktopItems(items).filter((item) => item.parentId === parentId);
+  return roots.flatMap<FileOperationConflict>((source) => (
+    siblings.filter((item) => (
+      sameFileName(item.name, source.name)
+      && (mode === "copy" || item.id !== source.id)
+    )).map((target) => ({
+      sourceId: source.id,
+      sourceName: source.name,
+      targetId: target.id,
+      targetName: target.name,
+      self: source.id === target.id,
+    }))
+  ));
+}
+
+export function applyDesktopFileOperation(
+  items: DesktopItem[],
+  ids: string[],
+  parentId: string | null,
+  mode: FileOperationMode,
+  strategy: FileConflictStrategy,
+  createId: () => string = () => crypto.randomUUID(),
+  now = Date.now(),
+): FileOperationResult {
+  const roots = operationRoots(items, ids, parentId, mode);
+  if (!roots.length) {
+    return { items, changed: false, resultIds: [], removedIds: new Set() };
+  }
+  const rootIds = new Set(roots.map((item) => item.id));
+  const conflicts = desktopFileOperationConflicts(items, ids, parentId, mode);
+  const externalConflicts = conflicts.filter((conflict) => !rootIds.has(conflict.targetId));
+  if (strategy === "cancel" && externalConflicts.length) {
+    return { items, changed: false, resultIds: [], removedIds: new Set() };
+  }
+
+  const removedIds = strategy === "replace"
+    ? descendantIds(items, externalConflicts.map((conflict) => conflict.targetId))
+    : new Set<string>();
+  const retained = items.filter((item) => !removedIds.has(item.id));
+  const destinationNames = visibleDesktopItems(retained)
+    .filter((item) => (
+      item.parentId === parentId
+      && (mode === "copy" || !rootIds.has(item.id))
+    ))
+    .map((item) => item.name);
+
+  if (mode === "move") {
+    const names = [...destinationNames];
+    const movedItems = retained.map((item) => {
+      if (!rootIds.has(item.id)) return item;
+      const name = availableFileName(item, names);
+      names.push(name);
+      return { ...item, name, parentId };
+    });
+    return {
+      items: movedItems,
+      changed: true,
+      resultIds: [...rootIds],
+      removedIds,
+    };
+  }
+
+  const names = [...destinationNames];
+  const copies: DesktopItem[] = [];
+  const resultIds: string[] = [];
+  for (const root of roots) {
+    const copiedIds = descendantIds(items, [root.id]);
+    const idMap = new Map([...copiedIds].map((id) => [id, createId()]));
+    const duplicateInPlace = root.parentId === parentId;
+    const rootName = availableFileName(
+      root,
+      names,
+      duplicateInPlace,
+    );
+    names.push(rootName);
+    resultIds.push(idMap.get(root.id)!);
+    copies.push(...items
+      .filter((item) => copiedIds.has(item.id) && isDesktopItemVisible(items, item))
+      .map((item) => ({
+        ...item,
+        id: idMap.get(item.id)!,
+        name: item.id === root.id ? rootName : item.name,
+        parentId: item.id === root.id
+          ? parentId
+          : idMap.get(item.parentId!) ?? parentId,
+        createdAt: now,
+        lastOpenedAt: undefined,
+        deletedAt: undefined,
+      })));
+  }
+  return {
+    items: [...retained, ...copies],
+    changed: copies.length > 0,
+    resultIds,
+    removedIds,
   };
 }

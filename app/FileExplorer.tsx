@@ -1,24 +1,48 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 
-import { descendantIds, visibleDesktopItems, type DesktopItem } from "./desktopFiles";
+import {
+  descendantIds,
+  NOVA_FILE_DRAG_TYPE,
+  visibleDesktopItems,
+  type DesktopItem,
+  type FileClipboard,
+  type FileOperationMode,
+} from "./desktopFiles";
 
 type ExplorerLocation = "folder" | "recent" | "images" | "documents";
 type SortMode = "name" | "type" | "date";
 type ViewMode = "grid" | "list";
+type SelectionBox = { left: number; top: number; width: number; height: number };
 
 type FileExplorerProps = {
   items: DesktopItem[];
   folderId: string | null;
+  clipboard: FileClipboard | null;
+  canUndo: boolean;
   onNavigate: (folderId: string | null) => void;
   onOpen: (item: DesktopItem) => void;
   onCreateFolder: (parentId: string | null) => void;
   onCreateText: (parentId: string | null) => void;
   onRename: (item: DesktopItem) => void;
-  onDuplicate: (item: DesktopItem) => void;
-  onMove: (item: DesktopItem, parentId: string | null) => void;
-  onTrash: (item: DesktopItem) => void;
+  onSetClipboard: (mode: FileOperationMode, ids: string[]) => void;
+  onPaste: (parentId: string | null) => void;
+  onFileOperation: (
+    mode: FileOperationMode,
+    ids: string[],
+    parentId: string | null,
+  ) => void;
+  onTrash: (ids: string[]) => void;
+  onUndo: () => void;
   onOpenRecycle: () => void;
 };
 
@@ -32,14 +56,32 @@ const typeLabel = (item: DesktopItem) => (
   item.type === "folder" ? "文件夹" : item.type === "image" ? "图片" : "文本文稿"
 );
 
-const itemSize = (item: DesktopItem) => {
-  if (item.type === "folder") return "—";
-  const bytes = item.type === "image"
+const itemBytes = (item: DesktopItem) => {
+  if (item.type === "folder") return 0;
+  return item.type === "image"
     ? Math.max(0, Math.floor(item.content.length * .75))
     : new Blob([item.content]).size;
+};
+
+const formatBytes = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+const itemSize = (item: DesktopItem) => (
+  item.type === "folder" ? "—" : formatBytes(itemBytes(item))
+);
+
+const readDraggedIds = (event: DragEvent) => {
+  try {
+    const value = JSON.parse(event.dataTransfer.getData(NOVA_FILE_DRAG_TYPE));
+    return Array.isArray(value)
+      ? value.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
 };
 
 function ItemIcon({ item }: { item: DesktopItem }) {
@@ -53,38 +95,51 @@ function ItemIcon({ item }: { item: DesktopItem }) {
 export default function FileExplorer({
   items,
   folderId,
+  clipboard,
+  canUndo,
   onNavigate,
   onOpen,
   onCreateFolder,
   onCreateText,
   onRename,
-  onDuplicate,
-  onMove,
+  onSetClipboard,
+  onPaste,
+  onFileOperation,
   onTrash,
+  onUndo,
   onOpenRecycle,
 }: FileExplorerProps) {
   const [location, setLocation] = useState<ExplorerLocation>("folder");
   const [history, setHistory] = useState<(string | null)[]>([folderId]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("name");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [moveOpen, setMoveOpen] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<string>("");
+  const [moveTarget, setMoveTarget] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
   const pendingNavigationRef = useRef<{ active: boolean; value: string | null }>({
     active: false,
     value: null,
   });
+  const selectionAnchorRef = useRef<string | null>(null);
+  const contentRef = useRef<HTMLElement>(null);
+  const lassoRef = useRef<{
+    startClientX: number;
+    startClientY: number;
+    startLocalX: number;
+    startLocalY: number;
+    baseIds: string[];
+  } | null>(null);
 
   const liveItems = useMemo(() => visibleDesktopItems(items), [items]);
   const currentFolder = folderId
     ? liveItems.find((item) => item.id === folderId && item.type === "folder") ?? null
-    : null;
-  const selected = selectedId
-    ? liveItems.find((item) => item.id === selectedId) ?? null
     : null;
 
   useEffect(() => {
@@ -96,7 +151,7 @@ export default function FileExplorer({
     setLocation("folder");
     setHistory([folderId]);
     setHistoryIndex(0);
-    setSelectedId(null);
+    setSelectedIds([]);
   }, [folderId]);
 
   useEffect(() => {
@@ -105,8 +160,9 @@ export default function FileExplorer({
 
   const requestNavigation = (next: string | null, mode: "push" | "history" = "push") => {
     setLocation("folder");
-    setSelectedId(null);
+    setSelectedIds([]);
     setQuery("");
+    setPropertiesOpen(false);
     pendingNavigationRef.current = { active: true, value: next };
     if (mode === "push") {
       setHistory((current) => [...current.slice(0, historyIndex + 1), next]);
@@ -166,11 +222,13 @@ export default function FileExplorer({
   }, [baseItems, query, sortMode]);
 
   useEffect(() => {
-    if (selectedId && !visibleItems.some((item) => item.id === selectedId)) {
-      setSelectedId(null);
-    }
-  }, [selectedId, visibleItems]);
+    setSelectedIds((current) => current.filter((id) => (
+      visibleItems.some((item) => item.id === id)
+    )));
+  }, [visibleItems]);
 
+  const selectedItems = visibleItems.filter((item) => selectedIds.includes(item.id));
+  const primarySelected = selectedItems.at(-1) ?? null;
   const activateItem = (item: DesktopItem) => {
     if (item.type === "folder") requestNavigation(item.id);
     else onOpen(item);
@@ -178,8 +236,37 @@ export default function FileExplorer({
 
   const openLocation = (next: ExplorerLocation) => {
     setLocation(next);
-    setSelectedId(null);
+    setSelectedIds([]);
     setQuery("");
+    setPropertiesOpen(false);
+  };
+
+  const selectItem = (item: DesktopItem, event: MouseEvent) => {
+    if (event.shiftKey && selectionAnchorRef.current) {
+      const from = visibleItems.findIndex((entry) => entry.id === selectionAnchorRef.current);
+      const to = visibleItems.findIndex((entry) => entry.id === item.id);
+      if (from >= 0 && to >= 0) {
+        const range = visibleItems
+          .slice(Math.min(from, to), Math.max(from, to) + 1)
+          .map((entry) => entry.id);
+        setSelectedIds((current) => (
+          event.ctrlKey || event.metaKey
+            ? [...new Set([...current, ...range])]
+            : range
+        ));
+        return;
+      }
+    }
+    selectionAnchorRef.current = item.id;
+    if (event.ctrlKey || event.metaKey) {
+      setSelectedIds((current) => (
+        current.includes(item.id)
+          ? current.filter((id) => id !== item.id)
+          : [...current, item.id]
+      ));
+      return;
+    }
+    setSelectedIds([item.id]);
   };
 
   const currentTitle = location === "folder"
@@ -187,26 +274,121 @@ export default function FileExplorer({
     : locationLabels[location];
   const canCreate = location === "folder";
   const parentFolder = currentFolder?.parentId ?? null;
-  const excludedMoveIds = selected?.type === "folder"
-    ? descendantIds(liveItems, [selected.id])
-    : new Set<string>();
+  const excludedMoveIds = selectedItems
+    .filter((item) => item.type === "folder")
+    .reduce((result, item) => {
+      for (const id of descendantIds(liveItems, [item.id])) result.add(id);
+      return result;
+    }, new Set<string>());
   const moveFolders = liveItems
     .filter((item) => item.type === "folder" && !excludedMoveIds.has(item.id))
     .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
 
   const beginMove = () => {
-    if (!selected) return;
+    if (!selectedItems.length) return;
     setContextMenu(null);
-    setMoveTarget(selected.parentId ?? "");
+    setMoveTarget(
+      selectedItems.every((item) => item.parentId === selectedItems[0].parentId)
+        ? selectedItems[0].parentId ?? ""
+        : "",
+    );
     setMoveOpen(true);
   };
 
   const confirmMove = () => {
-    if (!selected) return;
-    onMove(selected, moveTarget || null);
+    if (!selectedItems.length) return;
+    onFileOperation("move", selectedIds, moveTarget || null);
     setMoveOpen(false);
-    setSelectedId(null);
+    setSelectedIds([]);
   };
+
+  const writeDrag = (event: DragEvent, item: DesktopItem) => {
+    const ids = selectedIds.includes(item.id) ? selectedIds : [item.id];
+    if (!selectedIds.includes(item.id)) setSelectedIds(ids);
+    event.dataTransfer.effectAllowed = "copyMove";
+    event.dataTransfer.setData(NOVA_FILE_DRAG_TYPE, JSON.stringify(ids));
+    event.dataTransfer.setData("text/plain", ids.join(","));
+  };
+
+  const dropFiles = (event: DragEvent, parentId: string | null) => {
+    const ids = readDraggedIds(event);
+    if (!ids.length) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onFileOperation(event.ctrlKey || event.metaKey ? "copy" : "move", ids, parentId);
+    setDropTargetId(null);
+    setSelectedIds([]);
+  };
+
+  const startLasso = (event: PointerEvent<HTMLElement>) => {
+    if (
+      event.button !== 0
+      || (event.target as HTMLElement).closest(".explorer-items > button,.explorer-list-header")
+    ) return;
+    const content = contentRef.current;
+    if (!content) return;
+    const bounds = content.getBoundingClientRect();
+    lassoRef.current = {
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startLocalX: event.clientX - bounds.left + content.scrollLeft,
+      startLocalY: event.clientY - bounds.top + content.scrollTop,
+      baseIds: event.ctrlKey || event.metaKey ? selectedIds : [],
+    };
+    if (!event.ctrlKey && !event.metaKey) setSelectedIds([]);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveLasso = (event: PointerEvent<HTMLElement>) => {
+    const lasso = lassoRef.current;
+    const content = contentRef.current;
+    if (!lasso || !content) return;
+    const bounds = content.getBoundingClientRect();
+    const currentLocalX = event.clientX - bounds.left + content.scrollLeft;
+    const currentLocalY = event.clientY - bounds.top + content.scrollTop;
+    const left = Math.min(lasso.startLocalX, currentLocalX);
+    const top = Math.min(lasso.startLocalY, currentLocalY);
+    const width = Math.abs(currentLocalX - lasso.startLocalX);
+    const height = Math.abs(currentLocalY - lasso.startLocalY);
+    setSelectionBox({ left, top, width, height });
+    const selectionRect = {
+      left: Math.min(lasso.startClientX, event.clientX),
+      top: Math.min(lasso.startClientY, event.clientY),
+      right: Math.max(lasso.startClientX, event.clientX),
+      bottom: Math.max(lasso.startClientY, event.clientY),
+    };
+    const intersected = [...content.querySelectorAll<HTMLElement>("[data-file-id]")]
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return (
+          rect.right >= selectionRect.left
+          && rect.left <= selectionRect.right
+          && rect.bottom >= selectionRect.top
+          && rect.top <= selectionRect.bottom
+        );
+      })
+      .map((element) => element.dataset.fileId!)
+      .filter(Boolean);
+    setSelectedIds([...new Set([...lasso.baseIds, ...intersected])]);
+  };
+
+  const endLasso = (event: PointerEvent<HTMLElement>) => {
+    if (!lassoRef.current) return;
+    lassoRef.current = null;
+    setSelectionBox(null);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+
+  const selectedTreeIds = selectedItems.reduce((result, item) => {
+    for (const id of descendantIds(liveItems, [item.id])) result.add(id);
+    return result;
+  }, new Set<string>());
+  const selectedBytes = liveItems
+    .filter((item) => selectedTreeIds.has(item.id))
+    .reduce((total, item) => total + itemBytes(item), 0);
+  const locationName = primarySelected?.parentId
+    ? liveItems.find((item) => item.id === primarySelected.parentId)?.name ?? "桌面"
+    : "桌面";
 
   return <div
     className="file-explorer"
@@ -220,9 +402,37 @@ export default function FileExplorer({
     }}
     onKeyDown={(event) => {
       if ((event.target as HTMLElement).matches("input,select")) return;
-      if (event.key === "Enter" && selected) activateItem(selected);
-      if (event.key === "F2" && selected) onRename(selected);
-      if (event.key === "Delete" && selected) setDeleteOpen(true);
+      const command = event.ctrlKey || event.metaKey;
+      if (command && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setSelectedIds(visibleItems.map((item) => item.id));
+      }
+      if (command && event.key.toLowerCase() === "c" && selectedIds.length) {
+        event.preventDefault();
+        onSetClipboard("copy", selectedIds);
+      }
+      if (command && event.key.toLowerCase() === "x" && selectedIds.length) {
+        event.preventDefault();
+        onSetClipboard("move", selectedIds);
+      }
+      if (command && event.key.toLowerCase() === "v" && canCreate && clipboard) {
+        event.preventDefault();
+        onPaste(folderId);
+      }
+      if (command && event.key.toLowerCase() === "z" && canUndo) {
+        event.preventDefault();
+        onUndo();
+      }
+      if (event.key === "Enter" && primarySelected) activateItem(primarySelected);
+      if (event.key === "F2" && selectedItems.length === 1) onRename(selectedItems[0]);
+      if (event.key === "Delete" && selectedItems.length) setDeleteOpen(true);
+      if (event.key === "Escape") {
+        setContextMenu(null);
+        setMoveOpen(false);
+        setDeleteOpen(false);
+        setPropertiesOpen(false);
+        setSelectedIds([]);
+      }
     }}
   >
     <header className="explorer-command-bar">
@@ -237,10 +447,14 @@ export default function FileExplorer({
       </div>
       <span className="explorer-command-separator" />
       <div className="explorer-item-actions">
-        <button aria-label="重命名" title="重命名" disabled={!selected} onClick={() => selected && onRename(selected)}>✎</button>
-        <button aria-label="复制副本" title="复制副本" disabled={!selected} onClick={() => selected && onDuplicate(selected)}>⧉</button>
-        <button aria-label="移动到" title="移动到" disabled={!selected} onClick={beginMove}>↪</button>
-        <button className="danger" aria-label="移到回收站" title="移到回收站" disabled={!selected} onClick={() => setDeleteOpen(true)}>⌫</button>
+        <button aria-label="剪切" title="剪切" disabled={!selectedIds.length} onClick={() => onSetClipboard("move", selectedIds)}>✂</button>
+        <button aria-label="复制" title="复制" disabled={!selectedIds.length} onClick={() => onSetClipboard("copy", selectedIds)}>⧉</button>
+        <button aria-label="粘贴" title="粘贴" disabled={!canCreate || !clipboard} onClick={() => onPaste(folderId)}>▣</button>
+        <button aria-label="撤销文件操作" title="撤销" disabled={!canUndo} onClick={onUndo}>↶</button>
+        <button aria-label="重命名" title="重命名" disabled={selectedItems.length !== 1} onClick={() => primarySelected && onRename(primarySelected)}>✎</button>
+        <button aria-label="移动到" title="移动到" disabled={!selectedIds.length} onClick={beginMove}>↪</button>
+        <button aria-label="属性" title="属性" disabled={!selectedIds.length} onClick={() => setPropertiesOpen(true)}>ⓘ</button>
+        <button className="danger" aria-label="移到回收站" title="移到回收站" disabled={!selectedIds.length} onClick={() => setDeleteOpen(true)}>⌫</button>
       </div>
       <div className="explorer-view-actions">
         <select aria-label="排序方式" value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
@@ -261,9 +475,16 @@ export default function FileExplorer({
       <label><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`搜索“${currentTitle}”`} aria-label={`搜索${currentTitle}`} /></label>
     </div>
 
-    <div className="explorer-layout">
+    <div className={`explorer-layout ${propertiesOpen ? "properties-open" : ""}`}>
       <aside className="explorer-sidebar">
-        <button className={location === "folder" && folderId === null ? "active" : ""} onClick={() => requestNavigation(null)}><i className="desktop-mark">▦</i><span>桌面</span></button>
+        <button
+          className={location === "folder" && folderId === null ? "active" : ""}
+          onClick={() => requestNavigation(null)}
+          onDragOver={(event) => {
+            if (event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) event.preventDefault();
+          }}
+          onDrop={(event) => dropFiles(event, null)}
+        ><i className="desktop-mark">▦</i><span>桌面</span></button>
         <button className={location === "recent" ? "active" : ""} onClick={() => openLocation("recent")}><i>◷</i><span>最近使用</span></button>
         <button className={location === "images" ? "active" : ""} onClick={() => openLocation("images")}><i>▧</i><span>图片</span></button>
         <button className={location === "documents" ? "active" : ""} onClick={() => openLocation("documents")}><i>▤</i><span>文稿</span></button>
@@ -271,24 +492,57 @@ export default function FileExplorer({
         <button onClick={onOpenRecycle}><i>▥</i><span>回收站</span></button>
       </aside>
 
-      <section className={`explorer-content ${viewMode}`} onPointerDown={(event) => {
-        if (!(event.target as HTMLElement).closest(".explorer-items > button")) setSelectedId(null);
-      }}>
+      <section
+        ref={contentRef}
+        className={`explorer-content ${viewMode}`}
+        onPointerDown={startLasso}
+        onPointerMove={moveLasso}
+        onPointerUp={endLasso}
+        onPointerCancel={endLasso}
+        onDragOver={(event) => {
+          if (canCreate && event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = event.ctrlKey || event.metaKey ? "copy" : "move";
+          }
+        }}
+        onDrop={(event) => {
+          if (canCreate && !(event.target as HTMLElement).closest("[data-file-id]")) {
+            dropFiles(event, folderId);
+          }
+        }}
+      >
         {viewMode === "list" && visibleItems.length > 0 && <header className="explorer-list-header"><span>名称</span><span>日期</span><span>类型</span><span>大小</span></header>}
         <div className="explorer-items">
           {visibleItems.map((item) => <button
             key={item.id}
-            className={selectedId === item.id ? "selected" : ""}
-            onClick={() => setSelectedId(item.id)}
+            data-file-id={item.id}
+            draggable
+            aria-pressed={selectedIds.includes(item.id)}
+            className={`${selectedIds.includes(item.id) ? "selected" : ""} ${clipboard?.mode === "move" && clipboard.ids.includes(item.id) ? "cut" : ""} ${dropTargetId === item.id ? "drop-target" : ""}`}
+            onClick={(event) => selectItem(item, event)}
             onDoubleClick={() => activateItem(item)}
+            onDragStart={(event) => writeDrag(event, item)}
+            onDragEnd={() => setDropTargetId(null)}
+            onDragOver={(event) => {
+              if (item.type !== "folder" || !event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) return;
+              event.preventDefault();
+              event.stopPropagation();
+              event.dataTransfer.dropEffect = event.ctrlKey || event.metaKey ? "copy" : "move";
+              setDropTargetId(item.id);
+            }}
+            onDragLeave={() => setDropTargetId((current) => current === item.id ? null : current)}
+            onDrop={(event) => {
+              if (item.type === "folder") dropFiles(event, item.id);
+            }}
             onContextMenu={(event) => {
               event.preventDefault();
-              setSelectedId(item.id);
+              if (!selectedIds.includes(item.id)) setSelectedIds([item.id]);
+              selectionAnchorRef.current = item.id;
               const bounds = event.currentTarget.closest(".file-explorer")?.getBoundingClientRect();
               if (bounds) {
                 setContextMenu({
                   x: Math.min(event.clientX - bounds.left, bounds.width - 178),
-                  y: Math.min(event.clientY - bounds.top, bounds.height - 178),
+                  y: Math.min(event.clientY - bounds.top, bounds.height - 230),
                 });
               }
             }}
@@ -300,45 +554,62 @@ export default function FileExplorer({
             <span className="item-size">{item.type === "folder" ? `${liveItems.filter((entry) => entry.parentId === item.id).length} 项` : itemSize(item)}</span>
           </button>)}
         </div>
+        {selectionBox && <i className="explorer-selection-box" style={selectionBox} />}
         {!visibleItems.length && <div className="explorer-empty"><span>{query ? "⌕" : "▱"}</span><strong>{query ? "没有匹配的项目" : `${currentTitle}为空`}</strong><small>{query ? "尝试使用其他名称搜索" : canCreate ? "可以在工具栏中新建文件夹或文稿" : "此位置暂时没有内容"}</small></div>}
       </section>
+
+      {propertiesOpen && <aside className="explorer-properties">
+        <header><strong>属性</strong><button aria-label="关闭属性" onClick={() => setPropertiesOpen(false)}>×</button></header>
+        <div className="properties-icon">{selectedItems.length === 1 && primarySelected ? <ItemIcon item={primarySelected} /> : <span>▦</span>}</div>
+        <h3>{selectedItems.length === 1 ? primarySelected?.name : `${selectedItems.length} 个项目`}</h3>
+        <dl>
+          <div><dt>类型</dt><dd>{selectedItems.length === 1 && primarySelected ? typeLabel(primarySelected) : "多个项目"}</dd></div>
+          <div><dt>位置</dt><dd>{selectedItems.length === 1 ? locationName : currentTitle}</dd></div>
+          <div><dt>包含</dt><dd>{selectedTreeIds.size} 个项目</dd></div>
+          <div><dt>大小</dt><dd>{formatBytes(selectedBytes)}</dd></div>
+          {selectedItems.length === 1 && primarySelected && <div><dt>创建时间</dt><dd>{new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(primarySelected.createdAt)}</dd></div>}
+        </dl>
+      </aside>}
     </div>
 
     <footer className="explorer-status">
       <span>{visibleItems.length} 个项目</span>
-      {selected && <><i /><strong>已选择 1 个项目</strong><span>{typeLabel(selected)} · {itemSize(selected)}</span></>}
+      {!!selectedItems.length && <><i /><strong>已选择 {selectedItems.length} 个项目</strong><span>{formatBytes(selectedBytes)}</span></>}
+      {clipboard && <><i /><span>{clipboard.mode === "move" ? "已剪切" : "已复制"} {clipboard.ids.length} 个项目</span></>}
     </footer>
 
-    {contextMenu && selected && <div className="explorer-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
-      <button onClick={() => { activateItem(selected); setContextMenu(null); }}>打开</button>
-      <button onClick={() => { onRename(selected); setContextMenu(null); }}>重命名</button>
-      <button onClick={() => { onDuplicate(selected); setContextMenu(null); }}>复制副本</button>
+    {contextMenu && primarySelected && <div className="explorer-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
+      {selectedItems.length === 1 && <button onClick={() => { activateItem(primarySelected); setContextMenu(null); }}>打开</button>}
+      <button onClick={() => { onSetClipboard("move", selectedIds); setContextMenu(null); }}>剪切</button>
+      <button onClick={() => { onSetClipboard("copy", selectedIds); setContextMenu(null); }}>复制</button>
+      {selectedItems.length === 1 && <button onClick={() => { onRename(primarySelected); setContextMenu(null); }}>重命名</button>}
       <button onClick={beginMove}>移动到…</button>
+      <button onClick={() => { setPropertiesOpen(true); setContextMenu(null); }}>属性</button>
       <span />
       <button className="danger" onClick={() => { setDeleteOpen(true); setContextMenu(null); }}>移到回收站</button>
     </div>}
 
-    {moveOpen && selected && <div className="explorer-dialog-layer">
+    {moveOpen && !!selectedItems.length && <div className="explorer-dialog-layer">
       <form onSubmit={(event) => { event.preventDefault(); confirmMove(); }}>
-        <strong>移动“{selected.name}”</strong>
+        <strong>移动 {selectedItems.length} 个项目</strong>
         <p>选择目标文件夹</p>
         <select value={moveTarget} onChange={(event) => setMoveTarget(event.target.value)}>
           <option value="">桌面</option>
           {moveFolders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
         </select>
-        <div><button type="button" onClick={() => setMoveOpen(false)}>取消</button><button type="submit" disabled={(moveTarget || null) === selected.parentId}>移动</button></div>
+        <div><button type="button" onClick={() => setMoveOpen(false)}>取消</button><button type="submit">移动</button></div>
       </form>
     </div>}
 
-    {deleteOpen && selected && <div className="explorer-dialog-layer">
+    {deleteOpen && !!selectedItems.length && <div className="explorer-dialog-layer">
       <form onSubmit={(event) => {
         event.preventDefault();
-        onTrash(selected);
+        onTrash(selectedIds);
         setDeleteOpen(false);
-        setSelectedId(null);
+        setSelectedIds([]);
       }}>
         <strong>移到回收站？</strong>
-        <p>“{selected.name}”将保留在回收站中，可以稍后还原。</p>
+        <p>{selectedItems.length === 1 ? `“${selectedItems[0].name}”` : `${selectedItems.length} 个项目`}将保留在回收站中，可以稍后还原。</p>
         <div><button type="button" onClick={() => setDeleteOpen(false)}>取消</button><button className="danger" type="submit">移到回收站</button></div>
       </form>
     </div>}

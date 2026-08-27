@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyDesktopFileOperation,
+  desktopFileOperationConflicts,
   descendantIds,
   duplicateDesktopItem,
   permanentlyDeleteDesktopItems,
   recycleBinItems,
   restoreDesktopItem,
   trashDesktopItems,
+  topLevelDesktopItemIds,
   visibleDesktopItems,
   moveDesktopItem,
   type DesktopItem,
@@ -132,5 +135,113 @@ describe("desktopFiles", () => {
 
     expect([...result.removedIds]).toEqual(["folder-a", "folder-b", "text-a"]);
     expect(result.items.map((item) => item.id)).toEqual(["image-a"]);
+  });
+
+  it("normalizes a multi-selection to top-level roots", () => {
+    expect(topLevelDesktopItemIds(items, ["folder-a", "folder-b", "text-a", "image-a"]))
+      .toEqual(["folder-a", "image-a"]);
+  });
+
+  it("copies multiple roots and preserves a folder subtree", () => {
+    let id = 0;
+    const result = applyDesktopFileOperation(
+      items,
+      ["folder-b", "image-a"],
+      null,
+      "copy",
+      "keep-both",
+      () => `new-${++id}`,
+      100,
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.resultIds).toEqual(["new-1", "new-3"]);
+    expect(result.items.slice(items.length)).toEqual([
+      expect.objectContaining({ id: "new-1", name: "资料", parentId: null }),
+      expect.objectContaining({ id: "new-2", name: "说明.txt", parentId: "new-1" }),
+      expect.objectContaining({ id: "new-3", name: "封面 - 副本.png", parentId: null }),
+    ]);
+  });
+
+  it("detects external name conflicts and supports cancelling the operation", () => {
+    const conflicting: DesktopItem[] = [
+      ...items,
+      { id: "target", type: "text", name: "说明.txt", content: "旧", parentId: null, createdAt: 5 },
+    ];
+
+    expect(desktopFileOperationConflicts(
+      conflicting,
+      ["text-a"],
+      null,
+      "move",
+    )).toEqual([
+      expect.objectContaining({ sourceId: "text-a", targetId: "target", self: false }),
+    ]);
+    expect(applyDesktopFileOperation(
+      conflicting,
+      ["text-a"],
+      null,
+      "move",
+      "cancel",
+    ).changed).toBe(false);
+  });
+
+  it("keeps both files by assigning an available destination name", () => {
+    const conflicting: DesktopItem[] = [
+      ...items,
+      { id: "target", type: "text", name: "说明.txt", content: "旧", parentId: null, createdAt: 5 },
+    ];
+    const result = applyDesktopFileOperation(
+      conflicting,
+      ["text-a"],
+      null,
+      "move",
+      "keep-both",
+    );
+
+    expect(result.items.find((item) => item.id === "text-a")).toMatchObject({
+      name: "说明 (2).txt",
+      parentId: null,
+    });
+  });
+
+  it("replaces all conflicting target trees during a move", () => {
+    const conflicting: DesktopItem[] = [
+      ...items,
+      { id: "target-1", type: "folder", name: "资料", content: "", parentId: null, createdAt: 5 },
+      { id: "target-2", type: "folder", name: "资料", content: "", parentId: null, createdAt: 6 },
+      { id: "target-child", type: "text", name: "旧.txt", content: "", parentId: "target-1", createdAt: 7 },
+    ];
+    const result = applyDesktopFileOperation(
+      conflicting,
+      ["folder-b"],
+      null,
+      "move",
+      "replace",
+    );
+
+    expect([...result.removedIds]).toEqual(["target-1", "target-2", "target-child"]);
+    expect(result.items.some((item) => item.id.startsWith("target"))).toBe(false);
+    expect(result.items.find((item) => item.id === "folder-b")).toMatchObject({
+      name: "资料",
+      parentId: null,
+    });
+  });
+
+  it("copies in place with a stable copy suffix", () => {
+    const result = applyDesktopFileOperation(
+      items,
+      ["image-a"],
+      null,
+      "copy",
+      "keep-both",
+      () => "image-copy",
+      100,
+    );
+
+    expect(result.items.at(-1)).toMatchObject({
+      id: "image-copy",
+      name: "封面 - 副本.png",
+    });
   });
 });

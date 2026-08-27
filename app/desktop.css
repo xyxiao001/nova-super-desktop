@@ -272,7 +272,8 @@
 .explorer-address-row nav strong { overflow:hidden; color:#354149; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
 .explorer-address-row label { padding:0 8px; gap:6px; color:#74838c; }
 .explorer-address-row input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#273138; font-size:10px; }
-.explorer-layout { min-height:0; display:grid; grid-template-columns:174px minmax(0,1fr); }
+.explorer-layout { position:relative; min-height:0; display:grid; grid-template-columns:174px minmax(0,1fr); }
+.explorer-layout.properties-open { grid-template-columns:174px minmax(0,1fr) 238px; }
 .explorer-sidebar { min-height:0; padding:8px 7px; overflow:auto; border-right:1px solid #d8dee2; background:#eef2f4; }
 .explorer-sidebar > button { width:100%; height:34px; padding:0 9px; border:0; border-radius:4px; display:flex; align-items:center; gap:9px; background:transparent; color:#334048; text-align:left; font-size:10px; }
 .explorer-sidebar > button:hover { background:#dde7ec; }
@@ -281,6 +282,7 @@
 .explorer-sidebar > button i.desktop-mark { border-radius:4px; background:#318fc8; color:#fff; font-size:11px; }
 .explorer-sidebar > span { display:block; height:1px; margin:7px 8px; background:#d4dce1; }
 .explorer-content { position:relative; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:auto; background:#fff; }
+.explorer-selection-box { position:absolute; z-index:3; pointer-events:none; border:1px solid #278bc7; background:#6dbce94a; }
 .explorer-list-header { height:28px; padding:0 10px 0 8px; flex:none; display:grid; grid-template-columns:minmax(180px,1.6fr) 105px 100px 70px; align-items:center; border-bottom:1px solid #dde2e5; color:#69777f; font-size:9px; }
 .explorer-list-header span { padding:0 8px; border-right:1px solid #e2e6e8; }
 .explorer-list-header span:last-child { border-right:0; text-align:right; }
@@ -289,6 +291,8 @@
 .explorer-content.list .explorer-items > button { width:100%; height:38px; padding:0 10px 0 7px; border:0; border-radius:3px; display:grid; grid-template-columns:28px minmax(145px,1.6fr) 105px 100px 70px; align-items:center; background:transparent; color:#273138; text-align:left; }
 .explorer-content.list .explorer-items > button:hover { background:#f0f5f8; }
 .explorer-content.list .explorer-items > button.selected { background:#dcecf6; box-shadow:inset 0 0 0 1px #b6d9ee; }
+.explorer-items > button.cut { opacity:.46; }
+.explorer-items > button.drop-target { background:#d7edf8!important; box-shadow:inset 0 0 0 2px #2589c4!important; }
 .explorer-content.list .explorer-items strong { padding:0 8px; overflow:hidden; font-size:10px; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
 .explorer-content.list .explorer-items .item-date,.explorer-content.list .explorer-items .item-type,.explorer-content.list .explorer-items .item-size { padding:0 8px; overflow:hidden; color:#718089; font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
 .explorer-content.list .explorer-items .item-size { text-align:right; }
@@ -319,6 +323,20 @@
 .explorer-status { padding:0 11px; display:flex; align-items:center; gap:9px; border-top:1px solid #d8dee2; background:#f3f6f7; color:#6e7b83; font-size:8px; }
 .explorer-status i { width:1px; height:12px; background:#cbd3d8; }
 .explorer-status strong { color:#3a4850; font-weight:500; }
+.explorer-properties { min-width:0; overflow:auto; border-left:1px solid #d8dee2; background:#f5f7f8; color:#344149; }
+.explorer-properties > header { height:42px; padding:0 10px 0 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #d8dee2; }
+.explorer-properties > header strong { font-size:12px; }
+.explorer-properties > header button { width:28px; height:28px; border:0; border-radius:4px; background:transparent; color:#52616a; font-size:17px; }
+.explorer-properties > header button:hover { background:#e2e8eb; }
+.properties-icon { height:94px; display:grid; place-items:center; }
+.properties-icon > .explorer-item-icon { width:62px; height:58px; transform:scale(1.2); }
+.properties-icon > .explorer-item-icon.folder { height:44px; }
+.properties-icon > span { width:58px; height:58px; display:grid; place-items:center; border-radius:6px; background:#dce8ee; color:#3e718b; font-size:28px; }
+.explorer-properties h3 { margin:0; padding:0 14px 16px; overflow:hidden; border-bottom:1px solid #d8dee2; font-size:11px; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+.explorer-properties dl { margin:0; padding:10px 14px; }
+.explorer-properties dl div { padding:8px 0; border-bottom:1px solid #dfe4e7; }
+.explorer-properties dt { margin-bottom:3px; color:#7b878e; font-size:8px; }
+.explorer-properties dd { margin:0; overflow-wrap:anywhere; color:#36434a; font-size:10px; line-height:1.45; }
 .explorer-dialog-layer { position:absolute; z-index:10; inset:0; display:grid; place-items:center; padding:18px; background:#16232d55; backdrop-filter:blur(2px); }
 .explorer-dialog-layer form { width:min(360px,100%); padding:19px; border:1px solid #d0d7dc; border-radius:7px; background:#f8fafb; color:#273139; box-shadow:0 20px 55px #0007; }
 .explorer-dialog-layer form > strong { display:block; overflow:hidden; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
@@ -334,6 +352,23 @@
 .explorer-context-menu button:hover { background:#e3edf2; }
 .explorer-context-menu button.danger { color:#b13730; }
 .explorer-context-menu > span { display:block; height:1px; margin:4px 5px; background:#d6dde1; }
+.desktop-item.cut { opacity:.48; }
+.desktop-item.drop-target { border-radius:5px; background:#b8e0f08c; outline:2px solid #79c8e6; }
+
+.file-operation-layer { position:fixed; z-index:120; inset:0; display:grid; place-items:center; padding:20px; background:#14222c66; backdrop-filter:blur(3px); }
+.file-operation-dialog { width:min(430px,100%); overflow:hidden; border:1px solid #c9d1d6; border-radius:7px; background:#f8fafb; color:#2a353c; box-shadow:0 24px 70px #0008; }
+.file-operation-dialog > header { padding:18px 20px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #d8dee2; }
+.file-operation-dialog > header > span { width:32px; height:32px; display:grid; place-items:center; border-radius:50%; background:#f1c84b; color:#493b0c; font-weight:700; }
+.file-operation-dialog > header div { min-width:0; }
+.file-operation-dialog > header strong { display:block; font-size:14px; }
+.file-operation-dialog > header p { margin:3px 0 0; color:#748088; font-size:9px; }
+.file-conflict-list { max-height:190px; padding:8px 20px; overflow:auto; }
+.file-conflict-list > div { padding:9px 0; border-bottom:1px solid #e0e5e7; display:flex; flex-direction:column; gap:3px; }
+.file-conflict-list span { overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.file-conflict-list small,.file-conflict-list > p { margin:0; color:#7c888f; font-size:8px; }
+.file-operation-dialog > footer { padding:13px 20px 17px; display:flex; justify-content:flex-end; gap:7px; }
+.file-operation-dialog button { min-width:82px; height:32px; border:1px solid #aeb8be; border-radius:4px; background:#fff; color:#2e3940; font-size:10px; }
+.file-operation-dialog button.danger { border-color:#b7423a; background:#b7423a; color:#fff; }
 
 .folder-view { height: 100%; display: flex; flex-direction: column; background: #fff; color: #222; }
 .folder-view > header { height: 46px; flex: none; padding: 0 13px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; background: #f6f6f6; }
@@ -611,6 +646,16 @@
 .windows-desktop.theme-dark .explorer-content.list .explorer-items > button.selected,
 .windows-desktop.theme-dark .explorer-content.grid .explorer-items > button.selected { border-color:#356b8b; background:#24475b; box-shadow:inset 0 0 0 1px #356b8b; }
 .windows-desktop.theme-dark .explorer-context-menu button:hover { background:#2c373d; }
+.windows-desktop.theme-dark .explorer-properties { border-color:#39434a; background:#20272c; color:#e4eaed; }
+.windows-desktop.theme-dark .explorer-properties > header,
+.windows-desktop.theme-dark .explorer-properties h3,
+.windows-desktop.theme-dark .explorer-properties dl div { border-color:#39434a; }
+.windows-desktop.theme-dark .explorer-properties dd { color:#dce4e8; }
+.windows-desktop.theme-dark .file-operation-dialog { border-color:#465159; background:#20272c; color:#e4eaed; }
+.windows-desktop.theme-dark .file-operation-dialog > header,
+.windows-desktop.theme-dark .file-conflict-list > div { border-color:#39434a; }
+.windows-desktop.theme-dark .file-operation-dialog button { border-color:#56636b; background:#293239; color:#e7ecef; }
+.windows-desktop.theme-dark .file-operation-dialog button.danger { border-color:#b94b43; background:#a83b35; color:#fff; }
 
 .desktop-toast { position: absolute; z-index: 120; right: 18px; bottom: 63px; padding: 11px 15px; border: 1px solid #ffffff77; border-radius: 8px; background: #f6f8fae8; color: #222; font-size: 12px; box-shadow: 0 12px 36px #0006; backdrop-filter: blur(20px); }
 .pwa-status { position:absolute; z-index:125; right:18px; bottom:108px; min-height:36px; padding:0 10px; display:flex; align-items:center; gap:8px; border:1px solid #ffffff8c; border-radius:6px; background:#f5f8faed; color:#25323a; box-shadow:0 12px 32px #0005; backdrop-filter:blur(18px); }.pwa-status > span { width:7px; height:7px; flex:none; border-radius:50%; background:#d18a24; }.pwa-status.update > span { background:#23814b; }.pwa-status strong { font-size:10px; font-weight:600; }.pwa-status button { height:25px; padding:0 8px; border:1px solid #9eb0bb; border-radius:4px; background:#fff; color:#1d5f8a; font-size:9px; }
@@ -653,6 +698,8 @@
   .note-editor-header span { display:none; }
   .explorer-command-bar button span { display:none; }
   .explorer-layout { grid-template-columns:52px minmax(0,1fr); }
+  .explorer-layout.properties-open { grid-template-columns:52px minmax(0,1fr); }
+  .explorer-properties { position:absolute; z-index:5; top:0; right:0; bottom:0; width:min(238px,calc(100% - 52px)); box-shadow:-12px 0 28px #0004; }
   .explorer-sidebar { padding-inline:5px; }
   .explorer-sidebar > button { padding:0; justify-content:center; }
   .explorer-sidebar > button span { display:none; }
