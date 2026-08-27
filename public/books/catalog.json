@@ -1,0 +1,37 @@
+{
+  "books": [
+    {
+      "id": "fortress-besieged",
+      "title": "围城",
+      "author": "钱钟书",
+      "description": "在机锋与讽刺之间，观察婚姻、知识分子与人生困局。",
+      "cover": "jade",
+      "file": "fortress-besieged.txt",
+      "url": "/books/fortress-besieged.txt",
+      "size": 655239,
+      "version": "e0f2bf1a27f4"
+    },
+    {
+      "id": "rich-dad-poor-dad",
+      "title": "穷爸爸富爸爸",
+      "author": "罗伯特·T·清崎",
+      "description": "从两种截然不同的金钱观出发，重新理解资产、负债与财务选择。",
+      "cover": "amber",
+      "file": "rich-dad-poor-dad.txt",
+      "url": "/books/rich-dad-poor-dad.txt",
+      "size": 335473,
+      "version": "664db6914514"
+    },
+    {
+      "id": "strongest-sect",
+      "title": "万古最强宗",
+      "author": "江湖再见",
+      "description": "宗门养成、热血冒险与轻松日常交织的长篇故事。",
+      "cover": "indigo",
+      "file": "strongest-sect.txt",
+      "url": "/books/strongest-sect.txt",
+      "size": 15278932,
+      "version": "4a2cfd086b87"
+    }
+  ]
+}
