@@ -4,6 +4,27 @@ import path from "node:path";
 
 const booksDirectory = path.resolve("public/books");
 const curated = {
+  "three-body.txt": {
+    id: "three-body",
+    title: "三体",
+    author: "刘慈欣",
+    description: "跨越地球往事、黑暗森林与死神永生的科幻三部曲。",
+    cover: "indigo",
+  },
+  "journey-under-the-midnight-sun.txt": {
+    id: "journey-under-the-midnight-sun",
+    title: "白夜行",
+    author: "东野圭吾",
+    description: "围绕一桩旧案展开，在漫长岁月中追索人物命运与真相。",
+    cover: "slate",
+  },
+  "yang-shen.txt": {
+    id: "yang-shen",
+    title: "阳神",
+    author: "梦入神机",
+    description: "以肉身与神魂修行为主线展开的东方玄幻长篇。",
+    cover: "amber",
+  },
   "rich-dad-poor-dad.txt": {
     id: "rich-dad-poor-dad",
     title: "穷爸爸富爸爸",

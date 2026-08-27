@@ -12,6 +12,17 @@
       "version": "e0f2bf1a27f4"
     },
     {
+      "id": "journey-under-the-midnight-sun",
+      "title": "白夜行",
+      "author": "东野圭吾",
+      "description": "围绕一桩旧案展开，在漫长岁月中追索人物命运与真相。",
+      "cover": "slate",
+      "file": "journey-under-the-midnight-sun.txt",
+      "url": "/books/journey-under-the-midnight-sun.txt",
+      "size": 935843,
+      "version": "803868aff235"
+    },
+    {
       "id": "rich-dad-poor-dad",
       "title": "穷爸爸富爸爸",
       "author": "罗伯特·T·清崎",
@@ -32,6 +43,28 @@
       "url": "/books/strongest-sect.txt",
       "size": 15278932,
       "version": "4a2cfd086b87"
+    },
+    {
+      "id": "three-body",
+      "title": "三体",
+      "author": "刘慈欣",
+      "description": "跨越地球往事、黑暗森林与死神永生的科幻三部曲。",
+      "cover": "indigo",
+      "file": "three-body.txt",
+      "url": "/books/three-body.txt",
+      "size": 2679323,
+      "version": "8be9d8a921a5"
+    },
+    {
+      "id": "yang-shen",
+      "title": "阳神",
+      "author": "梦入神机",
+      "description": "以肉身与神魂修行为主线展开的东方玄幻长篇。",
+      "cover": "amber",
+      "file": "yang-shen.txt",
+      "url": "/books/yang-shen.txt",
+      "size": 8909886,
+      "version": "477cc141c7ce"
     }
   ]
 }
