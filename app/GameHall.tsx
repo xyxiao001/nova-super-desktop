@@ -8,6 +8,7 @@ export const GAME_CATALOG = [
   {id:"chess",label:"国际象棋",category:"策略",meta:"Stockfish 18"},
   {id:"gomoku",label:"五子棋",category:"棋类",meta:"Alpha-Beta AI"},
   {id:"go",label:"围棋",category:"棋类",meta:"9 路 · Monte Carlo"},
+  {id:"sudoku",label:"数独",category:"逻辑",meta:"四档难度 · 离线题库"},
 ] as const;
 
 export type GameAppId = GameId;
@@ -16,7 +17,8 @@ function GameArtwork({id}:{id:GameAppId}){
   if(id==="mines")return <span className="game-artwork mines-artwork" aria-hidden="true"><i/><i/><i/></span>;
   if(id==="chess")return <span className="game-artwork chess-artwork" aria-hidden="true">♞</span>;
   if(id==="gomoku")return <span className="game-artwork gomoku-artwork" aria-hidden="true"><i/><i/><i/></span>;
-  return <span className="game-artwork go-artwork" aria-hidden="true"><i/><i/></span>;
+  if(id==="go")return <span className="game-artwork go-artwork" aria-hidden="true"><i/><i/></span>;
+  return <span className="game-artwork sudoku-artwork" aria-hidden="true">{["8","3","7","2","9","4","6","1","5"].map((value)=><i key={value}>{value}</i>)}</span>;
 }
 
 export default function GameHall({running,onLaunch}:{running:Record<GameAppId,boolean>;onLaunch:(id:GameAppId)=>void}){

@@ -6,7 +6,7 @@ export default function GameResultDialog({title,detail,tone,onRestart,onDismiss}
       <span className="game-result-mark" aria-hidden="true">{tone==="win"?"✓":tone==="loss"?"×":"="}</span>
       <strong>{title}</strong>
       <p>{detail}</p>
-      <footer><button onClick={onDismiss}>查看棋局</button><button onClick={onRestart}>再来一局</button></footer>
+      <footer><button onClick={onDismiss}>查看本局</button><button onClick={onRestart}>再来一局</button></footer>
     </div>
   </section>;
 }

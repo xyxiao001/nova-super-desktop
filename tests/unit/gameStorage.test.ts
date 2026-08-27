@@ -47,7 +47,7 @@ afterEach(() => {
 
 describe("resetAllGameData", () => {
   it("clears records, progress, and mines auxiliary data while preserving unrelated settings", () => {
-    const gameIds: GameId[] = ["mines", "chess", "gomoku", "go"];
+    const gameIds: GameId[] = ["mines", "chess", "gomoku", "go", "sudoku"];
     for (const id of gameIds) saveGameProgress(id, { board: id });
     localStorage.setItem("nova-mines-difficulty", "expert");
     localStorage.setItem("nova-mines-best", JSON.stringify({ expert: 42 }));
@@ -58,6 +58,7 @@ describe("resetAllGameData", () => {
       chess: vi.fn<() => void>(),
       gomoku: vi.fn<() => void>(),
       go: vi.fn<() => void>(),
+      sudoku: vi.fn<() => void>(),
     } satisfies Record<GameId, () => void>;
     const unsubscribe = gameIds.map((id) => subscribeGameReset(id, resetListeners[id]));
     const unsubscribeRecreatingListener = subscribeGameReset("mines", () => {

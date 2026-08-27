@@ -4,6 +4,7 @@ import { ChangeEvent, DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent
 import ChessGame from "./ChessGame";
 import DrawingApp from "./DrawingApp";
 import FileExplorer from "./FileExplorer";
+import FocusClockApp from "./FocusClockApp";
 import {
   createAppLaunchIntent,
   launchIntentFor,
@@ -50,6 +51,7 @@ import ReaderApp from "./ReaderApp";
 import type { StoredBookSummary } from "./readerCore";
 import { getStoredBookSummaries } from "./readerStorage";
 import SettingsApp from "./SettingsApp";
+import SudokuGame from "./SudokuGame";
 import {
   edgeSnapMode,
   snappedWindowGeometry,
@@ -64,7 +66,7 @@ type CropRect = { x: number; y: number; w: number; h: number };
 type Point = { x: number; y: number };
 type EditState = { values: Record<string, number>; filter: string; rotation: number; flipX: boolean; flipY: boolean; ratio: Ratio; crop: CropRect; redEyes: Point[] };
 type Control = { label: string; key: string; min?: number; max?: number };
-type WindowAppId = "photo" | "notes" | "viewer" | "reader" | "games" | "settings" | "explorer" | "folder" | "recycle" | GameAppId | "calculator" | "drawing";
+type WindowAppId = "photo" | "notes" | "viewer" | "reader" | "games" | "settings" | "explorer" | "folder" | "recycle" | GameAppId | "calculator" | "drawing" | "focus";
 type AppId = "desktop" | WindowAppId;
 type AppDefinition = { id:WindowAppId; label:string; icon:string; kind:string; launcher:boolean; taskbarPinned:boolean; windowIcon?:string; taskbarIcon?:string };
 type WindowState = { open:boolean; minimized:boolean; maximized:boolean; z:number; snapMode?:WindowSnapMode };
@@ -104,8 +106,10 @@ const APP_REGISTRY:Record<WindowAppId,AppDefinition> = {
   chess:{id:"chess",label:"国际象棋",icon:"♞",kind:"chess",launcher:false,taskbarPinned:false},
   gomoku:{id:"gomoku",label:"五子棋",icon:"●",kind:"gomoku",launcher:false,taskbarPinned:false},
   go:{id:"go",label:"围棋",icon:"◉",kind:"go",launcher:false,taskbarPinned:false},
+  sudoku:{id:"sudoku",label:"数独",icon:"九",kind:"sudoku",launcher:false,taskbarPinned:false},
   calculator:{id:"calculator",label:"计算器",icon:"＋",kind:"calculator",launcher:true,taskbarPinned:false},
   drawing:{id:"drawing",label:"NOVA 画板",icon:"✎",kind:"drawing",launcher:true,taskbarPinned:false},
+  focus:{id:"focus",label:"专注时钟",icon:"◷",kind:"focus",launcher:true,taskbarPinned:false},
 };
 const REGISTERED_APPS=Object.values(APP_REGISTRY);
 const LAUNCHER_APPS=REGISTERED_APPS.filter((app)=>app.launcher);
@@ -316,15 +320,17 @@ export default function Home() {
     {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><Notepad items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
     {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><PhotoViewer images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
     {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><ReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
-    {windowStates.games.open&&<AppWindow {...windowProps("games")}><GameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open}} onLaunch={openWindow}/></AppWindow>}
+    {windowStates.games.open&&<AppWindow {...windowProps("games")}><GameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open}} onLaunch={openWindow}/></AppWindow>}
     {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><FolderView folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
     {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><RecycleBin items={trashedItems} restore={restoreMany} remove={permanentlyDeleteMany} empty={emptyRecycleBin}/></AppWindow>}
     {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><Minesweeper/></AppWindow>}
     {windowStates.chess.open&&<AppWindow {...windowProps("chess")}><ChessGame/></AppWindow>}
     {windowStates.gomoku.open&&<AppWindow {...windowProps("gomoku")}><GomokuGame/></AppWindow>}
     {windowStates.go.open&&<AppWindow {...windowProps("go")}><GoGame/></AppWindow>}
+    {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><SudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
     {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><Calculator/></AppWindow>}
     {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><DrawingApp onSave={savePhoto}/></AppWindow>}
+    {windowStates.focus.open&&<AppWindow {...windowProps("focus")}><FocusClockApp active={focused==="focus"&&!windowStates.focus.minimized}/></AppWindow>}
     {windowStates.settings.open&&<AppWindow {...windowProps("settings")}><SettingsApp settings={settings} launchIntent={launchIntentFor(launchIntent,"settings")} onLaunchHandled={handleLaunchHandled} onChange={updateSettings}/></AppWindow>}
     {altTab&&<section className="window-switcher" role="dialog" aria-label="切换窗口">{altTab.apps.filter((app)=>windowStates[app].open).map((app)=>{const definition=APP_REGISTRY[app];return <div key={app} className={altTab.active===app?"active":""}><span className={`app-glyph ${app}-glyph`}>{definition.windowIcon??definition.icon}</span><strong>{taskbarLabel(definition)}</strong></div>})}</section>}
     {startOpen&&<section className="start-menu"><label className="start-search">⌕ <input autoFocus value={searchQuery} onChange={(event)=>{setSearchQuery(event.target.value);setSearchIndex(0)}} onKeyDown={(event)=>{if(event.key==="ArrowDown"){event.preventDefault();setSearchIndex((current)=>Math.max(0,Math.min(searchResults.length-1,current+1)))}if(event.key==="ArrowUp"){event.preventDefault();setSearchIndex((current)=>Math.max(0,current-1))}if(event.key==="Enter"){event.preventDefault();runSearchResult(searchIndex)}}} placeholder="搜索应用、文件、书籍和设置"/></label>{searchText?<div className="start-results"><header><strong>搜索结果</strong><span>{searchResults.length} 项</span></header>{searchResults.map((result,index)=><button key={result.key} className={index===searchIndex?"active":""} onPointerEnter={()=>setSearchIndex(index)} onClick={()=>runSearchResult(index)}><i>{result.icon}</i><span><strong>{result.label}</strong><small>{result.detail}</small></span></button>)}{!searchResults.length&&<p>没有找到“{searchQuery}”</p>}</div>:<><header><strong>已固定</strong><span>所有应用</span></header><div className="start-apps">{appEntries.map((app)=><button key={app.key} onClick={app.open}><i className={`start-${app.kind}`}>{app.icon}</i><span>{app.label}</span></button>)}</div></>}<footer><span>◉</span><strong>NOVA 用户</strong><button onClick={()=>{setStartOpen(false);setSearchQuery("");setSearchIndex(0)}}>⏻</button></footer></section>}
