@@ -10,6 +10,7 @@ import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subs
 import GoGame from "./GoGame";
 import GomokuGame from "./GomokuGame";
 import { playNovaSound, readNovaSettings, saveNovaSettings, type NovaSettings } from "./novaSettings";
+import PwaManager from "./PwaManager";
 import ReaderApp from "./ReaderApp";
 import SettingsApp from "./SettingsApp";
 
@@ -236,6 +237,7 @@ export default function Home() {
     {taskbarMenu&&taskbarMenuApp&&<div className="taskbar-window-menu" style={{left:taskbarMenu.x}}><strong>{taskbarLabel(taskbarMenuApp)}</strong><button onClick={()=>openWindow(taskbarMenu.app)}>切换到窗口</button>{windowStates[taskbarMenu.app].open&&<><button onClick={()=>windowStates[taskbarMenu.app].minimized?openWindow(taskbarMenu.app):minimizeWindow(taskbarMenu.app)}>{windowStates[taskbarMenu.app].minimized?"还原":"最小化"}</button><button onClick={()=>{if(windowStates[taskbarMenu.app].minimized)openWindow(taskbarMenu.app);toggleMaximizeWindow(taskbarMenu.app);setTaskbarMenu(null)}}>{windowStates[taskbarMenu.app].maximized?"还原窗口":"最大化"}</button><span/><button className="danger" onClick={()=>closeWindow(taskbarMenu.app)}>关闭窗口</button></>}</div>}
     {renameItemId&&<div className="rename-layer"><form className="rename-dialog" onSubmit={(event)=>{event.preventDefault();finishRename()}}><strong>重命名</strong><input autoFocus value={renameValue} onChange={(event)=>setRenameValue(event.target.value)} onKeyDown={(event)=>{if(event.key==="Escape")setRenameItemId(null)}}/><div><button type="button" onClick={()=>setRenameItemId(null)}>取消</button><button type="submit">确定</button></div></form></div>}
     {draggingFiles&&<div className="desktop-drop-zone"><div><span>⇩</span><strong>释放以上传到桌面</strong><small>支持图片和 TXT 文本</small></div></div>}
+    <PwaManager/>
     {toast&&<div className="desktop-toast">{toast}</div>}
     {booting&&<div className="boot-screen"><div className="boot-logo"><i/><i/><i/><i/></div><strong>NOVA</strong><span>正在启动超级桌面</span><div className="boot-dots"><i/><i/><i/><i/><i/></div></div>}
   </main>

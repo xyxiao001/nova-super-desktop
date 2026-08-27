@@ -1,0 +1,28 @@
+{
+  "id": "/",
+  "name": "NOVA 超级桌面",
+  "short_name": "NOVA",
+  "description": "集成阅读、创作和本地游戏的个人创意桌面。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#dceaf5",
+  "theme_color": "#1262a0",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
