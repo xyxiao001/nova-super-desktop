@@ -176,7 +176,7 @@
 .windows-desktop .desktop-window.focused { z-index: 26; border-color: #9fd7ff; box-shadow: 0 26px 80px #0009, 0 0 0 1px #1686d755; }
 .windows-desktop .desktop-window.maximized { inset:0!important; width:auto!important; height:auto!important; max-width:none; max-height:none; border-radius:0; }
 .photo-window { inset: 24px 20px 70px 36px; }
-.notes-window { inset: auto; width: min(720px, 80vw); height: min(540px, 76vh); left: 15vw; top: 68px; }
+.notes-window { inset:auto; width:min(880px,86vw); height:min(620px,82vh); left:12vw; top:54px; }
 .viewer-window { inset: auto; width: min(850px, 84vw); height: min(600px, 80vh); left: 12vw; top: 48px; }
 .folder-window { inset: auto; width: min(760px, 82vw); height: min(520px, 74vh); left: 20vw; top: 82px; }
 .recycle-window { inset: auto; width: min(760px, 82vw); height: min(520px, 74vh); left: 22vw; top: 76px; }
@@ -230,11 +230,13 @@
 .windows-desktop .desktop-window .editor-shell { height: 100%; min-height: 0; }
 .windows-desktop .desktop-window .workspace { height: calc(100% - 72px); }
 
-.notepad-app { height: 100%; display: flex; flex-direction: column; background: #fff; color: #242424; }
-.notepad-app header { height: 42px; flex: none; padding: 6px 12px; display: flex; align-items: center; border-bottom: 1px solid #dedede; background: #f7f7f7; }
-.notepad-app header input { flex: 1; border: 0; background: transparent; color: #222; font-size: 13px; font-weight: 600; outline: 0; }
-.notepad-app header span { color: #888; font-size: 11px; }
-.notepad-app textarea { flex: 1; width: 100%; resize: none; border: 0; outline: 0; padding: 22px 25px; background: #fff; color: #222; font: 15px/1.7 "Segoe UI", "PingFang SC", sans-serif; }
+.notepad-app { height:100%; min-height:0; display:grid; grid-template-columns:230px minmax(0,1fr); overflow:hidden; background:#f7f8fa; color:#222a30; }
+.note-sidebar { min-width:0; display:flex; flex-direction:column; border-right:1px solid #d8dde1; background:#eef1f3; }
+.note-sidebar > header { height:52px; padding:0 11px 0 15px; flex:none; display:flex; align-items:center; justify-content:space-between; border-bottom:0; background:transparent; }.note-sidebar > header > div { display:flex; align-items:baseline; gap:7px; }.note-sidebar > header strong { font-size:14px; }.note-sidebar > header span { color:#77838b; font-size:9px; }.note-sidebar > header button { width:29px; height:29px; padding:0; border:1px solid #bdc6cc; border-radius:5px; background:#fff; color:#245f89; font-size:18px; line-height:1; }
+.note-search { height:32px; margin:0 10px 9px; padding:0 8px; flex:none; display:flex; align-items:center; gap:6px; border:1px solid #ccd3d8; border-radius:5px; background:#fafbfc; color:#7e8990; }.note-search input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#283138; font-size:10px; }.note-search input::placeholder { color:#929ba1; }
+.note-list { min-height:0; flex:1; overflow:auto; padding:0 7px 9px; }.note-list > button { position:relative; width:100%; height:73px; padding:10px 11px; border:0; border-bottom:1px solid #d9dee2; border-radius:4px; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto 1fr; column-gap:8px; background:transparent; color:#263038; text-align:left; }.note-list > button:hover { background:#e2e7ea; }.note-list > button.active { background:#fff; box-shadow:0 2px 8px #35444e14; }.note-list > button.active::before { content:""; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:#2582bc; }.note-list strong { overflow:hidden; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }.note-list p { grid-column:1 / -1; margin:5px 0 0; overflow:hidden; color:#737f87; font-size:9px; line-height:1.45; text-overflow:ellipsis; white-space:nowrap; }.note-list span { color:#929ba1; font-size:8px; }.note-list-empty { min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; color:#87929a; }.note-list-empty span { font-size:24px; }.note-list-empty strong { font-size:10px; font-weight:500; }
+.note-workspace { min-width:0; min-height:0; display:flex; flex-direction:column; background:#fff; }.note-editor-header { height:52px; padding:0 14px 0 21px; flex:none; display:flex; align-items:center; gap:12px; border-bottom:1px solid #e1e5e8; background:#fafbfc; }.note-editor-header > input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#222a30; font-size:13px; font-weight:650; }.note-editor-header > div { display:flex; align-items:center; gap:9px; }.note-editor-header span { color:#7c878e; font-size:9px; }.note-editor-header button { width:30px; height:28px; padding:0; border:1px solid #ccd3d7; border-radius:4px; background:#fff; color:#66747c; font-size:14px; }.note-editor-header button:hover { border-color:#c65c53; color:#ad342d; }.note-editor-header button.confirm { width:43px; border-color:#b23a32; background:#b23a32; color:#fff; font-size:9px; }
+.note-workspace > textarea { min-height:0; flex:1; width:100%; resize:none; border:0; outline:0; padding:28px clamp(24px,5vw,58px); background:#fff; color:#22272b; caret-color:#237eb7; font:15px/1.75 "Segoe UI","PingFang SC",sans-serif; }.note-workspace > textarea::placeholder { color:#a9b0b5; }.note-workspace > footer { height:31px; padding:0 16px; flex:none; display:flex; align-items:center; justify-content:flex-end; gap:14px; border-top:1px solid #edf0f2; color:#8a949a; font-size:8px; }.note-welcome { height:100%; padding:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }.note-welcome > span { width:54px; height:54px; display:grid; place-items:center; border:1px solid #cbd4da; border-radius:8px; background:#f2f5f7; color:#4c7896; font-size:24px; }.note-welcome strong { margin-top:16px; font-size:15px; }.note-welcome p { max-width:320px; margin:8px 0 19px; color:#758189; font-size:10px; line-height:1.6; }.note-welcome button { height:33px; padding:0 13px; border:1px solid #247dad; border-radius:5px; background:#247dad; color:#fff; font-size:10px; }
 
 .photo-viewer { height: 100%; position: relative; display: grid; place-items: center; background: #171717; color: #eee; }
 .photo-viewer > img { max-width: 100%; max-height: calc(100% - 52px); object-fit: contain; box-shadow: 0 16px 48px #0008; }
@@ -469,6 +471,20 @@
 .windows-desktop.theme-dark .theme-options button,
 .windows-desktop.theme-dark .sound-settings > button,
 .windows-desktop.theme-dark .data-settings > button { border-color:#46535b; background:#272f35; color:#e7ecef; }
+.windows-desktop.theme-dark .notepad-app { color:#e4e9ec; background:#171d21; }
+.windows-desktop.theme-dark .note-sidebar { border-color:#39434a; background:#20272c; }
+.windows-desktop.theme-dark .note-sidebar > header button,
+.windows-desktop.theme-dark .note-search,
+.windows-desktop.theme-dark .note-list > button.active,
+.windows-desktop.theme-dark .note-editor-header button { border-color:#465159; background:#2a3238; color:#dce5ea; }
+.windows-desktop.theme-dark .note-search input,
+.windows-desktop.theme-dark .note-editor-header > input { color:#edf1f3; }
+.windows-desktop.theme-dark .note-list > button { border-color:#343e45; color:#e6ecef; }
+.windows-desktop.theme-dark .note-list > button:hover { background:#293238; }
+.windows-desktop.theme-dark .note-workspace,
+.windows-desktop.theme-dark .note-workspace > textarea { background:#171d21; color:#dfe5e8; }
+.windows-desktop.theme-dark .note-editor-header { border-color:#343e45; background:#1c2328; }
+.windows-desktop.theme-dark .note-workspace > footer { border-color:#2d363c; }
 
 .desktop-toast { position: absolute; z-index: 120; right: 18px; bottom: 63px; padding: 11px 15px; border: 1px solid #ffffff77; border-radius: 8px; background: #f6f8fae8; color: #222; font-size: 12px; box-shadow: 0 12px 36px #0006; backdrop-filter: blur(20px); }
 .desktop-upload-input { position:absolute; width:1px; height:1px; overflow:hidden; opacity:.001; }
@@ -502,6 +518,11 @@
   .notes-window, .viewer-window, .reader-window, .games-window, .settings-window, .folder-window, .recycle-window, .mines-window, .chess-window, .gomoku-window, .go-window, .calculator-window, .drawing-window { left: 5vw; width: 90vw; }
   .desktop-files { left: 4px; }
   .taskbar-tray span { display: none; }
+}
+@media (max-width: 680px) {
+  .notepad-app { grid-template-columns:170px minmax(0,1fr); }
+  .note-workspace > textarea { padding:22px 20px; }
+  .note-editor-header span { display:none; }
 }
 
 @media (max-width: 680px) {

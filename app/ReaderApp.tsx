@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { openDB, type DBSchema } from "idb";
 
 type CatalogBook = {
@@ -47,9 +47,9 @@ async function storeBook(book: StoredBook) {
   database.close();
 }
 
-async function getLocalBooks() {
+async function getStoredBooks() {
   const database = await openDatabase();
-  const books = (await database.getAll(BOOK_STORE)).filter((book) => book.source === "local");
+  const books = await database.getAll(BOOK_STORE);
   database.close();
   return books;
 }
@@ -103,7 +103,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
   const [catalogState, setCatalogState] = useState<"loading" | "ready" | "error">("loading");
   const [downloads, setDownloads] = useState<DownloadMetadata>({});
   const [localBooks, setLocalBooks] = useState<StoredBook[]>([]);
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<Set<string>>(() => new Set());
   const [activeBook, setActiveBook] = useState<StoredBook | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [chapterIndex, setChapterIndex] = useState(0);
@@ -120,6 +120,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
   const importRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const pendingScrollProgress = useRef(0);
+  const requestedBookRef = useRef<string | null>(null);
 
   const loadCatalog = async () => {
     setCatalogState("loading");
@@ -135,15 +136,23 @@ export default function ReaderApp({ active }: { active: boolean }) {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem(DOWNLOADS_KEY);
-    setDownloads(saved ? JSON.parse(saved) : {});
-    loadCatalog();
-    void getLocalBooks().then(setLocalBooks).catch(() => setMessage("本地书籍读取失败"));
+    let cancelled = false;
+    const catalogTimer = window.setTimeout(() => void loadCatalog(), 0);
+    void getStoredBooks().then((books) => {
+      if (cancelled) return;
+      setLocalBooks(books.filter((book) => book.source === "local"));
+      setDownloads(Object.fromEntries(books.filter((book) => book.source !== "local").map((book) => [book.id, { version: book.version, downloadedAt: book.downloadedAt }])));
+    }).catch(() => setMessage("本地书库读取失败"));
+    return () => { cancelled = true; window.clearTimeout(catalogTimer); };
   }, []);
 
   useEffect(() => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
   }, [preferences]);
+
+  useEffect(() => {
+    localStorage.setItem(DOWNLOADS_KEY, JSON.stringify(downloads));
+  }, [downloads]);
 
   const chapter = chapters[chapterIndex];
   const pageLimit = Math.max(160, Math.round(360 * (18 / preferences.fontSize) * (1.85 / preferences.lineHeight)));
@@ -157,15 +166,12 @@ export default function ReaderApp({ active }: { active: boolean }) {
     localStorage.setItem(`nova-reader-progress:${activeBook.id}`, JSON.stringify({ chapterIndex, pageIndex: safePageIndex, scrollProgress }));
   }, [activeBook, chapterIndex, chapters.length, safePageIndex, scrollProgress]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!activeBook || preferences.readingMode !== "scroll") return;
-    const frame = requestAnimationFrame(() => {
-      const stage = stageRef.current;
-      if (!stage) return;
-      const available = Math.max(0, stage.scrollHeight - stage.clientHeight);
-      stage.scrollTop = pendingScrollProgress.current * available;
-    });
-    return () => cancelAnimationFrame(frame);
+    const stage = stageRef.current;
+    if (!stage) return;
+    const available = Math.max(0, stage.scrollHeight - stage.clientHeight);
+    stage.scrollTop = pendingScrollProgress.current * available;
   }, [activeBook, chapterIndex, preferences.readingMode]);
 
   const openBook = (book: StoredBook) => {
@@ -182,24 +188,24 @@ export default function ReaderApp({ active }: { active: boolean }) {
   };
 
   const downloadOrOpen = async (book: CatalogBook) => {
-    setDownloading(book.id);
+    if (downloading.has(book.id)) return;
+    requestedBookRef.current = book.id;
+    setDownloading((current) => new Set(current).add(book.id));
     setMessage("");
     try {
       let stored = await getStoredBook(book.id);
       if (!stored || stored.version !== book.version) {
         const response = await fetch(book.url);
         if (!response.ok) throw new Error(String(response.status));
-        stored = { ...book, content: await response.text(), downloadedAt: Date.now() };
+        stored = { ...book, content: await response.text(), downloadedAt: Date.now(), source: "cloud" };
         await storeBook(stored);
-        const next = { ...downloads, [book.id]: { version: book.version, downloadedAt: stored.downloadedAt } };
-        setDownloads(next);
-        localStorage.setItem(DOWNLOADS_KEY, JSON.stringify(next));
       }
-      openBook(stored);
+      setDownloads((current) => ({ ...current, [book.id]: { version: stored.version, downloadedAt: stored.downloadedAt } }));
+      if (requestedBookRef.current === book.id) openBook(stored);
     } catch {
       setMessage(`“${book.title}”下载失败，请稍后重试`);
     } finally {
-      setDownloading(null);
+      setDownloading((current) => { const next = new Set(current); next.delete(book.id); return next; });
     }
   };
 
@@ -236,10 +242,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
     try {
       await deleteStoredBook(book.id);
       localStorage.removeItem(`nova-reader-progress:${book.id}`);
-      const next = { ...downloads };
-      delete next[book.id];
-      setDownloads(next);
-      localStorage.setItem(DOWNLOADS_KEY, JSON.stringify(next));
+      setDownloads((current) => { const next = { ...current }; delete next[book.id]; return next; });
     } catch {
       setMessage(`“${book.title}”删除失败`);
     }
@@ -249,7 +252,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
   const resetScroll = () => {
     pendingScrollProgress.current = 0;
     setScrollProgress(0);
-    stageRef.current?.scrollTo({ top: 0 });
+    if (stageRef.current) stageRef.current.scrollTop = 0;
   };
   const nextPage = () => {
     if (safePageIndex < pages.length - 1) setPageIndex(safePageIndex + 1);
@@ -323,10 +326,10 @@ export default function ReaderApp({ active }: { active: boolean }) {
     {catalogState === "loading" ? <div className="reader-state"><i/><strong>正在查看云端书库</strong></div> : catalogState === "error" ? <div className="reader-state"><strong>云端书库暂时不可用</strong><button onClick={loadCatalog}>重新检查</button></div> : <section className="reader-shelf">{catalog.map((book) => {
       const downloaded = downloads[book.id];
       const current = downloaded?.version === book.version;
-      return <article className="reader-book-card" key={book.id}><button className="reader-book-open" onClick={() => downloadOrOpen(book)} disabled={downloading === book.id}>
+      return <article className="reader-book-card" key={book.id}><button className="reader-book-open" onClick={() => downloadOrOpen(book)} disabled={downloading.has(book.id)}>
           <span className={`reader-cover cover-${book.cover}`}><i>NOVA</i><strong>{book.title}</strong><small>{book.author}</small></span>
-          <span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className={current ? "downloaded" : "cloud"}>{downloading === book.id ? "正在下载…" : current ? `继续阅读 · ${formatSize(book.size)}` : downloaded ? "发现云端更新" : `云端 · ${formatSize(book.size)}`}</em></span>
-        </button>{current && <button className="reader-book-delete" aria-label={`删除${book.title}下载`} title="删除下载，可重新下载" onClick={() => void removeCloudDownload(book)}>×</button>}</article>;
+          <span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className={current ? "downloaded" : "cloud"}>{downloading.has(book.id) ? "正在下载…" : current ? `继续阅读 · ${formatSize(book.size)}` : downloaded ? "发现云端更新" : `云端 · ${formatSize(book.size)}`}</em></span>
+        </button>{downloaded && <button className="reader-book-delete" disabled={downloading.has(book.id)} aria-label={`删除${book.title}下载`} title="删除下载，可重新下载" onClick={() => void removeCloudDownload(book)}>×</button>}</article>;
     })}</section>}
     {message && <div className="reader-message">{message}</div>}
   </div>;
@@ -335,7 +338,7 @@ export default function ReaderApp({ active }: { active: boolean }) {
     <header className="reader-toolbar"><div><button onClick={goLibrary}>← 书架</button><button onClick={() => setSidebarOpen(!sidebarOpen)}>☰ 目录</button></div><div className="reader-book-heading"><strong>{activeBook.title}</strong><small>{chapter?.title}</small></div><div><span>{progress}%</span><button onClick={() => setSettingsOpen(!settingsOpen)}>Aa</button></div></header>
     <div className="reader-body">
       {sidebarOpen && <aside className="reader-chapters"><header><strong>目录</strong><span>{chapters.length} 章</span></header><div>{chapters.map((item, index) => <button key={`${item.title}-${index}`} className={index === chapterIndex ? "active" : ""} onClick={() => selectChapter(index)}><span>{item.title}</span>{index === chapterIndex && <small>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1}/${pages.length}`}</small>}</button>)}</div></aside>}
-      <main ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress}>
+      <main key={`${activeBook.id}-${chapterIndex}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress}>
         <article key={`${chapterIndex}-${preferences.readingMode === "page" ? `${safePageIndex}-${turn.token}` : "scroll"}`} className={`reader-page ${preferences.readingMode === "page" ? pageAnimation : ""}`} style={{ fontSize: preferences.fontSize, lineHeight: preferences.lineHeight }}>
           <header><span>{activeBook.title}</span><span>{chapter?.title}</span></header>
           {(preferences.readingMode === "scroll" || safePageIndex === 0) && <h1>{chapter?.title}</h1>}
