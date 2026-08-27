@@ -2,11 +2,15 @@
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
+import GameResultDialog from "./GameResultDialog";
+import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subscribeGameReset, touchGame } from "./gameStorage";
+import { playNovaSound } from "./novaSettings";
 
 type ClockPreset = "none" | "blitz" | "rapid" | "classic";
 type ClockState = Record<Color,number>;
 type GameMode = "ai" | "local";
 type EngineLevel = "casual" | "club" | "master";
+type ChessProgress = {pgn:string;mode:GameMode;humanColor:Color;engineLevel:EngineLevel;orientation:Color;clockPreset:ClockPreset;timeLeft:ClockState};
 
 const PIECES:Record<Color,Record<PieceSymbol,string>> = {
   w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},
@@ -31,24 +35,27 @@ const colorName=(color:Color)=>color==="w"?"白方":"黑方";
 const formatClock=(seconds:number)=>`${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
 
 export default function ChessGame(){
-  const [game,setGame]=useState(()=>new Chess());
+  const [restored]=useState(()=>loadGameProgress<ChessProgress>("chess"));
+  const [game,setGame]=useState(()=>{const next=new Chess();if(restored?.pgn)next.loadPgn(restored.pgn);return next});
   const [selected,setSelected]=useState<Square|null>(null);
   const [lastMove,setLastMove]=useState<{from:Square;to:Square}|null>(null);
-  const [orientation,setOrientation]=useState<Color>("w");
-  const [mode,setMode]=useState<GameMode>("ai");
-  const [humanColor,setHumanColor]=useState<Color>("w");
-  const [engineLevel,setEngineLevel]=useState<EngineLevel>("club");
+  const [orientation,setOrientation]=useState<Color>(restored?.orientation??"w");
+  const [mode,setMode]=useState<GameMode>(restored?.mode??"ai");
+  const [humanColor,setHumanColor]=useState<Color>(restored?.humanColor??"w");
+  const [engineLevel,setEngineLevel]=useState<EngineLevel>(restored?.engineLevel??"club");
   const [engineReady,setEngineReady]=useState(false);
   const [aiThinking,setAiThinking]=useState(false);
   const [rulesOpen,setRulesOpen]=useState(false);
-  const [clockPreset,setClockPreset]=useState<ClockPreset>("none");
-  const [timeLeft,setTimeLeft]=useState<ClockState>(()=>initialClock("none"));
+  const [clockPreset,setClockPreset]=useState<ClockPreset>(restored?.clockPreset??"none");
+  const [timeLeft,setTimeLeft]=useState<ClockState>(restored?.timeLeft??initialClock("none"));
   const [clockRunning,setClockRunning]=useState(false);
   const [message,setMessage]=useState("");
+  const [resultDismissed,setResultDismissed]=useState(false);
   const importRef=useRef<HTMLInputElement>(null);
   const workerRef=useRef<Worker|null>(null);
   const gameRef=useRef(game);
   const pendingFenRef=useRef("");
+  const resultRef=useRef("");
   const history=game.history(),turn=game.turn(),aiColor:Color=humanColor==="w"?"b":"w";
   const legalTargets=useMemo(()=>new Set<Square>(selected?game.moves({square:selected,verbose:true}).map((move)=>move.to):[]),[game,selected]);
   const files=orientation==="w"?FILES:[...FILES].reverse(),ranks=orientation==="w"?[8,7,6,5,4,3,2,1]:[1,2,3,4,5,6,7,8];
@@ -75,6 +82,7 @@ export default function ChessGame(){
       setSelected(null);
       gameRef.current=next;
       setGame(next);
+      playNovaSound("move");
       if(timedRef.current)setClockRunning(true);
     };
     worker.postMessage("uci");
@@ -94,6 +102,7 @@ export default function ChessGame(){
   },[aiColor,aiThinking,engineLevel,engineReady,finished,game,mode,paused,turn]);
   useEffect(()=>{if(!timed||!clockRunning||finished)return;const active=game.turn(),timer=window.setInterval(()=>setTimeLeft((current)=>({...current,[active]:Math.max(0,current[active]-1)})),1000);return()=>window.clearInterval(timer)},[clockRunning,finished,game,timed]);
   useEffect(()=>{if(!message)return;const timer=window.setTimeout(()=>setMessage(""),2200);return()=>window.clearTimeout(timer)},[message]);
+  useEffect(()=>{touchGame("chess")},[]);
 
   const selectSquare=(square:Square)=>{
     if(locked)return;
@@ -104,17 +113,22 @@ export default function ChessGame(){
       setSelected(null);
       gameRef.current=next;
       setGame(next);
+      playNovaSound("move");
       if(timed)setClockRunning(true);
       return;
     }
     setSelected(piece?.color===turn?square:null);
   };
   const configureClock=(preset:ClockPreset)=>{if(history.length)return;setClockPreset(preset);setTimeLeft(initialClock(preset));setClockRunning(false)};
-  const restart=(nextMode=mode,nextHuman=humanColor)=>{workerRef.current?.postMessage("stop");setMode(nextMode);setHumanColor(nextHuman);setOrientation(nextMode==="ai"?nextHuman:"w");const next=new Chess();gameRef.current=next;setGame(next);setLastMove(null);setSelected(null);setTimeLeft(initialClock(clockPreset));setClockRunning(false);setAiThinking(false);setMessage("")};
+  const restart=(nextMode=mode,nextHuman=humanColor)=>{workerRef.current?.postMessage("stop");resultRef.current="";clearGameProgress("chess");touchGame("chess");setMode(nextMode);setHumanColor(nextHuman);setOrientation(nextMode==="ai"?nextHuman:"w");const next=new Chess();gameRef.current=next;setGame(next);setLastMove(null);setSelected(null);setTimeLeft(initialClock(clockPreset));setClockRunning(false);setAiThinking(false);setResultDismissed(false);setMessage("")};
   const undo=()=>{workerRef.current?.postMessage("stop");const next=copyGame(game);let move=next.undo();if(!move)return;if(mode==="ai"&&next.history().length)move=next.undo()??move;gameRef.current=next;setGame(next);setLastMove(null);setSelected(null);setAiThinking(false);if(timedOut||!next.history().length)setClockRunning(false)};
   const exportPgn=()=>{if(!history.length)return;const exported=copyGame(game),result=timedOut?timedOut==="w"?"0-1":"1-0":game.isCheckmate()?turn==="w"?"0-1":"1-0":game.isDraw()?"1/2-1/2":"*";exported.setHeader("Event","NOVA 本地对局");exported.setHeader("Date",new Date().toISOString().slice(0,10).replace(/-/g,"."));exported.setHeader("Result",result);const url=URL.createObjectURL(new Blob([exported.pgn({newline:"\n",maxWidth:88})],{type:"application/x-chess-pgn;charset=utf-8"})),link=document.createElement("a");link.href=url;link.download=`NOVA-对局-${new Date().toISOString().slice(0,10)}.pgn`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setMessage("PGN 已导出")};
   const importPgn=async(event:ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];event.target.value="";if(!file)return;try{workerRef.current?.postMessage("stop");const next=new Chess();next.loadPgn(await file.text());const moves=next.history({verbose:true}),last=moves[moves.length-1];gameRef.current=next;setGame(next);setMode("local");setSelected(null);setLastMove(last?{from:last.from,to:last.to}:null);setTimeLeft(initialClock(clockPreset));setClockRunning(false);setAiThinking(false);setMessage(`${file.name} 已导入，本局切换为双人`)}catch{setMessage("无法读取该 PGN 文件")}};
   const status=timedOut?`${colorName(timedOut==="w"?"b":"w")}胜 · ${colorName(timedOut)}超时`:game.isCheckmate()?`${colorName(turn)}被将死`:game.isDraw()?"和棋":aiThinking?"Stockfish 正在思考":!engineReady&&mode==="ai"?"正在加载 Stockfish":paused?`${colorName(turn)}走 · 已暂停`:`${colorName(turn)}走${game.isCheck()?" · 将军":""}`;
+  const winnerColor:Color|null=timedOut?(timedOut==="w"?"b":"w"):game.isCheckmate()?(turn==="w"?"b":"w"):null;
+  useEffect(()=>{if(history.length&&!finished)saveGameProgress<ChessProgress>("chess",{pgn:game.pgn(),mode,humanColor,engineLevel,orientation,clockPreset,timeLeft})},[clockPreset,engineLevel,finished,game,humanColor,history.length,mode,orientation,timeLeft]);
+  useEffect(()=>{if(!finished)return;const key=`${game.fen()}:${timedOut??""}`;if(resultRef.current===key)return;resultRef.current=key;const result=winnerColor===null?"draw":mode==="local"||winnerColor===humanColor?"win":"loss";finishGame("chess",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move")},[finished,game,humanColor,mode,timedOut,winnerColor]);
+  useEffect(()=>subscribeGameReset("chess",()=>restart(mode,humanColor)),[humanColor,mode]);
 
   return <main className="chess-game">
     <header className="chess-toolbar">
@@ -144,5 +158,6 @@ export default function ChessGame(){
       </aside>
     </section>
     {rulesOpen&&<section className="game-rules" role="dialog" aria-modal="true" aria-label="国际象棋规则"><div><header><strong>国际象棋规则</strong><button aria-label="关闭规则" onClick={()=>setRulesOpen(false)}>×</button></header><article><h3>目标</h3><p>将对方的王置于无法解除的攻击中即为将死。王被攻击时必须立即应将。</p><h3>棋子走法</h3><dl><dt>王</dt><dd>每次向任意方向走一格；符合条件时可与车进行王车易位。</dd><dt>后</dt><dd>沿横、竖或斜线走任意格。</dd><dt>车 / 象</dt><dd>车沿横竖线，象沿斜线走任意格。</dd><dt>马</dt><dd>走“日”字且可以越子。</dd><dt>兵</dt><dd>向前走、斜向吃子；首步可走两格，到达底线后升变。</dd></dl><h3>特殊规则</h3><p>支持王车易位、吃过路兵、兵升变、三次重复、五十回合规则及子力不足和棋。所有合法性由 chess.js 校验，电脑对手由 Stockfish 18 驱动。</p></article></div></section>}
+    {finished&&!resultDismissed&&<GameResultDialog tone={winnerColor===null?"draw":mode==="local"||winnerColor===humanColor?"win":"loss"} title={winnerColor===null?"本局和棋":mode==="local"?`${colorName(winnerColor)}获胜`:winnerColor===humanColor?"你赢了":"Stockfish 获胜"} detail={timedOut?`${colorName(timedOut)}用时耗尽`:game.isCheckmate()?"将死结束":status} onDismiss={()=>setResultDismissed(true)} onRestart={()=>restart()}/>}
   </main>
 }

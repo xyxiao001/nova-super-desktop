@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import GameResultDialog from "./GameResultDialog";
+import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subscribeGameReset, touchGame } from "./gameStorage";
 import GomokuWorker from "./gomoku.worker?worker";
+import { playNovaSound } from "./novaSettings";
 
 type Stone = 0|1|2;
 type Side = "black"|"white";
 type Move = {row:number;column:number;stone:Exclude<Stone,0>};
+type GomokuProgress = {moves:Move[];humanSide:Side};
 
 const SIZE=15;
 const EMPTY_BOARD=()=>Array<Stone>(SIZE*SIZE).fill(0);
@@ -26,17 +30,21 @@ const hasFive=(board:Stone[],index:number,stone:Exclude<Stone,0>)=>{
 };
 
 export default function GomokuGame(){
-  const [board,setBoard]=useState<Stone[]>(EMPTY_BOARD);
-  const [moves,setMoves]=useState<Move[]>([]);
-  const [humanSide,setHumanSide]=useState<Side>("black");
-  const [turn,setTurn]=useState<Exclude<Stone,0>>(1);
+  const [restored]=useState(()=>loadGameProgress<GomokuProgress>("gomoku"));
+  const restoredMoves=restored?.moves??[];
+  const [board,setBoard]=useState<Stone[]>(()=>{const next=EMPTY_BOARD();for(const move of restoredMoves)next[indexOf(move.row,move.column)]=move.stone;return next});
+  const [moves,setMoves]=useState<Move[]>(restoredMoves);
+  const [humanSide,setHumanSide]=useState<Side>(restored?.humanSide??"black");
+  const [turn,setTurn]=useState<Exclude<Stone,0>>(restoredMoves.length%2===0?1:2);
   const [winner,setWinner]=useState<Exclude<Stone,0>|"draw"|null>(null);
   const [thinking,setThinking]=useState(false);
   const [rulesOpen,setRulesOpen]=useState(false);
+  const [resultDismissed,setResultDismissed]=useState(false);
   const workerRef=useRef<Worker|null>(null);
   const requestIdRef=useRef(0);
   const boardRef=useRef(board);
   const movesRef=useRef(moves);
+  const resultRef=useRef("");
   const aiStone=humanSide==="black"?2:1,humanStone=stoneFor(humanSide);
   const lastMove=moves.at(-1);
   const stars=useMemo(()=>new Set([3,7,11].flatMap((row)=>[3,7,11].map((column)=>indexOf(row,column)))),[]);
@@ -57,6 +65,7 @@ export default function GomokuGame(){
       movesRef.current=nextMoves;
       setBoard(next);
       setMoves(nextMoves);
+      playNovaSound("move");
       if(hasFive(next,index,aiStone))setWinner(aiStone);
       else if(next.every(Boolean))setWinner("draw");
       else setTurn(humanStone);
@@ -72,6 +81,10 @@ export default function GomokuGame(){
     },180);
     return()=>window.clearTimeout(timer);
   },[aiStone,moves,thinking,turn,winner]);
+  useEffect(()=>{touchGame("gomoku")},[]);
+  useEffect(()=>{if(moves.length&&!winner)saveGameProgress<GomokuProgress>("gomoku",{moves,humanSide})},[humanSide,moves,winner]);
+  useEffect(()=>{if(!winner)return;const key=`${winner}:${moves.length}`;if(resultRef.current===key)return;resultRef.current=key;const result=winner==="draw"?"draw":winner===humanStone?"win":"loss";finishGame("gomoku",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move")},[humanStone,moves.length,winner]);
+  useEffect(()=>subscribeGameReset("gomoku",()=>restart(humanSide)),[humanSide]);
 
   const play=(index:number)=>{
     if(board[index]||winner||thinking||turn!==humanStone)return;
@@ -82,11 +95,12 @@ export default function GomokuGame(){
     const nextMoves=[...moves,{row,column,stone:humanStone}];
     movesRef.current=nextMoves;
     setMoves(nextMoves);
+    playNovaSound("move");
     if(hasFive(next,index,humanStone))setWinner(humanStone);
     else if(next.every(Boolean))setWinner("draw");
     else setTurn(aiStone);
   };
-  const restart=(side=humanSide)=>{requestIdRef.current++;const next=EMPTY_BOARD();boardRef.current=next;movesRef.current=[];setHumanSide(side);setBoard(next);setMoves([]);setWinner(null);setThinking(false);setTurn(1)};
+  function restart(side=humanSide){requestIdRef.current++;const next=EMPTY_BOARD();boardRef.current=next;movesRef.current=[];resultRef.current="";clearGameProgress("gomoku");touchGame("gomoku");setHumanSide(side);setBoard(next);setMoves([]);setWinner(null);setResultDismissed(false);setThinking(false);setTurn(1)}
   const undo=()=>{
     if(!moves.length||thinking)return;
     const removeCount=moves.length>1?2:1,nextMoves=moves.slice(0,-removeCount),next=EMPTY_BOARD();
@@ -106,5 +120,6 @@ export default function GomokuGame(){
       <aside className="board-game-panel"><section><span>你</span><strong>{humanSide==="black"?"黑棋":"白棋"}</strong></section><section><span>对手</span><strong>Alpha-Beta AI</strong></section><section><span>手数</span><strong>{moves.length}</strong></section><p>AI 使用开源 Minimax 与 Alpha-Beta 剪枝引擎，重点识别连五、冲四、活三与防守要点。</p></aside>
     </section>
     {rulesOpen&&<section className="game-rules" role="dialog" aria-modal="true" aria-label="五子棋规则"><div><header><strong>五子棋规则</strong><button aria-label="关闭规则" onClick={()=>setRulesOpen(false)}>×</button></header><article><h3>胜负</h3><p>黑棋先行。任意一方在横、竖或斜线方向率先形成连续五枚或更多同色棋子即获胜。</p><h3>当前规则</h3><p>采用自由五子棋规则，不设置禁手；黑白双方均允许长连。棋盘为标准 15×15，落子后不能移动。</p><h3>人机对战</h3><p>可以选择执黑或执白。悔棋会同时撤回玩家和 AI 最近的一轮着法。</p></article></div></section>}
+    {winner&&!resultDismissed&&<GameResultDialog tone={winner==="draw"?"draw":winner===humanStone?"win":"loss"} title={winner==="draw"?"本局和棋":winner===humanStone?"你赢了":"AI 获胜"} detail={`本局共进行 ${moves.length} 手`} onDismiss={()=>setResultDismissed(true)} onRestart={()=>restart()}/>}
   </main>
 }
