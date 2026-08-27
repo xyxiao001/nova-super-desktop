@@ -7,6 +7,8 @@ import {
 } from "./readerCore";
 
 const PREFERENCES_KEY = "nova-reader-preferences";
+const ACTIVITY_KEY = "nova-reader-activity";
+const BOOKMARKS_KEY = "nova-reader-bookmarks";
 const progressKey = (bookId: string) => `nova-reader-progress:${bookId}`;
 const themes = new Set(["paper", "green", "night"]);
 const modes = new Set(["scroll", "page"]);
@@ -14,6 +16,25 @@ const animations = new Set(["page", "slide", "none"]);
 const clamp = (value: unknown, minimum: number, maximum: number, fallback: number) => {
   const number = typeof value === "number" && Number.isFinite(value) ? value : fallback;
   return Math.min(maximum, Math.max(minimum, number));
+};
+
+export type ReaderActivity = Record<string, {
+  bookId: string;
+  lastReadAt: number;
+  progress: number;
+  title: string;
+  author: string;
+}>;
+
+export type ReaderBookmark = {
+  id: string;
+  bookId: string;
+  chapterId: string;
+  chapterTitle: string;
+  paragraphIndex: number;
+  characterOffset: number;
+  excerpt: string;
+  createdAt: number;
 };
 
 export function readReaderPreferences(): ReaderPreferences {
@@ -88,4 +109,57 @@ export function saveReaderLocation(bookId: string, location: ReaderLocation) {
 
 export function removeReaderLocation(bookId: string) {
   localStorage.removeItem(progressKey(bookId));
+}
+
+export function readReaderActivity(): ReaderActivity {
+  if (typeof window === "undefined") return {};
+  try {
+    const saved = localStorage.getItem(ACTIVITY_KEY);
+    if (!saved) return {};
+    const parsed = JSON.parse(saved) as { version?: number; value?: ReaderActivity };
+    return parsed.version === READER_DATA_VERSION && parsed.value ? parsed.value : {};
+  } catch {
+    localStorage.removeItem(ACTIVITY_KEY);
+    return {};
+  }
+}
+
+export function saveReaderActivity(entry: ReaderActivity[string]) {
+  const activity = readReaderActivity();
+  activity[entry.bookId] = entry;
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify({ version: READER_DATA_VERSION, value: activity }));
+  return activity;
+}
+
+export function readReaderBookmarks(bookId: string) {
+  try {
+    const saved = localStorage.getItem(BOOKMARKS_KEY);
+    if (!saved) return [] as ReaderBookmark[];
+    const parsed = JSON.parse(saved) as { version?: number; value?: Record<string, ReaderBookmark[]> };
+    return parsed.version === READER_DATA_VERSION ? parsed.value?.[bookId] ?? [] : [];
+  } catch {
+    localStorage.removeItem(BOOKMARKS_KEY);
+    return [] as ReaderBookmark[];
+  }
+}
+
+export function saveReaderBookmarks(bookId: string, bookmarks: ReaderBookmark[]) {
+  let value: Record<string, ReaderBookmark[]> = {};
+  try {
+    const saved = localStorage.getItem(BOOKMARKS_KEY);
+    if (saved) value = (JSON.parse(saved) as { version?: number; value?: Record<string, ReaderBookmark[]> }).value ?? {};
+  } catch {
+    value = {};
+  }
+  value[bookId] = bookmarks;
+  localStorage.setItem(BOOKMARKS_KEY, JSON.stringify({ version: READER_DATA_VERSION, value }));
+}
+
+export function removeReaderBookData(bookId: string) {
+  removeReaderLocation(bookId);
+  const activity = readReaderActivity();
+  delete activity[bookId];
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify({ version: READER_DATA_VERSION, value: activity }));
+  const bookmarks = readReaderBookmarks(bookId);
+  if (bookmarks.length) saveReaderBookmarks(bookId, []);
 }

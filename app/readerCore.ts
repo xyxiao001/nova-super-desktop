@@ -56,6 +56,15 @@ export type ReaderParagraph = {
   end: number;
 };
 
+export type ReaderSearchResult = {
+  id: string;
+  chapterId: string;
+  chapterTitle: string;
+  paragraphIndex: number;
+  characterOffset: number;
+  excerpt: string;
+};
+
 export const READER_DATA_VERSION = 2;
 export const DEFAULT_READER_PREFERENCES: ReaderPreferences = {
   theme: "paper",

@@ -12,6 +12,7 @@
     "build:vercel": "npm run books:catalog && vite build --config vite.vercel.config.ts --outDir dist-vercel",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test:unit": "vitest run",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
@@ -47,6 +48,7 @@
     "typescript-eslint": "8.59.3",
     "vinext": "1.0.0-beta.2",
     "vite": "8.0.13",
+    "vitest": "^4.1.11",
     "wrangler": "4.92.0"
   },
   "type": "module"
