@@ -168,7 +168,7 @@ const databaseExists = async (name: string) => {
 const openMagicTowerDatabase = async (create: boolean) => {
   if (!(await databaseExists(MAGIC_TOWER_DATABASE)) && !create) return null;
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(MAGIC_TOWER_DATABASE, 1);
+    const request = indexedDB.open(MAGIC_TOWER_DATABASE);
     request.onerror = () => reject(request.error);
     request.onupgradeneeded = () => {
       if (!create) return;

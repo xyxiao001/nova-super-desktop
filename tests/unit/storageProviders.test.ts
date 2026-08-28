@@ -29,6 +29,19 @@ const deleteMagicTowerDatabase = () => new Promise<void>((resolve, reject) => {
   request.onsuccess = () => resolve();
 });
 
+const createLocalForageMagicTowerDatabase = () => new Promise<void>((resolve, reject) => {
+  const request = fakeIndexedDB.open("nova-magic-tower", 2);
+  request.onerror = () => reject(request.error);
+  request.onupgradeneeded = () => {
+    request.result.createObjectStore("humanbreak_saves");
+    request.result.createObjectStore("local-forage-detect-blob-support");
+  };
+  request.onsuccess = () => {
+    request.result.close();
+    resolve();
+  };
+});
+
 beforeEach(async () => {
   vi.stubGlobal("localStorage", new MemoryStorage());
   vi.stubGlobal("indexedDB", fakeIndexedDB);
@@ -42,6 +55,26 @@ afterEach(async () => {
 });
 
 describe("storage providers", () => {
+  it("reads a Magic Tower database upgraded by localForage", async () => {
+    await createLocalForageMagicTowerDatabase();
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = fakeIndexedDB.open("nova-magic-tower");
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+    const transaction = database.transaction("humanbreak_saves", "readwrite");
+    transaction.objectStore("humanbreak_saves").put("saved", "save1");
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+
+    await expect(readMagicTowerRecords()).resolves.toEqual([
+      { key: "save1", value: "saved" },
+    ]);
+  });
+
   it("exports game localStorage and Magic Tower IndexedDB together", async () => {
     localStorage.setItem("nova-game-records", "{}");
     localStorage.setItem("HumanBreak_settings", "hard");
