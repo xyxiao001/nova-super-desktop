@@ -13,6 +13,11 @@ import {
 import type { NovaSettings, NovaTheme } from "./novaSettings";
 import { playNovaSound } from "./novaSettings";
 import {
+  clearResourceCache,
+  inspectResourceCaches,
+  type NovaResourcePackage,
+} from "./resourceCache";
+import {
   clearNovaStorageCategory,
   inspectNovaStorage,
   type NovaStorageCategory,
@@ -24,12 +29,20 @@ const THEMES:{id:NovaTheme;label:string;sample:string}[]=[
   {id:"dark",label:"深色",sample:"●"},
 ];
 
+type ClearTarget =
+  | { kind: "data"; item: NovaStorageCategory }
+  | { kind: "resource"; item: NovaResourcePackage };
+
 const formatBytes=(bytes:number)=>{
   if(bytes<1024)return `${bytes} B`;
   if(bytes<1024*1024)return `${Math.round(bytes/1024)} KB`;
   if(bytes<1024*1024*1024)return `${(bytes/1024/1024).toFixed(1)} MB`;
   return `${(bytes/1024/1024/1024).toFixed(1)} GB`;
 };
+
+const inspectResourceCacheState=()=>inspectResourceCaches()
+  .then((resources)=>({resources,unavailable:false}))
+  .catch(()=>({resources:[] as NovaResourcePackage[],unavailable:true}));
 
 export default function SettingsApp({
   settings,
@@ -44,8 +57,10 @@ export default function SettingsApp({
 }){
   const [storage,setStorage]=useState({usage:0,quota:0});
   const [storageCategories,setStorageCategories]=useState<NovaStorageCategory[]>([]);
+  const [resourcePackages,setResourcePackages]=useState<NovaResourcePackage[]>([]);
+  const [resourceUnavailable,setResourceUnavailable]=useState(false);
   const [storageLoading,setStorageLoading]=useState(true);
-  const [clearTarget,setClearTarget]=useState<NovaStorageCategory|null>(null);
+  const [clearTarget,setClearTarget]=useState<ClearTarget|null>(null);
   const [clearing,setClearing]=useState(false);
   const [backupState,setBackupState]=useState<"idle"|"exporting"|"restoring">("idle");
   const [backupMessage,setBackupMessage]=useState("");
@@ -58,9 +73,15 @@ export default function SettingsApp({
   const refreshStorage=async()=>{
     setStorageLoading(true);
     try{
-      const [estimate,categories]=await Promise.all([estimateNovaStorage(),inspectNovaStorage()]);
+      const [estimate,categories,resourceResult]=await Promise.all([
+        estimateNovaStorage(),
+        inspectNovaStorage(),
+        inspectResourceCacheState(),
+      ]);
       setStorage(estimate);
       setStorageCategories(categories);
+      setResourcePackages(resourceResult.resources);
+      setResourceUnavailable(resourceResult.unavailable);
     }catch{
       setBackupMessage("本地数据读取失败");
     }finally{
@@ -69,10 +90,16 @@ export default function SettingsApp({
   };
   useEffect(()=>{
     let cancelled=false;
-    void Promise.all([estimateNovaStorage(),inspectNovaStorage()]).then(([estimate,categories])=>{
+    void Promise.all([
+      estimateNovaStorage(),
+      inspectNovaStorage(),
+      inspectResourceCacheState(),
+    ]).then(([estimate,categories,resourceResult])=>{
       if(cancelled)return;
       setStorage(estimate);
       setStorageCategories(categories);
+      setResourcePackages(resourceResult.resources);
+      setResourceUnavailable(resourceResult.unavailable);
     }).catch(()=>{
       if(!cancelled)setBackupMessage("本地数据读取失败");
     }).finally(()=>{
@@ -125,16 +152,17 @@ export default function SettingsApp({
     setClearing(true);
     setBackupMessage("");
     try{
-      await clearNovaStorageCategory(clearTarget.id);
-      if(clearTarget.id!=="offline"){
+      if(clearTarget.kind==="data"){
+        await clearNovaStorageCategory(clearTarget.item.id);
         window.location.reload();
         return;
       }
+      await clearResourceCache(clearTarget.item.id);
       setClearTarget(null);
-      setBackupMessage("PWA 离线缓存已清除");
+      setBackupMessage(`${clearTarget.item.label}已删除，需要时会重新下载`);
       await refreshStorage();
     }catch{
-      setBackupMessage(`${clearTarget.label}清除失败`);
+      setBackupMessage(`${clearTarget.item.label}清除失败`);
     }finally{
       setClearing(false);
     }
@@ -165,15 +193,25 @@ export default function SettingsApp({
         <button disabled={!settings.sound} onClick={()=>playNovaSound("success")}>测试声音</button>
       </section>
       <section className={`${sectionClass("backup")} backup-settings`} data-settings-section="backup">
-        <div><strong>本地数据</strong><span>{formatBytes(storage.usage)} 已使用{storage.quota?` · ${formatBytes(storage.quota)} 可用空间`:""}</span></div>
+        <div><strong>存储管理</strong><span>{formatBytes(storage.usage)} 已使用{storage.quota?` · ${formatBytes(storage.quota)} 可用空间`:""}</span></div>
         <div className="storage-meter" aria-label={`存储空间已使用 ${Math.round(storagePercent)}%`}><i style={{width:`${storagePercent}%`}}/></div>
+        <div className="storage-group-heading"><strong>用户数据</strong><span>文件、存档和偏好仅保存在当前设备，删除后不可恢复</span></div>
         <div className="storage-list" aria-busy={storageLoading}>
           {storageLoading&&!storageCategories.length?<p>正在统计本地数据…</p>:storageCategories.map((category)=><article key={category.id}>
             <span className={`storage-kind ${category.id}`} aria-hidden="true"/>
             <div><strong>{category.label}</strong><small>{category.description}</small></div>
             <output>{formatBytes(category.bytes)}</output>
-            <button disabled={!category.canClear||clearing} aria-label={`清除${category.label}`} onClick={()=>setClearTarget(category)}>删除</button>
+            <button disabled={!category.canClear||clearing} aria-label={`清除${category.label}`} onClick={()=>setClearTarget({kind:"data",item:category})}>删除</button>
           </article>)}
+        </div>
+        <div className="storage-group-heading resource-heading"><strong>按需资源</strong><span>应用和内容在首次使用时下载，可删除并在下次打开时重新获取</span></div>
+        <div className="storage-list resource-list" aria-busy={storageLoading}>
+          {storageLoading&&!resourcePackages.length?<p>正在统计应用资源…</p>:resourcePackages.length?resourcePackages.map((resource)=><article key={resource.id}>
+            <span className={`storage-kind resource ${resource.id}`} aria-hidden="true"/>
+            <div><strong>{resource.label}</strong><small>{resource.entries?`${resource.description} · ${resource.entries} 个文件`:`${resource.description} · 尚未下载`}</small></div>
+            <output>{formatBytes(resource.bytes)}</output>
+            <button disabled={!resource.entries||clearing} aria-label={`删除${resource.label}`} onClick={()=>setClearTarget({kind:"resource",item:resource})}>删除</button>
+          </article>):<p>{resourceUnavailable?"资源缓存状态暂不可用，更新或重载后重试":"按需资源缓存会在安装版中启用"}</p>}
         </div>
         <div className="backup-actions">
           <button disabled={backupState!=="idle"} onClick={()=>void exportBackup()}>⇩ 导出备份</button>
@@ -184,11 +222,11 @@ export default function SettingsApp({
       </section>
     </div>
     {clearTarget&&<div className="settings-restore-layer">
-      <section role="dialog" aria-modal="true" aria-label={`确认清除${clearTarget.label}`}>
-        <strong>清除{clearTarget.label}？</strong>
-        <p>{clearTarget.id==="offline"?"离线资源会在后续使用时重新缓存。":"该数据将从当前设备永久删除，操作后桌面会刷新。"}</p>
-        <dl className="settings-clear-summary"><div><dt>数据项</dt><dd>{clearTarget.entries}</dd></div><div><dt>预计释放</dt><dd>{formatBytes(clearTarget.bytes)}</dd></div></dl>
-        <small>此操作无法撤销，建议先导出备份。</small>
+      <section role="dialog" aria-modal="true" aria-label={`确认清除${clearTarget.item.label}`}>
+        <strong>删除{clearTarget.item.label}？</strong>
+        <p>{clearTarget.kind==="resource"?"只删除已下载资源，不影响文件、存档和设置；下次打开时会重新下载。":"该数据将从当前设备永久删除，操作后桌面会刷新。"}</p>
+        <dl className="settings-clear-summary"><div><dt>{clearTarget.kind==="resource"?"缓存文件":"数据项"}</dt><dd>{clearTarget.item.entries}</dd></div><div><dt>预计释放</dt><dd>{formatBytes(clearTarget.item.bytes)}</dd></div></dl>
+        <small>{clearTarget.kind==="resource"?"离线时将暂时无法使用对应内容。":"此操作无法撤销，建议先导出备份。"}</small>
         <footer><button disabled={clearing} onClick={()=>setClearTarget(null)}>取消</button><button className="danger" disabled={clearing} onClick={()=>void confirmClearStorage()}>{clearing?"正在清除":"确认清除"}</button></footer>
       </section>
     </div>}

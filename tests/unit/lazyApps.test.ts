@@ -21,6 +21,7 @@ describe("lazy app registry", () => {
       "recycle",
       "settings",
       "sudoku",
+      "tower",
       "viewer",
       "voyage",
     ]);

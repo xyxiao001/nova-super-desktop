@@ -26,6 +26,15 @@ export default function PwaManager() {
     navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
 
     let registration: ServiceWorkerRegistration | null = null;
+    const checkForUpdates = () => {
+      if (navigator.onLine) {
+        void registration?.update().catch((error) => {
+          console.error("NOVA service worker update check failed", error);
+        });
+      }
+    };
+    window.addEventListener("focus", checkForUpdates);
+    window.addEventListener("online", checkForUpdates);
     const register = async () => {
       registration = await navigator.serviceWorker.register("/sw.js", {
         scope: "/",
@@ -53,6 +62,8 @@ export default function PwaManager() {
     return () => {
       window.removeEventListener("online", updateOnlineState);
       window.removeEventListener("offline", updateOnlineState);
+      window.removeEventListener("focus", checkForUpdates);
+      window.removeEventListener("online", checkForUpdates);
       navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
       registration?.removeEventListener("updatefound", handleUpdateFound);
     };

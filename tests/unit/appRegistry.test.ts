@@ -26,5 +26,6 @@ describe("appRegistry", () => {
   it("keeps non-launcher game windows out of the all-apps list", () => {
     expect(LAUNCHER_APPS.some((app) => app.id === "games")).toBe(true);
     expect(LAUNCHER_APPS.some((app) => app.id === "mines")).toBe(false);
+    expect(LAUNCHER_APPS.some((app) => app.id === "tower")).toBe(false);
   });
 });

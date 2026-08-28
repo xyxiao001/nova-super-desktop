@@ -8,7 +8,6 @@ export type NovaStorageCategoryId =
   | "reading"
   | "focus"
   | "settings"
-  | "offline"
   | "other";
 
 export type NovaStorageCategory = {
@@ -20,8 +19,9 @@ export type NovaStorageCategory = {
   canClear: boolean;
 };
 
-const CACHE_PREFIX = "nova-pwa-";
 const LEGACY_KEYS = new Set(["nova-desktop-items", "nova-reader-downloads"]);
+const MAGIC_TOWER_STORAGE_PREFIX = "HumanBreak_";
+const MAGIC_TOWER_DATABASE = "nova-magic-tower";
 const encoder = new TextEncoder();
 
 const encodedSize = (value: unknown) => encoder.encode(JSON.stringify(value)).byteLength;
@@ -29,10 +29,18 @@ const encodedSize = (value: unknown) => encoder.encode(JSON.stringify(value)).by
 const getNovaLocalStorageEntries = () => Array.from(
   { length: localStorage.length },
   (_, index) => localStorage.key(index),
-).filter((key): key is string => !!key && key.startsWith("nova-") && !LEGACY_KEYS.has(key));
+).filter((key): key is string => (
+  !!key
+  && (key.startsWith("nova-") || key.startsWith(MAGIC_TOWER_STORAGE_PREFIX))
+  && !LEGACY_KEYS.has(key)
+));
 
-const localCategory = (key: string): Exclude<NovaStorageCategoryId, "desktop" | "reader" | "offline"> => {
-  if (key.startsWith("nova-game-") || key.startsWith("nova-mines-")) return "games";
+const localCategory = (key: string): Exclude<NovaStorageCategoryId, "desktop" | "reader"> => {
+  if (
+    key.startsWith("nova-game-")
+    || key.startsWith("nova-mines-")
+    || key.startsWith(MAGIC_TOWER_STORAGE_PREFIX)
+  ) return "games";
   if (key.startsWith("nova-reader-")) return "reading";
   if (key.startsWith("nova-focus-")) return "focus";
   if (key === "nova-settings" || key === "nova-desktop-positions" || key.startsWith("nova-window-geometry:")) return "settings";
@@ -43,28 +51,83 @@ const localStorageSize = (keys: string[]) => keys.reduce((total, key) => (
   total + encoder.encode(key).byteLength + encoder.encode(localStorage.getItem(key) ?? "").byteLength
 ), 0);
 
-const inspectOfflineCache = async () => {
-  if (!("caches" in globalThis)) return { names: [] as string[], entries: 0, bytes: 0 };
-  const names = (await caches.keys()).filter((name) => name.startsWith(CACHE_PREFIX));
-  let entries = 0;
-  let bytes = 0;
-  for (const name of names) {
-    const cache = await caches.open(name);
-    const requests = await cache.keys();
-    entries += requests.length;
-    for (const request of requests) {
-      const response = await cache.match(request);
-      if (response) bytes += (await response.clone().arrayBuffer()).byteLength;
-    }
+const inspectMagicTowerStorage = async () => {
+  if (!("indexedDB" in globalThis)) return { entries: 0, bytes: 0 };
+  const factory = indexedDB as IDBFactory & {
+    databases?: () => Promise<Array<{ name?: string }>>;
+  };
+  if (!factory.databases) return { entries: 0, bytes: 0 };
+  const databases = await factory.databases();
+  if (!databases.some((database) => database.name === MAGIC_TOWER_DATABASE)) {
+    return { entries: 0, bytes: 0 };
   }
-  return { names, entries, bytes };
+  return new Promise<{ entries: number; bytes: number }>((resolve, reject) => {
+    const request = indexedDB.open(MAGIC_TOWER_DATABASE);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains("humanbreak_saves")) {
+        database.close();
+        resolve({ entries: 0, bytes: 0 });
+        return;
+      }
+      const transaction = database.transaction("humanbreak_saves", "readonly");
+      const cursor = transaction.objectStore("humanbreak_saves").openCursor();
+      let entries = 0;
+      let bytes = 0;
+      cursor.onerror = () => reject(cursor.error);
+      cursor.onsuccess = () => {
+        if (!cursor.result) return;
+        entries += 1;
+        bytes += encodedSize(cursor.result.value);
+        cursor.result.continue();
+      };
+      transaction.oncomplete = () => {
+        database.close();
+        resolve({ entries, bytes });
+      };
+      transaction.onerror = () => reject(transaction.error);
+    };
+  });
+};
+
+const clearMagicTowerDatabase = async () => {
+  if (!("indexedDB" in globalThis)) {
+    return;
+  }
+  const factory = indexedDB as IDBFactory & {
+    databases?: () => Promise<Array<{ name?: string }>>;
+  };
+  if (factory.databases) {
+    const databases = await factory.databases();
+    if (!databases.some((database) => database.name === MAGIC_TOWER_DATABASE)) return;
+  }
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open(MAGIC_TOWER_DATABASE);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains("humanbreak_saves")) {
+        database.close();
+        resolve();
+        return;
+      }
+      const transaction = database.transaction("humanbreak_saves", "readwrite");
+      transaction.objectStore("humanbreak_saves").clear();
+      transaction.oncomplete = () => {
+        database.close();
+        resolve();
+      };
+      transaction.onerror = () => reject(transaction.error);
+    };
+  });
 };
 
 export async function inspectNovaStorage(): Promise<NovaStorageCategory[]> {
-  const [desktopItems, readerBooks, offline] = await Promise.all([
+  const [desktopItems, readerBooks, magicTower] = await Promise.all([
     loadDesktopItems(),
     getAllStoredBooks(),
-    inspectOfflineCache(),
+    inspectMagicTowerStorage(),
   ]);
   const localEntries = getNovaLocalStorageEntries();
   const localGroups = {
@@ -95,10 +158,10 @@ export async function inspectNovaStorage(): Promise<NovaStorageCategory[]> {
     {
       id: "games",
       label: "游戏数据",
-      description: `${localGroups.games.length} 项存档与战绩`,
-      entries: localGroups.games.length,
-      bytes: localStorageSize(localGroups.games),
-      canClear: localGroups.games.length > 0,
+      description: `${localGroups.games.length + magicTower.entries} 项存档、战绩与游戏设置`,
+      entries: localGroups.games.length + magicTower.entries,
+      bytes: localStorageSize(localGroups.games) + magicTower.bytes,
+      canClear: localGroups.games.length + magicTower.entries > 0,
     },
     {
       id: "reading",
@@ -124,19 +187,9 @@ export async function inspectNovaStorage(): Promise<NovaStorageCategory[]> {
       bytes: localStorageSize(localGroups.settings),
       canClear: localGroups.settings.length > 0,
     },
-    {
-      id: "offline",
-      label: "PWA 离线缓存",
-      description: offline.names.length
-        ? `${offline.entries} 个资源 · ${offline.names.join("、")}`
-        : "尚未缓存离线资源",
-      entries: offline.entries,
-      bytes: offline.bytes,
-      canClear: offline.names.length > 0,
-    },
   ];
   if (localGroups.other.length) {
-    categories.splice(-1, 0, {
+    categories.push({
       id: "other",
       label: "其他本地数据",
       description: `${localGroups.other.length} 项未分类应用数据`,
@@ -158,13 +211,8 @@ export async function clearNovaStorageCategory(id: NovaStorageCategoryId) {
     await replaceStoredBooks([]);
     return;
   }
-  if (id !== "offline") {
-    for (const key of getNovaLocalStorageEntries()) {
-      if (localCategory(key) === id) localStorage.removeItem(key);
-    }
-    return;
+  for (const key of getNovaLocalStorageEntries()) {
+    if (localCategory(key) === id) localStorage.removeItem(key);
   }
-  if (!("caches" in globalThis)) return;
-  const names = (await caches.keys()).filter((name) => name.startsWith(CACHE_PREFIX));
-  await Promise.all(names.map((name) => caches.delete(name)));
+  if (id === "games") await clearMagicTowerDatabase();
 }

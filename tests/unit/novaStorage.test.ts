@@ -29,23 +29,12 @@ class MemoryStorage implements Storage {
   setItem(key: string, value: string) { this.values.set(key, value); }
 }
 
-const cacheDelete = vi.fn();
-
 beforeEach(() => {
   storageMocks.loadDesktopItems.mockReset().mockResolvedValue([]);
   storageMocks.deleteDesktopItems.mockReset().mockResolvedValue(undefined);
   storageMocks.getAllStoredBooks.mockReset().mockResolvedValue([]);
   storageMocks.replaceStoredBooks.mockReset().mockResolvedValue(undefined);
-  cacheDelete.mockReset().mockResolvedValue(true);
   vi.stubGlobal("localStorage", new MemoryStorage());
-  vi.stubGlobal("caches", {
-    keys: vi.fn().mockResolvedValue(["nova-pwa-v2:shell", "unrelated-cache"]),
-    open: vi.fn().mockResolvedValue({
-      keys: vi.fn().mockResolvedValue([new Request("https://nova.test/app.js")]),
-      match: vi.fn().mockResolvedValue(new Response("cached")),
-    }),
-    delete: cacheDelete,
-  });
 });
 
 afterEach(() => {
@@ -57,34 +46,25 @@ describe("novaStorage", () => {
     localStorage.setItem("nova-game-records", "{}");
     localStorage.setItem("nova-reader-bookmarks", "[]");
     localStorage.setItem("nova-settings", "{}");
+    localStorage.setItem("HumanBreak_settings", "{}");
     localStorage.setItem("unrelated", "keep");
 
     const categories = await inspectNovaStorage();
 
-    expect(categories.find((item) => item.id === "games")?.entries).toBe(1);
+    expect(categories.find((item) => item.id === "games")?.entries).toBe(2);
     expect(categories.find((item) => item.id === "reading")?.entries).toBe(1);
     expect(categories.find((item) => item.id === "settings")?.entries).toBe(1);
-    expect(categories.find((item) => item.id === "offline")).toMatchObject({
-      entries: 1,
-      bytes: 6,
-      canClear: true,
-    });
   });
 
   it("clears only the selected local data category", async () => {
     localStorage.setItem("nova-game-records", "{}");
+    localStorage.setItem("HumanBreak_settings", "{}");
     localStorage.setItem("nova-reader-bookmarks", "[]");
 
     await clearNovaStorageCategory("games");
 
     expect(localStorage.getItem("nova-game-records")).toBeNull();
+    expect(localStorage.getItem("HumanBreak_settings")).toBeNull();
     expect(localStorage.getItem("nova-reader-bookmarks")).toBe("[]");
-  });
-
-  it("deletes only NOVA-owned cache storage", async () => {
-    await clearNovaStorageCategory("offline");
-
-    expect(cacheDelete).toHaveBeenCalledOnce();
-    expect(cacheDelete).toHaveBeenCalledWith("nova-pwa-v2:shell");
   });
 });

@@ -52,6 +52,7 @@ export const APP_REGISTRY: Record<WindowAppId, AppDefinition> = {
   go: { id: "go", label: "围棋", icon: "◉", kind: "go", launcher: false, taskbarPinned: false },
   sudoku: { id: "sudoku", label: "数独", icon: "九", kind: "sudoku", launcher: false, taskbarPinned: false },
   voyage: { id: "voyage", label: "星港远征", icon: "✧", kind: "voyage", launcher: false, taskbarPinned: false },
+  tower: { id: "tower", label: "魔塔", icon: "塔", kind: "tower", launcher: false, taskbarPinned: false },
   calculator: { id: "calculator", label: "计算器", icon: "＋", kind: "calculator", launcher: true, taskbarPinned: false, startGroup: "productivity" },
   drawing: { id: "drawing", label: "NOVA 画板", icon: "✎", kind: "drawing", launcher: true, taskbarPinned: false, startGroup: "create" },
   focus: { id: "focus", label: "专注时钟", icon: "◷", kind: "focus", launcher: true, taskbarPinned: false, startGroup: "productivity" },

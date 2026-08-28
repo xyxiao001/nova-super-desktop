@@ -59,6 +59,7 @@ import {
   LazyGameHall,
   LazyGoGame,
   LazyGomokuGame,
+  LazyMagicTowerGame,
   LazyMinesweeperGame,
   LazyNotepadApp,
   LazyPhotoEditor,
@@ -251,7 +252,7 @@ export default function Home() {
     {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><LazyNotepadApp items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
     {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><LazyPhotoViewerApp images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} focused={focused==="viewer"&&!windowStates.viewer.minimized} open={(item)=>setActiveImageId(item.id)} clearActive={()=>setActiveImageId(null)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
     {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><LazyReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
-    {windowStates.games.open&&<AppWindow {...windowProps("games")}><LazyGameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open}} onLaunch={openWindow}/></AppWindow>}
+    {windowStates.games.open&&<AppWindow {...windowProps("games")}><LazyGameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open,tower:windowStates.tower.open}} onLaunch={openWindow}/></AppWindow>}
     {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><LazyFolderViewApp folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
     {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><LazyRecycleBinApp items={trashedItems} restore={restoreMany} remove={permanentlyDeleteMany} empty={emptyRecycleBin}/></AppWindow>}
     {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><LazyMinesweeperGame/></AppWindow>}
@@ -260,6 +261,7 @@ export default function Home() {
     {windowStates.go.open&&<AppWindow {...windowProps("go")}><LazyGoGame/></AppWindow>}
     {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><LazySudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
     {windowStates.voyage.open&&<AppWindow {...windowProps("voyage")}><LazyStarVoyageGame active={focused==="voyage"&&!windowStates.voyage.minimized}/></AppWindow>}
+    {windowStates.tower.open&&<AppWindow {...windowProps("tower")}><LazyMagicTowerGame active={focused==="tower"&&!windowStates.tower.minimized}/></AppWindow>}
     {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><LazyCalculatorApp active={focused==="calculator"&&!windowStates.calculator.minimized}/></AppWindow>}
     {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><LazyDrawingApp onSave={savePhoto}/></AppWindow>}
     {windowStates.focus.open&&<AppWindow {...windowProps("focus")}><LazyFocusClockApp active={focused==="focus"&&!windowStates.focus.minimized}/></AppWindow>}

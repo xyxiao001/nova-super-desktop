@@ -1,21 +1,56 @@
-// Bump this value when the offline asset policy changes.
-const VERSION = "nova-pwa-v2";
+const VERSION = "nova-pwa-v4";
+const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
-const RUNTIME_CACHE = `${VERSION}:runtime`;
+const RESOURCE_CACHE_PREFIX = `${VERSION}:resource:`;
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
   "/favicon.svg",
   "/pwa-192.png",
   "/pwa-512.png",
-  "/default-photo.jpg",
-  "/books/catalog.json",
-  "/stockfish/stockfish.js",
-  "/stockfish/stockfish.wasm",
 ];
-const BUILD_ASSET_PATTERN = /["'`]([^"'`]+?\.(?:css|js|wasm|woff2?|png|jpe?g|webp|svg)(?:\?[^"'`]*)?)["'`]/gi;
 
-const cacheResponse = async (cacheName, request, response) => {
+const RESOURCE_PACKAGES = [
+  {
+    id: "magic-tower",
+    match: (request, url) => url.pathname.startsWith("/games/magic-tower/"),
+  },
+  {
+    id: "chess-engine",
+    match: (request, url) => url.pathname.startsWith("/stockfish/"),
+  },
+  {
+    id: "books",
+    match: (request, url) => url.pathname.startsWith("/books/"),
+  },
+  {
+    id: "photos",
+    match: (request, url) => (
+      url.pathname.startsWith("/photos/")
+      || url.pathname === "/default-photo.jpg"
+    ),
+  },
+  {
+    id: "apps",
+    match: (request, url) => (
+      url.pathname.startsWith("/_next/static/")
+      || ["script", "style", "worker", "font"].includes(request.destination)
+      || /\.(?:css|js|wasm|woff2?)$/i.test(url.pathname)
+    ),
+  },
+  {
+    id: "media",
+    match: (request) => ["image", "audio", "video"].includes(request.destination),
+  },
+];
+
+const resourceCacheName = (id) => `${RESOURCE_CACHE_PREFIX}${id}`;
+
+const findResourcePackage = (request, url) => (
+  RESOURCE_PACKAGES.find((item) => item.match(request, url))
+);
+
+const putResponse = async (cacheName, request, response) => {
   if (response.ok && response.type === "basic") {
     const cache = await caches.open(cacheName);
     await cache.put(request, response.clone());
@@ -30,40 +65,17 @@ const cacheShellAssets = async () => {
   await cache.put("/", shellResponse.clone());
 
   const html = await shellResponse.text();
-  const assetUrls = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+  const documentAssets = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
     .map((match) => new URL(match[1], self.location.origin))
     .filter((url) => url.origin === self.location.origin)
     .filter((url) => /\.(?:css|js|woff2?)$/i.test(url.pathname))
     .map((url) => url.pathname + url.search);
 
-  await Promise.all(CORE_ASSETS.slice(1).map(async (path) => {
+  await Promise.all([...new Set([...CORE_ASSETS.slice(1), ...documentAssets])].map(async (path) => {
     const response = await fetch(new Request(path, { cache: "reload" }));
     if (!response.ok) throw new Error(`Unable to cache ${path}`);
     await cache.put(path, response);
   }));
-  const pending = [...new Set(assetUrls)];
-  const discovered = new Set(pending);
-  while (pending.length) {
-    const path = pending.shift();
-    const response = await fetch(new Request(path, { cache: "reload" }));
-    if (!response.ok) continue;
-    await cache.put(path, response.clone());
-    if (!new URL(path, self.location.origin).pathname.endsWith(".js")) continue;
-
-    const source = await response.text();
-    for (const match of source.matchAll(BUILD_ASSET_PATTERN)) {
-      let url;
-      try {
-        url = new URL(match[1], new URL(path, self.location.origin));
-      } catch {
-        continue;
-      }
-      const nextPath = url.pathname + url.search;
-      if (url.origin !== self.location.origin || url.pathname.startsWith("/books/") || url.pathname.startsWith("/photos/") || discovered.has(nextPath)) continue;
-      discovered.add(nextPath);
-      pending.push(nextPath);
-    }
-  }
 };
 
 self.addEventListener("install", (event) => {
@@ -73,19 +85,89 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter((name) => name.startsWith("nova-pwa-") && name !== SHELL_CACHE && name !== RUNTIME_CACHE).map((name) => caches.delete(name)));
+    const currentCaches = new Set([
+      SHELL_CACHE,
+      ...RESOURCE_PACKAGES.map((item) => resourceCacheName(item.id)),
+    ]);
+    await Promise.all(names
+      .filter((name) => name.startsWith(CACHE_PREFIX) && !currentCaches.has(name))
+      .map((name) => caches.delete(name)));
     await self.clients.claim();
   })());
 });
 
+const inspectCache = async (name, existingNames) => {
+  if (!existingNames.has(name)) return { entries: 0, bytes: 0 };
+  const cache = await caches.open(name);
+  const requests = await cache.keys();
+  let bytes = 0;
+  for (const request of requests) {
+    const response = await cache.match(request);
+    if (!response) continue;
+    const contentLength = Number(response.headers.get("content-length"));
+    bytes += Number.isFinite(contentLength) && contentLength > 0
+      ? contentLength
+      : (await response.clone().arrayBuffer()).byteLength;
+  }
+  return { entries: requests.length, bytes };
+};
+
+const inspectResourceCaches = async () => {
+  const existingNames = new Set(await caches.keys());
+  const shell = await inspectCache(SHELL_CACHE, existingNames);
+  const resources = await Promise.all(RESOURCE_PACKAGES.map(async (item) => ({
+    id: item.id,
+    cacheName: resourceCacheName(item.id),
+    ...(await inspectCache(resourceCacheName(item.id), existingNames)),
+  })));
+  return [
+    {
+      id: "system",
+      cacheName: SHELL_CACHE,
+      ...shell,
+    },
+    ...resources,
+  ];
+};
+
 self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") void self.skipWaiting();
+  if (event.data?.type === "SKIP_WAITING") {
+    void self.skipWaiting();
+    return;
+  }
+  if (event.data?.type === "GET_RESOURCE_CACHE_STATUS" && event.ports[0]) {
+    event.waitUntil(inspectResourceCaches()
+      .then((packages) => event.ports[0].postMessage({ ok: true, packages }))
+      .catch((error) => event.ports[0].postMessage({
+        ok: false,
+        error: error instanceof Error ? error.message : "缓存读取失败",
+      })));
+    return;
+  }
+  if (event.data?.type === "CLEAR_RESOURCE_CACHE" && event.ports[0]) {
+    const packageId = event.data.packageId;
+    const cacheName = packageId === "system"
+      ? SHELL_CACHE
+      : RESOURCE_PACKAGES.some((item) => item.id === packageId)
+        ? resourceCacheName(packageId)
+        : null;
+    if (!cacheName) {
+      event.ports[0].postMessage({ ok: false, error: "未知资源包" });
+      return;
+    }
+    event.waitUntil(caches.delete(cacheName)
+      .then(() => event.ports[0].postMessage({ ok: true }))
+      .catch((error) => event.ports[0].postMessage({
+        ok: false,
+        error: error instanceof Error ? error.message : "缓存删除失败",
+      })));
+  }
 });
 
 const networkFirstNavigation = async (request) => {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && new URL(request.url).pathname === "/") {
       const cache = await caches.open(SHELL_CACHE);
       await cache.put("/", response.clone());
     }
@@ -101,16 +183,16 @@ const networkFirstNavigation = async (request) => {
   }
 };
 
-const cacheFirst = async (request) => {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  return cacheResponse(RUNTIME_CACHE, request, await fetch(request));
+const cacheFirst = async (cacheName, request) => {
+  const shellMatch = await caches.match(request);
+  if (shellMatch) return shellMatch;
+  return putResponse(cacheName, request, await fetch(request));
 };
 
-const staleWhileRevalidate = async (request) => {
-  const cache = await caches.open(RUNTIME_CACHE);
+const staleWhileRevalidate = async (cacheName, request) => {
+  const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
-  const network = fetch(request).then((response) => cacheResponse(RUNTIME_CACHE, request, response));
+  const network = fetch(request).then((response) => putResponse(cacheName, request, response));
   if (!cached) return network;
   void network.catch(() => undefined);
   return cached;
@@ -122,17 +204,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || url.pathname === "/sw.js") return;
 
+  const resourcePackage = findResourcePackage(request, url);
+  if (resourcePackage) {
+    const cacheName = resourceCacheName(resourcePackage.id);
+    event.respondWith(
+      url.pathname === "/books/catalog.json"
+        ? staleWhileRevalidate(cacheName, request)
+        : cacheFirst(cacheName, request),
+    );
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(networkFirstNavigation(request));
-    return;
-  }
-  if (url.pathname.startsWith("/photos/")) return;
-  if (url.pathname.startsWith("/books/") && url.pathname.endsWith(".txt")) return;
-  if (url.pathname === "/books/catalog.json") {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
-  if (["script", "style", "font", "image", "worker"].includes(request.destination) || /\.(?:css|js|wasm|woff2?)$/i.test(url.pathname)) {
-    event.respondWith(cacheFirst(request));
   }
 });
