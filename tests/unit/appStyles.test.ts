@@ -29,18 +29,26 @@ describe("application style loading", () => {
   });
 
   it("keeps the mobile desktop and reader inside the dynamic viewport", async () => {
-    const [globals, desktop, reader, productivity, games, page] = await Promise.all([
+    const [globals, desktop, reader, productivity, games, page, layout, index, manifestSource] = await Promise.all([
       readWorkspaceFile("app/globals.css"),
       readWorkspaceFile("app/desktop.css"),
       readWorkspaceFile("app/reader.css"),
       readWorkspaceFile("app/productivity-apps.css"),
       readWorkspaceFile("app/games-tools.css"),
       readWorkspaceFile("app/page.tsx"),
+      readWorkspaceFile("app/layout.tsx"),
+      readWorkspaceFile("index.html"),
+      readWorkspaceFile("public/manifest.webmanifest"),
     ]);
+    const manifest = JSON.parse(manifestSource) as { display: string; display_override: string[] };
 
     expect(globals).toContain("height:100dvh");
+    expect(globals).toContain('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),textarea,select{font-size:16px!important}');
+    expect(globals).toContain("background:#0b4d7c");
     expect(desktop).toContain("env(safe-area-inset-bottom)");
     expect(desktop).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
+    expect(desktop).toContain(".shortcut-icon { width:62px; height:62px; min-height:62px; flex:none");
+    expect(desktop).toContain("font-size:14px; line-height:18px");
     expect(desktop).toContain(".desktop-item.positioned, .desktop-shortcut.positioned { position:static!important");
     expect(desktop).toContain(".desktop-menu { position:fixed");
     expect(desktop).toContain(".windows-desktop.wallpaper-harbor");
@@ -58,5 +66,12 @@ describe("application style loading", () => {
     expect(games).toContain(".wallpaper-options");
     expect(games).toContain(".storage-group-toggle");
     expect(games).toContain(".settings-reset-panel");
+    expect(layout).toContain('statusBarStyle: "black-translucent"');
+    expect(layout).toContain('"mobile-web-app-capable": "yes"');
+    expect(index).toContain("viewport-fit=cover");
+    expect(index).toContain('<meta name="theme-color" content="#0b4d7c"');
+    expect(index).toContain('<meta name="mobile-web-app-capable" content="yes"');
+    expect(manifest.display).toBe("fullscreen");
+    expect(manifest.display_override).toEqual(["fullscreen", "standalone"]);
   });
 });

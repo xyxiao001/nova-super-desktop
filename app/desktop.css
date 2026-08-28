@@ -544,13 +544,17 @@
   .windows-desktop .window-content { height:calc(100% - 48px); }
   .window-resize-handle { display:none; }
   .windows-desktop .desktop-window .workspace { height:calc(100% - 62px); grid-template-columns:1fr; }
-  .desktop-files { top:calc(12px + env(safe-area-inset-top)); left:0; right:0; bottom:0; padding:8px 12px calc(18px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:96px; align-content:start; gap:7px 4px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
+  .desktop-files { top:calc(12px + env(safe-area-inset-top)); left:0; right:0; bottom:0; padding:9px 12px calc(18px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:112px; align-content:start; gap:8px 4px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
   .desktop-files::-webkit-scrollbar { display:none; }
   .desktop-item.positioned, .desktop-shortcut.positioned { position:static!important; left:auto!important; top:auto!important; }
-  .desktop-item, .desktop-shortcut { width:100%; height:96px; padding:7px 2px; gap:6px; border-radius:8px; touch-action:manipulation; -webkit-touch-callout:none; user-select:none; }
+  .desktop-item, .desktop-shortcut { width:100%; height:112px; padding:7px 2px; gap:7px; border-radius:8px; touch-action:manipulation; -webkit-touch-callout:none; user-select:none; }
   .desktop-item:active, .desktop-shortcut:active { background:#ffffff2c; border-color:#ffffff47; transform:scale(.95); }
-  .desktop-item > strong, .desktop-shortcut > strong { width:100%; min-height:30px; padding-inline:2px; display:-webkit-box; overflow:hidden; line-clamp:2; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; }
-  .shortcut-icon { width:52px; height:52px; margin-top:0; border-radius:12px; }
+  .desktop-item > strong, .desktop-shortcut > strong { width:100%; min-height:36px; padding-inline:2px; display:-webkit-box; overflow:hidden; font-size:14px; line-height:18px; font-weight:560; line-clamp:2; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; }
+  .shortcut-icon { width:62px; height:62px; min-height:62px; flex:none; margin-top:0; border-radius:14px; font-size:28px; }
+  .desktop-shortcut .settings-shortcut { font-size:27px; }
+  .desktop-shortcut .recycle-shortcut { font-size:24px; }
+  .desktop-shortcut .drawing-shortcut { font-size:32px; }
+  .desktop-item .shortcut-icon.text-icon b { margin:12px 5px 7px; font-size:9px; }
   .desktop-menu { position:fixed; left:8px!important; right:8px; top:auto!important; bottom:calc(8px + env(safe-area-inset-bottom)); width:auto; max-height:min(70dvh,460px); padding:8px; overflow-y:auto; border-radius:8px; animation:mobileMenuOpen .14s ease-out; }
   .desktop-menu button { min-height:44px; font-size:13px; touch-action:manipulation; }
   .desktop-menu .menu-summary { font-size:12px; }
@@ -568,11 +572,16 @@
   .start-search-close { width:44px; height:44px; padding:0; display:grid; place-items:center; border:0; border-radius:50%; background:#ffffffa8; color:#35434b; font-size:22px; touch-action:manipulation; }
   .start-menu-content { padding-top:8px; }
   .start-menu > footer { display:none; }
-  .start-section-header { height:34px; padding-inline:6px; }
-  .start-apps { grid-template-columns:repeat(4,1fr); grid-auto-rows:82px; gap:5px 4px; }
-  .start-apps button { height:78px; }
-  .start-results > button { min-height:58px; height:auto; padding-block:5px; touch-action:manipulation; }
-  .start-all-list > section > button { height:54px; touch-action:manipulation; }
+  .start-section-header { height:36px; padding-inline:6px; font-size:13px; }
+  .start-apps { grid-template-columns:repeat(4,1fr); grid-auto-rows:96px; gap:5px 4px; }
+  .start-apps button { height:92px; gap:8px; font-size:12px; }
+  .start-apps i { width:48px; height:48px; border-radius:11px; font-size:22px; }
+  .start-settings { font-size:21px!important; }
+  .start-results > button { min-height:64px; height:auto; padding-block:6px; touch-action:manipulation; }
+  .start-results > button > i { width:42px; height:42px; font-size:15px; }
+  .start-results strong { font-size:14px; }
+  .start-results small { font-size:11px; }
+  .start-all-list > section > button { height:60px; touch-action:manipulation; }
 }
 
 @keyframes mobileMenuOpen { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }

@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#1262a0",
+  themeColor: "#0b4d7c",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,6 +36,11 @@ export async function generateMetadata(): Promise<Metadata> {
       capable: true,
       statusBarStyle: "black-translucent",
       title: "NOVA",
+    },
+    other: {
+      "mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-status-bar-style": "black-translucent",
     },
     icons: {
       icon: [
