@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
 import GameResultDialog from "./GameResultDialog";

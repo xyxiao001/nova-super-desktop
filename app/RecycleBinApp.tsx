@@ -1,5 +1,7 @@
 "use client";
 
+import "./productivity-apps.css";
+
 import { useEffect, useState } from "react";
 
 import type { DesktopItem } from "./desktopFiles";

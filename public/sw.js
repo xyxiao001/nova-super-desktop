@@ -1,3 +1,5 @@
+importScripts("/resource-packages.generated.js");
+
 const VERSION = "nova-pwa-v4";
 const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
@@ -10,44 +12,17 @@ const CORE_ASSETS = [
   "/pwa-512.png",
 ];
 
-const RESOURCE_PACKAGES = [
-  {
-    id: "magic-tower",
-    match: (request, url) => url.pathname.startsWith("/games/magic-tower/"),
-  },
-  {
-    id: "chess-engine",
-    match: (request, url) => url.pathname.startsWith("/stockfish/"),
-  },
-  {
-    id: "books",
-    match: (request, url) => url.pathname.startsWith("/books/"),
-  },
-  {
-    id: "photos",
-    match: (request, url) => (
-      url.pathname.startsWith("/photos/")
-      || url.pathname === "/default-photo.jpg"
-    ),
-  },
-  {
-    id: "apps",
-    match: (request, url) => (
-      url.pathname.startsWith("/_next/static/")
-      || ["script", "style", "worker", "font"].includes(request.destination)
-      || /\.(?:css|js|wasm|woff2?)$/i.test(url.pathname)
-    ),
-  },
-  {
-    id: "media",
-    match: (request) => ["image", "audio", "video"].includes(request.destination),
-  },
-];
+const RESOURCE_PACKAGES = self.NOVA_RESOURCE_PACKAGES;
 
 const resourceCacheName = (id) => `${RESOURCE_CACHE_PREFIX}${id}`;
 
 const findResourcePackage = (request, url) => (
-  RESOURCE_PACKAGES.find((item) => item.match(request, url))
+  RESOURCE_PACKAGES.find((item) => (
+    item.pathPrefixes.some((prefix) => url.pathname.startsWith(prefix))
+    || item.exactPaths.includes(url.pathname)
+    || item.destinations.includes(request.destination)
+    || item.extensions.some((extension) => url.pathname.toLowerCase().endsWith(`.${extension}`))
+  ))
 );
 
 const putResponse = async (cacheName, request, response) => {

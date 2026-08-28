@@ -1,5 +1,7 @@
 "use client";
 
+import "./productivity-apps.css";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DesktopItem } from "./desktopFiles";
 import {

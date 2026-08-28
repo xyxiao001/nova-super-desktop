@@ -1,16 +1,27 @@
-import type { StoredBook } from "./readerCore";
-import type { DesktopItem } from "./desktopFiles";
-import { loadDesktopItems, replaceDesktopItems } from "./desktopStorage";
-import { getAllStoredBooks, replaceStoredBooks } from "./readerStorage";
+import {
+  STORAGE_PROVIDER_BY_ID,
+  STORAGE_PROVIDERS,
+  localStorageCategory,
+  type GameStorageProviderData,
+  type LocalStorageProviderData,
+  type StorageProviderId,
+} from "./storageProviders";
 
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
+const LEGACY_BACKUP_VERSION = 1;
 const LEGACY_KEYS = new Set(["nova-desktop-items", "nova-reader-downloads"]);
 
 export type NovaBackup = {
   version: typeof BACKUP_VERSION;
   exportedAt: string;
-  desktopItems: DesktopItem[];
-  readerBooks: StoredBook[];
+  providers: Record<StorageProviderId, unknown>;
+};
+
+type NovaBackupV1 = {
+  version: typeof LEGACY_BACKUP_VERSION;
+  exportedAt: string;
+  desktopItems: unknown;
+  readerBooks: unknown;
   localStorage: Record<string, string>;
 };
 
@@ -21,109 +32,107 @@ export type NovaBackupSummary = {
   localSettings: number;
 };
 
-const isDesktopItem = (value: unknown): value is DesktopItem => {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Partial<DesktopItem>;
-  return (
-    typeof item.id === "string"
-    && ["folder", "text", "image"].includes(item.type ?? "")
-    && typeof item.name === "string"
-    && typeof item.content === "string"
-    && (item.parentId === null || typeof item.parentId === "string")
-    && typeof item.createdAt === "number"
-  );
+const isObject = (value: unknown): value is Record<string, unknown> => (
+  !!value && typeof value === "object" && !Array.isArray(value)
+);
+
+const hasValidExportDate = (value: Record<string, unknown>) => (
+  typeof value.exportedAt === "string"
+  && Number.isFinite(Date.parse(value.exportedAt))
+);
+
+const isVersionTwoBackup = (value: unknown): value is NovaBackup => {
+  if (!isObject(value) || value.version !== BACKUP_VERSION || !hasValidExportDate(value)) return false;
+  const providers = value.providers;
+  if (!isObject(providers)) return false;
+  const providerIds = STORAGE_PROVIDERS.map((provider) => provider.id);
+  if (
+    Object.keys(providers).length !== providerIds.length
+    || !providerIds.every((id) => id in providers)
+  ) return false;
+  return STORAGE_PROVIDERS.every((provider) => provider.validateData(providers[provider.id]));
 };
 
-const isStoredBook = (value: unknown): value is StoredBook => {
-  if (!value || typeof value !== "object") return false;
-  const book = value as Partial<StoredBook>;
-  return (
-    typeof book.id === "string"
-    && typeof book.title === "string"
-    && typeof book.author === "string"
-    && typeof book.description === "string"
-    && typeof book.cover === "string"
-    && typeof book.file === "string"
-    && typeof book.url === "string"
-    && typeof book.size === "number"
-    && typeof book.version === "string"
-    && typeof book.content === "string"
-    && typeof book.downloadedAt === "number"
-    && (book.chapterIndex === undefined || Array.isArray(book.chapterIndex))
-  );
+const isVersionOneBackup = (value: unknown): value is NovaBackupV1 => {
+  if (!isObject(value) || value.version !== LEGACY_BACKUP_VERSION || !hasValidExportDate(value)) return false;
+  if (!STORAGE_PROVIDER_BY_ID.desktop.validateData(value.desktopItems)) return false;
+  if (!STORAGE_PROVIDER_BY_ID.reader.validateData(value.readerBooks)) return false;
+  if (!isObject(value.localStorage)) return false;
+  return Object.entries(value.localStorage).every(([key, entry]) => (
+    key.startsWith("nova-")
+    && !LEGACY_KEYS.has(key)
+    && typeof entry === "string"
+  ));
 };
 
-const readNovaLocalStorage = () => {
-  const values: Record<string, string> = {};
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index);
-    if (!key || !key.startsWith("nova-") || LEGACY_KEYS.has(key)) continue;
-    const value = localStorage.getItem(key);
-    if (value !== null) values[key] = value;
+const normalizeVersionOneBackup = (backup: NovaBackupV1): NovaBackup => {
+  const providers: Record<StorageProviderId, unknown> = {
+    desktop: backup.desktopItems,
+    reader: backup.readerBooks,
+    games: { localStorage: {}, magicTower: [] } satisfies GameStorageProviderData,
+    reading: { localStorage: {} } satisfies LocalStorageProviderData,
+    focus: { localStorage: {} } satisfies LocalStorageProviderData,
+    settings: { localStorage: {} } satisfies LocalStorageProviderData,
+    other: { localStorage: {} } satisfies LocalStorageProviderData,
+  };
+
+  for (const [key, value] of Object.entries(backup.localStorage)) {
+    const id = localStorageCategory(key);
+    const data = providers[id] as LocalStorageProviderData;
+    data.localStorage[key] = value;
   }
-  return values;
+
+  return {
+    version: BACKUP_VERSION,
+    exportedAt: backup.exportedAt,
+    providers,
+  };
 };
 
 export async function createNovaBackup(): Promise<NovaBackup> {
-  const [desktopItems, readerBooks] = await Promise.all([
-    loadDesktopItems(),
-    getAllStoredBooks(),
-  ]);
+  const entries = await Promise.all(STORAGE_PROVIDERS.map(async (provider) => (
+    [provider.id, await provider.exportData()] as const
+  )));
   return {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    desktopItems,
-    readerBooks,
-    localStorage: readNovaLocalStorage(),
+    providers: Object.fromEntries(entries) as Record<StorageProviderId, unknown>,
   };
 }
 
 export function parseNovaBackup(text: string): NovaBackup {
-  const value = JSON.parse(text) as Partial<NovaBackup>;
-  if (
-    value.version !== BACKUP_VERSION
-    || typeof value.exportedAt !== "string"
-    || !Number.isFinite(Date.parse(value.exportedAt))
-    || !Array.isArray(value.desktopItems)
-    || !value.desktopItems.every(isDesktopItem)
-    || !Array.isArray(value.readerBooks)
-    || !value.readerBooks.every(isStoredBook)
-    || !value.localStorage
-    || typeof value.localStorage !== "object"
-    || Array.isArray(value.localStorage)
-    || !Object.entries(value.localStorage).every(([key, entry]) => (
-      key.startsWith("nova-")
-      && !LEGACY_KEYS.has(key)
-      && typeof entry === "string"
-    ))
-  ) {
-    throw new Error("备份文件格式无效");
-  }
-  return value as NovaBackup;
+  const value: unknown = JSON.parse(text);
+  if (isVersionTwoBackup(value)) return value;
+  if (isVersionOneBackup(value)) return normalizeVersionOneBackup(value);
+  throw new Error("备份文件格式无效");
 }
 
+const localEntryCount = (value: unknown) => {
+  if (!isObject(value) || !isObject(value.localStorage)) return 0;
+  return Object.keys(value.localStorage).length;
+};
+
 export function summarizeNovaBackup(backup: NovaBackup): NovaBackupSummary {
+  const desktop = backup.providers.desktop;
+  const reader = backup.providers.reader;
+  const games = backup.providers.games;
+  const magicTower = isObject(games) && Array.isArray(games.magicTower)
+    ? games.magicTower.length
+    : 0;
   return {
     exportedAt: backup.exportedAt,
-    desktopItems: backup.desktopItems.length,
-    readerBooks: backup.readerBooks.length,
-    localSettings: Object.keys(backup.localStorage).length,
+    desktopItems: Array.isArray(desktop) ? desktop.length : 0,
+    readerBooks: Array.isArray(reader) ? reader.length : 0,
+    localSettings: STORAGE_PROVIDERS
+      .filter((provider) => provider.id !== "desktop" && provider.id !== "reader")
+      .reduce((total, provider) => total + localEntryCount(backup.providers[provider.id]), magicTower),
   };
 }
 
 export async function restoreNovaBackup(backup: NovaBackup) {
-  await Promise.all([
-    replaceDesktopItems(backup.desktopItems),
-    replaceStoredBooks(backup.readerBooks),
-  ]);
-  const currentKeys = Array.from(
-    { length: localStorage.length },
-    (_, index) => localStorage.key(index),
-  ).filter((key): key is string => !!key && key.startsWith("nova-"));
-  for (const key of currentKeys) localStorage.removeItem(key);
-  for (const [key, value] of Object.entries(backup.localStorage)) {
-    localStorage.setItem(key, value);
-  }
+  await Promise.all(STORAGE_PROVIDERS.map((provider) => (
+    provider.restoreData(backup.providers[provider.id])
+  )));
 }
 
 export async function estimateNovaStorage() {

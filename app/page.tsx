@@ -1,7 +1,8 @@
 "use client";
 
-import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import AppLoadBoundary from "./AppLoadBoundary";
+import { appIsActive, AppRuntimeProvider } from "./AppRuntime";
 import StartMenu from "./StartMenu";
 import {
   APP_REGISTRY,
@@ -34,7 +35,7 @@ import {
   type FileOperationConflict,
   type FileOperationMode,
 } from "./desktopFiles";
-import { createDesktopSyncQueue, loadDesktopItems } from "./desktopStorage";
+import { createDesktopSyncQueue, loadDesktopWorkspace } from "./desktopStorage";
 import {
   appendDesktopNotification,
   calendarDays,
@@ -77,10 +78,12 @@ import {
   type WindowGeometry,
   type WindowSnapMode,
 } from "./windowGeometry";
+import {
+  createInitialWindowManagerState,
+  windowReducer,
+  type WindowState,
+} from "./windowState";
 
-type AppId = "desktop" | WindowAppId;
-type WindowState = { open:boolean; minimized:boolean; maximized:boolean; z:number; snapMode?:WindowSnapMode };
-type WindowStateMap = Record<WindowAppId,WindowState>;
 type ContextMenuState = { x: number; y: number; itemId?: string; appKey?: WindowAppId };
 type TaskbarMenuState = { app:WindowAppId; x:number };
 type AltTabState = { apps:WindowAppId[]; active:WindowAppId };
@@ -106,9 +109,6 @@ const SETTINGS_SEARCH_ENTRIES=[
   {key:"settings:games",sectionId:"backup",label:"清除游戏记录",detail:"设置 · 本地数据",keywords:"存档 战绩 重置"},
 ];
 const readDesktopDragIds=(dataTransfer:DataTransfer)=>{try{const value=JSON.parse(dataTransfer.getData(NOVA_FILE_DRAG_TYPE));return Array.isArray(value)?value.filter((id):id is string=>typeof id==="string"):[]}catch{return[]}};
-const createInitialWindowState=()=>Object.fromEntries(REGISTERED_APPS.map((app)=>[app.id,{open:false,minimized:false,maximized:false,z:0}])) as WindowStateMap;
-const topWindow=(states:WindowStateMap,exclude?:WindowAppId)=>REGISTERED_APPS.filter((app)=>app.id!==exclude&&states[app.id].open&&!states[app.id].minimized).sort((a,b)=>states[b.id].z-states[a.id].z)[0]?.id??"desktop";
-
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const readBrowserFile=(file:File,mode:"text"|"data")=>new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result??""));reader.onerror=()=>reject(reader.error);if(mode==="text")reader.readAsText(file);else reader.readAsDataURL(file)});
 const fitWindowGeometry=(geometry:WindowGeometry):WindowGeometry=>{const width=clamp(geometry.width,320,Math.max(320,window.innerWidth-8)),height=clamp(geometry.height,260,Math.max(260,window.innerHeight-57));return{x:clamp(geometry.x,0,Math.max(0,window.innerWidth-width)),y:clamp(geometry.y,0,Math.max(0,window.innerHeight-49-height)),width,height}};
@@ -116,18 +116,18 @@ const readWindowGeometry=(app:WindowAppId)=>{const saved=localStorage.getItem(`$
 
 export default function Home() {
   const [items,setItems]=useState<DesktopItem[]>([]),[positions,setPositions]=useState<Record<string,IconPosition>>({}),[storageState,setStorageState]=useState<"loading"|"ready"|"error">("loading"),[selectedIds,setSelectedIds]=useState<string[]>([]);
-  const [windowStates,setWindowStates]=useState<WindowStateMap>(createInitialWindowState);
+  const [windowManager,dispatchWindow]=useReducer(windowReducer,undefined,createInitialWindowManagerState),windowStates=windowManager.windows,focused=windowManager.focused;
   const [photoSourceId,setPhotoSourceId]=useState<string|null>(null),[activeNoteId,setActiveNoteId]=useState<string|null>(null),[activeImageId,setActiveImageId]=useState<string|null>(null),[activeFolderId,setActiveFolderId]=useState<string|null>(null);
-  const [focused,setFocused]=useState<AppId>("desktop"),[clock,setClock]=useState(""),[contextMenu,setContextMenu]=useState<ContextMenuState|null>(null),[taskbarMenu,setTaskbarMenu]=useState<TaskbarMenuState|null>(null),[taskbarPreview,setTaskbarPreview]=useState<WindowAppId|null>(null),[altTab,setAltTab]=useState<AltTabState|null>(null),[startOpen,setStartOpen]=useState(false),[searchQuery,setSearchQuery]=useState(""),[searchIndex,setSearchIndex]=useState(0),[readerSearchBooks,setReaderSearchBooks]=useState<StoredBookSummary[]>([]),[toast,setToast]=useState(""),[taskbarRevealed,setTaskbarRevealed]=useState(false);
+  const [clock,setClock]=useState(""),[contextMenu,setContextMenu]=useState<ContextMenuState|null>(null),[taskbarMenu,setTaskbarMenu]=useState<TaskbarMenuState|null>(null),[taskbarPreview,setTaskbarPreview]=useState<WindowAppId|null>(null),[altTab,setAltTab]=useState<AltTabState|null>(null),[startOpen,setStartOpen]=useState(false),[searchQuery,setSearchQuery]=useState(""),[searchIndex,setSearchIndex]=useState(0),[readerSearchBooks,setReaderSearchBooks]=useState<StoredBookSummary[]>([]),[toast,setToast]=useState(""),[taskbarRevealed,setTaskbarRevealed]=useState(false);
   const [renameItemId,setRenameItemId]=useState<string|null>(null),[renameValue,setRenameValue]=useState(""),[booting,setBooting]=useState(true),[draggingFiles,setDraggingFiles]=useState(false);
   const [fileClipboard,setFileClipboard]=useState<FileClipboard|null>(null),[pendingFileOperation,setPendingFileOperation]=useState<PendingFileOperation|null>(null),[fileUndo,setFileUndo]=useState<FileUndoAction|null>(null);
   const [launchIntent,setLaunchIntent]=useState<AppLaunchIntent|null>(null),[systemPanelOpen,setSystemPanelOpen]=useState(false),[notifications,setNotifications]=useState<DesktopNotification[]>([]),[calendarMonth,setCalendarMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
   const [settings,setSettings]=useState<NovaSettings>(readNovaSettings),[systemDark,setSystemDark]=useState(false);
   const desktopUploadRef=useRef<HTMLInputElement>(null);
   const desktopSyncRef=useRef<ReturnType<typeof createDesktopSyncQueue>|null>(null);
-  const windowZRef=useRef(1),altTabTimerRef=useRef<number|null>(null),launchRequestRef=useRef(0),notificationIdRef=useRef(0);
+  const altTabTimerRef=useRef<number|null>(null),launchRequestRef=useRef(0),notificationIdRef=useRef(0);
 
-  useEffect(()=>{let cancelled=false;const timer=setTimeout(()=>setBooting(false),1450);const load=async()=>{try{const savedItems=await loadDesktopItems();if(cancelled)return;desktopSyncRef.current=createDesktopSyncQueue(savedItems);setItems(savedItems);setStorageState("ready")}catch{if(!cancelled){setStorageState("error");setToast("桌面文件读取失败")}}if(!cancelled){const savedPositions=localStorage.getItem(POSITION_STORAGE_KEY);try{setPositions(savedPositions?JSON.parse(savedPositions):{})}catch{setPositions({})}}};void load();return()=>{cancelled=true;clearTimeout(timer)}},[]);
+  useEffect(()=>{let cancelled=false;const timer=setTimeout(()=>setBooting(false),1450);const load=async()=>{try{const savedItems=await loadDesktopWorkspace();if(cancelled)return;desktopSyncRef.current=createDesktopSyncQueue(savedItems);setItems(savedItems);setStorageState("ready")}catch{if(!cancelled){setStorageState("error");setToast("桌面文件读取失败")}}if(!cancelled){const savedPositions=localStorage.getItem(POSITION_STORAGE_KEY);try{setPositions(savedPositions?JSON.parse(savedPositions):{})}catch{setPositions({})}}};void load();return()=>{cancelled=true;clearTimeout(timer)}},[]);
   useEffect(()=>{if(storageState!=="ready"||!desktopSyncRef.current)return;void desktopSyncRef.current.enqueue(items).catch(()=>setToast("桌面文件保存失败"))},[items,storageState]);
   useEffect(()=>{if(storageState==="ready")localStorage.setItem(POSITION_STORAGE_KEY,JSON.stringify(positions))},[positions,storageState]);
   useEffect(()=>{if(!startOpen)return;let cancelled=false;void getStoredBookSummaries().then((books)=>{if(!cancelled)setReaderSearchBooks(books)});return()=>{cancelled=true}},[startOpen]);
@@ -136,17 +136,18 @@ export default function Home() {
   useEffect(()=>{const media=window.matchMedia("(prefers-color-scheme: dark)"),update=()=>setSystemDark(media.matches);update();media.addEventListener("change",update);return()=>media.removeEventListener("change",update)},[]);
 
   const visibleItems=useMemo(()=>visibleDesktopItems(items),[items]);
-  const updateWindow=useCallback((app:WindowAppId,patch:Partial<WindowState>)=>setWindowStates((current)=>({...current,[app]:{...current[app],...patch}})),[]);
-  const focusWindow=useCallback((app:WindowAppId)=>{const z=++windowZRef.current;updateWindow(app,{z});setFocused(app)},[updateWindow]);
-  const openWindow=useCallback((app:WindowAppId)=>{const z=++windowZRef.current;updateWindow(app,{open:true,minimized:false,z});setFocused(app);setStartOpen(false);setSystemPanelOpen(false);setContextMenu(null);setTaskbarMenu(null);setTaskbarPreview(null);setTaskbarRevealed(false);playNovaSound("open")},[updateWindow]);
+  const updateWindow=useCallback((app:WindowAppId,patch:Partial<WindowState>)=>dispatchWindow({type:"update",app,patch}),[]);
+  const focusWindow=useCallback((app:WindowAppId)=>dispatchWindow({type:"focus",app}),[]);
+  const focusDesktop=useCallback(()=>dispatchWindow({type:"focus-desktop"}),[]);
+  const openWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"open",app});setStartOpen(false);setSystemPanelOpen(false);setContextMenu(null);setTaskbarMenu(null);setTaskbarPreview(null);setTaskbarRevealed(false);playNovaSound("open")},[]);
   const launchTarget=useCallback((target:AppLaunchTarget)=>{setLaunchIntent(createAppLaunchIntent(++launchRequestRef.current,target));if(target.app==="explorer")setActiveFolderId(target.parentId);openWindow(target.app)},[openWindow]);
   const handleLaunchHandled=useCallback((requestId:number)=>setLaunchIntent((current)=>current?.requestId===requestId?null:current),[]);
   const notifyFile=(message:string,itemId?:string)=>{setToast(message);setNotifications((current)=>appendDesktopNotification(current,{id:++notificationIdRef.current,message,createdAt:Date.now(),itemId}))};
-  const dismissWindow=useCallback((app:WindowAppId)=>updateWindow(app,{open:false}),[updateWindow]);
-  const closeWindow=useCallback((app:WindowAppId)=>{dismissWindow(app);if(app==="photo")setPhotoSourceId(null);setFocused(topWindow(windowStates,app));setTaskbarMenu(null);setTaskbarPreview(null);setTaskbarRevealed(false);playNovaSound("close")},[dismissWindow,windowStates]);
-  const minimizeWindow=useCallback((app:WindowAppId)=>{updateWindow(app,{minimized:true});setFocused(topWindow(windowStates,app));setTaskbarMenu(null);setTaskbarRevealed(false)},[updateWindow,windowStates]);
-  const toggleMaximizeWindow=useCallback((app:WindowAppId)=>{setWindowStates((current)=>({...current,[app]:{...current[app],maximized:!current[app].maximized,snapMode:undefined}}));setTaskbarRevealed(false)},[]);
-  const snapWindow=useCallback((app:WindowAppId,mode:WindowSnapMode)=>{updateWindow(app,{maximized:false,minimized:false,snapMode:mode});setFocused(app)},[updateWindow]);
+  const dismissWindow=useCallback((app:WindowAppId)=>dispatchWindow({type:"dismiss",app}),[]);
+  const closeWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"close",app});if(app==="photo")setPhotoSourceId(null);setTaskbarMenu(null);setTaskbarPreview(null);setTaskbarRevealed(false);playNovaSound("close")},[]);
+  const minimizeWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"minimize",app});setTaskbarMenu(null);setTaskbarRevealed(false)},[]);
+  const toggleMaximizeWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"toggle-maximize",app});setTaskbarRevealed(false)},[]);
+  const snapWindow=useCallback((app:WindowAppId,mode:WindowSnapMode)=>dispatchWindow({type:"snap",app,mode}),[]);
 
   const uniqueName=(base:string,extension="")=>{let index=1,name=`${base}${extension}`;while(visibleItems.some((item)=>item.name===name)){index+=1;name=`${base} ${index}${extension}`}return name};
   const createFolder=(parentId:string|null=null)=>{const item:DesktopItem={id:crypto.randomUUID(),type:"folder",name:uniqueName("新建文件夹"),content:"",parentId,createdAt:Date.now()};rememberFileUndo("新建文件夹");setItems((current)=>[...current,item]);setSelectedIds(parentId?[]:[item.id]);setContextMenu(null);notifyFile(`${item.name} 已创建`,item.id)};
@@ -160,7 +161,7 @@ export default function Home() {
   const downloadItem=(item:DesktopItem)=>{const link=document.createElement("a");let objectUrl="";if(item.type==="image")link.href=item.content;else{objectUrl=URL.createObjectURL(new Blob([item.content],{type:"text/plain;charset=utf-8"}));link.href=objectUrl}link.download=item.name;link.click();if(objectUrl)setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);setContextMenu(null)};
   const closeAffected=(ids:Set<string>)=>{if(activeImageId&&ids.has(activeImageId)){setActiveImageId(null);dismissWindow("viewer")}if(activeNoteId&&ids.has(activeNoteId)){const next=visibleItems.filter((item)=>item.type==="text"&&!ids.has(item.id)).sort((a,b)=>b.createdAt-a.createdAt)[0];setActiveNoteId(next?.id??null)}if(activeFolderId&&ids.has(activeFolderId)){setActiveFolderId(null);dismissWindow("folder")}if(photoSourceId&&ids.has(photoSourceId)){setPhotoSourceId(null);dismissWindow("photo")}};
   const rememberFileUndo=(label:string)=>setFileUndo({items,positions,label});
-  const moveManyToRecycleBin=(ids:string[])=>{const roots=topLevelDesktopItemIds(items,ids);if(!roots.length)return;const affected=descendantIds(items,roots);rememberFileUndo("移到回收站");setItems(trashDesktopItems(items,roots));closeAffected(affected);setSelectedIds([]);setContextMenu(null);setFocused("desktop");notifyFile(`${roots.length} 个项目已移到回收站`)};
+  const moveManyToRecycleBin=(ids:string[])=>{const roots=topLevelDesktopItemIds(items,ids);if(!roots.length)return;const affected=descendantIds(items,roots);rememberFileUndo("移到回收站");setItems(trashDesktopItems(items,roots));closeAffected(affected);setSelectedIds([]);setContextMenu(null);focusDesktop();notifyFile(`${roots.length} 个项目已移到回收站`)};
   const setClipboard=(mode:FileOperationMode,ids:string[])=>{const roots=topLevelDesktopItemIds(items,ids);if(!roots.length)return;setFileClipboard({mode,ids:roots});setToast(`${roots.length} 个项目已${mode==="copy"?"复制":"剪切"}`)};
   const performFileOperation=(mode:FileOperationMode,ids:string[],parentId:string|null,strategy:FileConflictStrategy)=>{const result=applyDesktopFileOperation(items,ids,parentId,mode,strategy);if(!result.changed){setToast("无法完成此文件操作");return}rememberFileUndo(mode==="copy"?"复制项目":"移动项目");setItems(result.items);if(result.removedIds.size){setPositions((current)=>Object.fromEntries(Object.entries(current).filter(([id])=>!result.removedIds.has(id))));closeAffected(result.removedIds)}setSelectedIds(parentId===null?result.resultIds:[]);if(mode==="move")setFileClipboard(null);setPendingFileOperation(null);setContextMenu(null);notifyFile(`${result.resultIds.length} 个项目已${mode==="copy"?"复制":"移动"}`,result.resultIds.length===1?result.resultIds[0]:undefined)};
   const requestFileOperation=(mode:FileOperationMode,ids:string[],parentId:string|null)=>{const roots=topLevelDesktopItemIds(items,ids);if(!roots.length)return;const rootIds=new Set(roots),conflicts=desktopFileOperationConflicts(items,roots,parentId,mode).filter((conflict)=>!rootIds.has(conflict.targetId));if(conflicts.length){setPendingFileOperation({mode,ids:roots,parentId,conflicts});return}performFileOperation(mode,roots,parentId,"keep-both")};
@@ -195,6 +196,7 @@ export default function Home() {
   const darkTheme=settings.theme==="dark"||(settings.theme==="system"&&systemDark);
   const calendarGrid=calendarDays(calendarMonth.getFullYear(),calendarMonth.getMonth());
   const calendarTitle=new Intl.DateTimeFormat("zh-CN",{year:"numeric",month:"long"}).format(calendarMonth);
+  const appRuntime=useMemo(()=>({windows:windowStates,focused,openApp:openWindow,isAppActive:(app:WindowAppId)=>appIsActive(windowStates,focused,app)}),[focused,openWindow,windowStates]);
   const defaultPosition=(index:number):IconPosition=>({x:Math.floor(index/7)*89,y:index%7*90});
   const desktopEntryIds=[...appEntries.map((app)=>`app:${app.key}`),...rootItems.map((item)=>item.id)];
   const resolvedPositions=desktopEntryIds.reduce<Record<string,IconPosition>>((result,id)=>{
@@ -208,7 +210,7 @@ export default function Home() {
   const positionFor=(id:string,index:number)=>resolvedPositions[id]??defaultPosition(index);
   const moveIcon=(id:string,position:IconPosition)=>setPositions((current)=>({...current,[id]:position}));
   const importFiles=async(fileList:FileList|File[])=>{const files=Array.from(fileList),accepted=files.filter((file)=>file.type.startsWith("image/")||file.type==="text/plain"||file.name.toLowerCase().endsWith(".txt"));if(!accepted.length){setToast("暂时只支持图片和 TXT 文件");setDraggingFiles(false);return}const records=await Promise.all(accepted.map(async(file)=>({type:(file.type.startsWith("image/")?"image":"text") as DesktopItem["type"],name:file.name,content:await readBrowserFile(file,file.type.startsWith("image/")?"data":"text")})));rememberFileUndo("导入文件");setItems((current)=>{const next=[...current];for(const record of records){const dot=record.name.lastIndexOf("."),base=dot>0?record.name.slice(0,dot):record.name,extension=dot>0?record.name.slice(dot):"";let name=record.name,index=2;while(next.some((item)=>!item.deletedAt&&item.name===name)){name=`${base} ${index}${extension}`;index++}next.push({id:crypto.randomUUID(),type:record.type,name,content:record.content,parentId:null,createdAt:Date.now()})}return next});setDraggingFiles(false);notifyFile(`${records.length} 个文件已上传到桌面`)};
-  const selectItem=(id:string,event:ReactMouseEvent)=>{setFocused("desktop");if(event.ctrlKey||event.metaKey||event.shiftKey)setSelectedIds((current)=>current.includes(id)?current.filter((item)=>item!==id):[...current,id]);else setSelectedIds([id])};
+  const selectItem=(id:string,event:ReactMouseEvent)=>{focusDesktop();if(event.ctrlKey||event.metaKey||event.shiftKey)setSelectedIds((current)=>current.includes(id)?current.filter((item)=>item!==id):[...current,id]);else setSelectedIds([id])};
   const openItemMenu=(item:DesktopItem,x:number,y:number)=>{if(!selectedIds.includes(item.id))setSelectedIds([item.id]);setContextMenu({x:Math.min(x,window.innerWidth-225),y:Math.min(y,window.innerHeight-235),itemId:item.id});setStartOpen(false)};
   const beginRename=(item:DesktopItem)=>{setRenameItemId(item.id);setRenameValue(item.name);setContextMenu(null)};
   const finishRename=()=>{const name=renameValue.trim(),source=renameItemId?items.find((item)=>item.id===renameItemId):null;if(source&&name&&name!==source.name){rememberFileUndo("重命名项目");setItems(items.map((item)=>item.id===source.id?{...item,name}:item));notifyFile(`${source.name} 已重命名为 ${name}`,source.id)}setRenameItemId(null)};
@@ -242,7 +244,7 @@ export default function Home() {
     window.addEventListener("keydown",shortcut);
     return()=>window.removeEventListener("keydown",shortcut)
   },[activeNote,closeWindow,contextMenu,cycleWindows,fileClipboard,fileUndo,focused,items,minimizeWindow,pendingFileOperation,selectedIds,snapWindow,startOpen,systemPanelOpen,taskbarMenu,updateWindow,windowStates]);
-  return <main className={`super-desktop windows-desktop ${darkTheme?"theme-dark":"theme-light"} ${taskbarAutoHide?"taskbar-auto-hide":""} ${taskbarRevealed?"taskbar-revealed":""} ${startOpen?"start-menu-open":""} ${systemPanelOpen?"system-panel-open":""}`} onPointerMove={(event)=>{if(!taskbarAutoHide)return;const target=event.target as HTMLElement,reveal=event.clientY>=event.currentTarget.clientHeight-10||!!target.closest(".windows-taskbar,.start-menu,.taskbar-window-menu,.system-panel");if(reveal!==taskbarRevealed)setTaskbarRevealed(reveal)}} onPointerDown={(event)=>{const target=event.target as HTMLElement;if(!target.closest(".desktop-item,.desktop-shortcut,.rename-dialog,.file-operation-dialog"))setSelectedIds([]);if(!target.closest(".desktop-menu"))setContextMenu(null);if(!target.closest(".taskbar-window-menu,.taskbar-entry"))setTaskbarMenu(null);if(!target.closest(".taskbar-entry"))setTaskbarPreview(null);if(!target.closest(".system-panel,.taskbar-clock"))setSystemPanelOpen(false);if(!target.closest(".start-menu,.start-button")){setStartOpen(false);setSearchQuery("")}}} onContextMenu={(event)=>{if((event.target as HTMLElement).closest(".desktop-window,.windows-taskbar,.desktop-item,.desktop-shortcut"))return;event.preventDefault();setContextMenu({x:Math.min(event.clientX,window.innerWidth-225),y:Math.min(event.clientY,window.innerHeight-250)});setFocused("desktop");setStartOpen(false)}} onDragOver={(event)=>{if((event.target as HTMLElement).closest(".desktop-window"))return;const internal=event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE);event.preventDefault();event.dataTransfer.dropEffect=internal?(event.ctrlKey||event.metaKey?"copy":"move"):"copy";setDraggingFiles(!internal)}} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingFiles(false)}} onDrop={(event)=>{if((event.target as HTMLElement).closest(".desktop-window"))return;event.preventDefault();setDraggingFiles(false);const ids=readDesktopDragIds(event.dataTransfer);if(ids.length)requestFileOperation(event.ctrlKey||event.metaKey?"copy":"move",ids,null);else void importFiles(event.dataTransfer.files)}}>
+  return <AppRuntimeProvider value={appRuntime}><main className={`super-desktop windows-desktop ${darkTheme?"theme-dark":"theme-light"} ${taskbarAutoHide?"taskbar-auto-hide":""} ${taskbarRevealed?"taskbar-revealed":""} ${startOpen?"start-menu-open":""} ${systemPanelOpen?"system-panel-open":""}`} onPointerMove={(event)=>{if(!taskbarAutoHide)return;const target=event.target as HTMLElement,reveal=event.clientY>=event.currentTarget.clientHeight-10||!!target.closest(".windows-taskbar,.start-menu,.taskbar-window-menu,.system-panel");if(reveal!==taskbarRevealed)setTaskbarRevealed(reveal)}} onPointerDown={(event)=>{const target=event.target as HTMLElement;if(!target.closest(".desktop-item,.desktop-shortcut,.rename-dialog,.file-operation-dialog"))setSelectedIds([]);if(!target.closest(".desktop-menu"))setContextMenu(null);if(!target.closest(".taskbar-window-menu,.taskbar-entry"))setTaskbarMenu(null);if(!target.closest(".taskbar-entry"))setTaskbarPreview(null);if(!target.closest(".system-panel,.taskbar-clock"))setSystemPanelOpen(false);if(!target.closest(".start-menu,.start-button")){setStartOpen(false);setSearchQuery("")}}} onContextMenu={(event)=>{if((event.target as HTMLElement).closest(".desktop-window,.windows-taskbar,.desktop-item,.desktop-shortcut"))return;event.preventDefault();setContextMenu({x:Math.min(event.clientX,window.innerWidth-225),y:Math.min(event.clientY,window.innerHeight-250)});focusDesktop();setStartOpen(false)}} onDragOver={(event)=>{if((event.target as HTMLElement).closest(".desktop-window"))return;const internal=event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE);event.preventDefault();event.dataTransfer.dropEffect=internal?(event.ctrlKey||event.metaKey?"copy":"move"):"copy";setDraggingFiles(!internal)}} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingFiles(false)}} onDrop={(event)=>{if((event.target as HTMLElement).closest(".desktop-window"))return;event.preventDefault();setDraggingFiles(false);const ids=readDesktopDragIds(event.dataTransfer);if(ids.length)requestFileOperation(event.ctrlKey||event.metaKey?"copy":"move",ids,null);else void importFiles(event.dataTransfer.files)}}>
     <input ref={desktopUploadRef} className="desktop-upload-input" aria-label="上传桌面文件" type="file" accept="image/*,.txt,text/plain" multiple onChange={(event)=>{if(event.target.files?.length)importFiles(event.target.files);event.target.value=""}}/>
     <div className="windows-wallpaper"><i/><i/><i/></div>
     <section className="desktop-files" aria-label="桌面图标">{appEntries.map((app,index)=><DesktopShortcut key={app.key} id={`app:${app.key}`} label={app.label} icon={app.icon} kind={app.kind} position={positionFor(`app:${app.key}`,index)} move={moveIcon} open={app.open} onContextMenu={(x,y)=>{setContextMenu({x:Math.min(x,window.innerWidth-225),y:Math.min(y,window.innerHeight-100),appKey:app.key});setStartOpen(false)}}/>)}{rootItems.map((item,index)=><DesktopFile key={item.id} item={item} position={positionFor(item.id,appEntries.length+index)} move={moveIcon} selected={selectedIds.includes(item.id)} cut={fileClipboard?.mode==="move"&&fileClipboard.ids.includes(item.id)} onSelect={(event)=>selectItem(item.id,event)} onOpen={()=>openItem(item)} onDragStart={(event)=>{const ids=selectedIds.includes(item.id)?selectedIds:[item.id];if(!selectedIds.includes(item.id))setSelectedIds(ids);event.dataTransfer.effectAllowed="copyMove";event.dataTransfer.setData(NOVA_FILE_DRAG_TYPE,JSON.stringify(ids));event.dataTransfer.setData("text/plain",ids.join(","))}} onFileDrop={item.type==="folder"?(event)=>{const ids=readDesktopDragIds(event.dataTransfer);if(!ids.length)return;event.preventDefault();event.stopPropagation();requestFileOperation(event.ctrlKey||event.metaKey?"copy":"move",ids,item.id)}:undefined} onContextMenu={(x,y)=>openItemMenu(item,x,y)}/>)}</section>
@@ -252,7 +254,7 @@ export default function Home() {
     {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><LazyNotepadApp items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
     {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><LazyPhotoViewerApp images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} focused={focused==="viewer"&&!windowStates.viewer.minimized} open={(item)=>setActiveImageId(item.id)} clearActive={()=>setActiveImageId(null)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
     {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><LazyReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
-    {windowStates.games.open&&<AppWindow {...windowProps("games")}><LazyGameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open,tower:windowStates.tower.open}} onLaunch={openWindow}/></AppWindow>}
+    {windowStates.games.open&&<AppWindow {...windowProps("games")}><LazyGameHall/></AppWindow>}
     {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><LazyFolderViewApp folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
     {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><LazyRecycleBinApp items={trashedItems} restore={restoreMany} remove={permanentlyDeleteMany} empty={emptyRecycleBin}/></AppWindow>}
     {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><LazyMinesweeperGame/></AppWindow>}
@@ -288,7 +290,7 @@ export default function Home() {
     <PwaManager/>
     {toast&&<div className="desktop-toast" role="status" aria-live="polite">{toast}</div>}
     {booting&&<div className="boot-screen"><div className="boot-logo"><i/><i/><i/><i/></div><strong>NOVA</strong><span>正在启动超级桌面</span><div className="boot-dots"><i/><i/><i/><i/><i/></div></div>}
-  </main>
+  </main></AppRuntimeProvider>
 }
 
 function AppWindow({app,title,icon,minimized,maximized,snapMode,focused,zIndex,onFocus,onClose,onMinimize,onMaximize,onSnap,onUnsnap,children}:{app:WindowAppId;title:string;icon:string;minimized:boolean;maximized:boolean;snapMode?:WindowSnapMode;focused:boolean;zIndex:number;onFocus:()=>void;onClose:()=>void;onMinimize:()=>void;onMaximize:()=>void;onSnap:(mode:WindowSnapMode)=>void;onUnsnap:()=>void;children:React.ReactNode}){

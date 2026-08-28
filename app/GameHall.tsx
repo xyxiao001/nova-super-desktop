@@ -1,6 +1,9 @@
 "use client";
 
+import "./games-tools.css";
+
 import { useEffect, useState } from "react";
+import { useAppRuntime } from "./AppRuntime";
 import { readGameRecords, requestNewGame, subscribeGameRecords, type GameId, type GameRecords } from "./gameStorage";
 import { VoyageEmblem } from "./StarVoyageArt";
 
@@ -26,13 +29,15 @@ function GameArtwork({id}:{id:GameAppId}){
   return <span className="game-artwork voyage-artwork" aria-hidden="true"><VoyageEmblem/></span>;
 }
 
-export default function GameHall({running,onLaunch}:{running:Record<GameAppId,boolean>;onLaunch:(id:GameAppId)=>void}){
+export default function GameHall(){
+  const {windows,openApp}=useAppRuntime();
+  const running=Object.fromEntries(GAME_CATALOG.map((game)=>[game.id,windows[game.id].open])) as Record<GameAppId,boolean>;
   const runningCount=GAME_CATALOG.filter((game)=>running[game.id]).length;
   const [records,setRecords]=useState<GameRecords>(readGameRecords);
   useEffect(()=>subscribeGameRecords(()=>setRecords(readGameRecords())),[]);
   const recent=GAME_CATALOG.map((game)=>({...game,time:records[game.id].lastPlayed})).filter((game)=>game.time).sort((a,b)=>b.time!-a.time!)[0];
   const recentText=recent?`最近游玩 · ${recent.label}`:"尚无本地对局";
-  const newGame=(id:GameAppId)=>{requestNewGame(id);onLaunch(id)};
+  const newGame=(id:GameAppId)=>{requestNewGame(id);openApp(id)};
 
   return <main className="game-hall">
     <header className="game-hall-header">
@@ -51,7 +56,7 @@ export default function GameHall({running,onLaunch}:{running:Record<GameAppId,bo
         <div className="game-tile-info">
           <header><strong>{game.label}</strong>{running[game.id]&&<span>运行中</span>}</header>
           <div className="game-tile-record"><span>{record.played} 局</span><span>{record.wins} 胜</span><span>{record.losses} 负</span><span>{record.draws} 和</span></div>
-          <footer><small>{game.meta}</small><div>{record.hasProgress&&<button className="new-game-button" aria-label={`新开${game.label}`} title="新游戏" onClick={()=>newGame(game.id)}>↻</button>}<button className="launch-game-button" onClick={()=>onLaunch(game.id)}>{record.hasProgress?"继续":"开始"}<i aria-hidden="true">→</i></button></div></footer>
+          <footer><small>{game.meta}</small><div>{record.hasProgress&&<button className="new-game-button" aria-label={`新开${game.label}`} title="新游戏" onClick={()=>newGame(game.id)}>↻</button>}<button className="launch-game-button" onClick={()=>openApp(game.id)}>{record.hasProgress?"继续":"开始"}<i aria-hidden="true">→</i></button></div></footer>
         </div>
       </article>})}
     </section>

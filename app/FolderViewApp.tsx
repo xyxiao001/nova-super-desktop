@@ -1,5 +1,7 @@
 "use client";
 
+import "./productivity-apps.css";
+
 import type { DesktopItem } from "./desktopFiles";
 
 export default function FolderViewApp({ folder, items, open, createText, createFolder, goBack, context }: {

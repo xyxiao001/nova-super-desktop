@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type DrawingTool = "pen" | "eraser";

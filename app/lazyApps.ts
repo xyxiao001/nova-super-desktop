@@ -1,45 +1,28 @@
 import { lazy } from "react";
+import { APP_MANIFESTS, type WindowAppId } from "./appManifest";
 
-export const appModuleLoaders = {
-  photo: () => import("./PhotoEditorApp"),
-  explorer: () => import("./FileExplorer"),
-  notes: () => import("./NotepadApp"),
-  viewer: () => import("./PhotoViewerApp"),
-  reader: () => import("./ReaderApp"),
-  games: () => import("./GameHall"),
-  settings: () => import("./SettingsApp"),
-  folder: () => import("./FolderViewApp"),
-  recycle: () => import("./RecycleBinApp"),
-  mines: () => import("./MinesweeperGame"),
-  chess: () => import("./ChessGame"),
-  gomoku: () => import("./GomokuGame"),
-  go: () => import("./GoGame"),
-  sudoku: () => import("./SudokuGame"),
-  voyage: () => import("./StarVoyageGame"),
-  tower: () => import("./MagicTowerGame"),
-  calculator: () => import("./CalculatorApp"),
-  drawing: () => import("./DrawingApp"),
-  focus: () => import("./FocusClockApp"),
-} as const;
+export const appModuleLoaders = Object.fromEntries(
+  Object.entries(APP_MANIFESTS).map(([id, manifest]) => [id, manifest.load]),
+) as { [K in WindowAppId]: (typeof APP_MANIFESTS)[K]["load"] };
 
-export type LazyAppId = keyof typeof appModuleLoaders;
+export type LazyAppId = WindowAppId;
 
-export const LazyPhotoEditor = lazy(appModuleLoaders.photo);
-export const LazyFileExplorer = lazy(appModuleLoaders.explorer);
-export const LazyNotepadApp = lazy(appModuleLoaders.notes);
-export const LazyPhotoViewerApp = lazy(appModuleLoaders.viewer);
-export const LazyReaderApp = lazy(appModuleLoaders.reader);
-export const LazyGameHall = lazy(appModuleLoaders.games);
-export const LazySettingsApp = lazy(appModuleLoaders.settings);
-export const LazyFolderViewApp = lazy(appModuleLoaders.folder);
-export const LazyRecycleBinApp = lazy(appModuleLoaders.recycle);
-export const LazyMinesweeperGame = lazy(appModuleLoaders.mines);
-export const LazyChessGame = lazy(appModuleLoaders.chess);
-export const LazyGomokuGame = lazy(appModuleLoaders.gomoku);
-export const LazyGoGame = lazy(appModuleLoaders.go);
-export const LazySudokuGame = lazy(appModuleLoaders.sudoku);
-export const LazyStarVoyageGame = lazy(appModuleLoaders.voyage);
-export const LazyMagicTowerGame = lazy(appModuleLoaders.tower);
-export const LazyCalculatorApp = lazy(appModuleLoaders.calculator);
-export const LazyDrawingApp = lazy(appModuleLoaders.drawing);
-export const LazyFocusClockApp = lazy(appModuleLoaders.focus);
+export const LazyPhotoEditor = lazy(APP_MANIFESTS.photo.load);
+export const LazyFileExplorer = lazy(APP_MANIFESTS.explorer.load);
+export const LazyNotepadApp = lazy(APP_MANIFESTS.notes.load);
+export const LazyPhotoViewerApp = lazy(APP_MANIFESTS.viewer.load);
+export const LazyReaderApp = lazy(APP_MANIFESTS.reader.load);
+export const LazyGameHall = lazy(APP_MANIFESTS.games.load);
+export const LazySettingsApp = lazy(APP_MANIFESTS.settings.load);
+export const LazyFolderViewApp = lazy(APP_MANIFESTS.folder.load);
+export const LazyRecycleBinApp = lazy(APP_MANIFESTS.recycle.load);
+export const LazyMinesweeperGame = lazy(APP_MANIFESTS.mines.load);
+export const LazyChessGame = lazy(APP_MANIFESTS.chess.load);
+export const LazyGomokuGame = lazy(APP_MANIFESTS.gomoku.load);
+export const LazyGoGame = lazy(APP_MANIFESTS.go.load);
+export const LazySudokuGame = lazy(APP_MANIFESTS.sudoku.load);
+export const LazyStarVoyageGame = lazy(APP_MANIFESTS.voyage.load);
+export const LazyMagicTowerGame = lazy(APP_MANIFESTS.tower.load);
+export const LazyCalculatorApp = lazy(APP_MANIFESTS.calculator.load);
+export const LazyDrawingApp = lazy(APP_MANIFESTS.drawing.load);
+export const LazyFocusClockApp = lazy(APP_MANIFESTS.focus.load);

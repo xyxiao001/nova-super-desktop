@@ -1,5 +1,7 @@
 "use client";
 
+import { RESOURCE_PACKAGE_MANIFESTS } from "./appManifest";
+
 export type NovaResourcePackage = {
   id: string;
   label: string;
@@ -9,15 +11,9 @@ export type NovaResourcePackage = {
   bytes: number;
 };
 
-const RESOURCE_PACKAGE_CATALOG: Array<Pick<NovaResourcePackage, "id" | "label" | "description">> = [
-  { id: "system", label: "NOVA 系统核心", description: "桌面启动所需的最小离线文件" },
-  { id: "apps", label: "应用与游戏模块", description: "打开窗口时按需加载的代码、样式与字体" },
-  { id: "photos", label: "相册图片", description: "内置精选照片与缩略图" },
-  { id: "books", label: "阅读内容", description: "书目与按需下载的正文资源" },
-  { id: "chess-engine", label: "国际象棋引擎", description: "Stockfish 脚本与计算引擎" },
-  { id: "magic-tower", label: "魔塔完整资源", description: "77 层、剧情、图片、音乐与音效" },
-  { id: "media", label: "其他界面资源", description: "使用过程中加载的图片与媒体" },
-];
+const RESOURCE_PACKAGE_CATALOG: Array<Pick<NovaResourcePackage, "id" | "label" | "description">> = [...RESOURCE_PACKAGE_MANIFESTS]
+  .sort((left, right) => left.displayOrder - right.displayOrder)
+  .map(({ id, label, description }) => ({ id, label, description }));
 
 type ResourceCacheStats = Pick<NovaResourcePackage, "id" | "cacheName" | "entries" | "bytes">;
 

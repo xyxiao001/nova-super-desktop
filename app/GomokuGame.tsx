@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import GameResultDialog from "./GameResultDialog";
 import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subscribeGameReset, touchGame } from "./gameStorage";

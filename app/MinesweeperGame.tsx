@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 import GameResultDialog from "./GameResultDialog";

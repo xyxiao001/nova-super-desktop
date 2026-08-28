@@ -174,6 +174,14 @@ npm run build
 npm run build:vercel
 ```
 
+## Spec 驱动迭代
+
+涉及新应用、新游戏、跨应用能力、存储或长期架构调整时，先按照 [NOVA Spec 驱动迭代流程](./docs/process/iteration-workflow.md) 明确目标、修改范围、不修改边界和验收标准，再拆成单目标迭代实施。
+
+- [Feature Spec 模板](./docs/specs/TEMPLATE.md)
+- [单目标迭代记录模板](./docs/iterations/TEMPLATE.md)
+- [ADR 模板](./docs/adrs/TEMPLATE.md)
+
 ## 项目结构
 
 ```text

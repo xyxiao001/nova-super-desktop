@@ -57,9 +57,10 @@ afterEach(() => {
 });
 
 describe("novaBackup", () => {
-  it("parses and summarizes a versioned NOVA backup", () => {
+  it("normalizes and summarizes a version 1 NOVA backup", () => {
     const parsed = parseNovaBackup(JSON.stringify(backup));
 
+    expect(parsed.version).toBe(2);
     expect(summarizeNovaBackup(parsed)).toEqual({
       exportedAt: backup.exportedAt,
       desktopItems: 0,
@@ -86,7 +87,7 @@ describe("novaBackup", () => {
     }))).toThrow("备份文件格式无效");
   });
 
-  it("creates a backup from both databases and NOVA localStorage", async () => {
+  it("creates a version 2 backup from every storage provider", async () => {
     const desktopItem = {
       id: "note",
       type: "text" as const,
@@ -101,9 +102,13 @@ describe("novaBackup", () => {
 
     const result = await createNovaBackup();
 
-    expect(result.desktopItems).toEqual([desktopItem]);
-    expect(result.readerBooks).toEqual([]);
-    expect(result.localStorage).toEqual({ "nova-settings": "{}" });
+    expect(result.version).toBe(2);
+    expect(result.providers.desktop).toEqual([desktopItem]);
+    expect(result.providers.reader).toEqual([]);
+    expect(result.providers.settings).toEqual({
+      localStorage: { "nova-settings": "{}" },
+    });
+    expect(result.providers.games).toEqual({ localStorage: {}, magicTower: [] });
   });
 
   it("restores NOVA data without deleting unrelated localStorage", async () => {
@@ -111,7 +116,7 @@ describe("novaBackup", () => {
     localStorage.setItem("nova-stale", "remove");
     localStorage.setItem("unrelated", "keep");
 
-    await restoreNovaBackup(backup);
+    await restoreNovaBackup(parseNovaBackup(JSON.stringify(backup)));
 
     expect(storageMocks.replaceDesktopItems).toHaveBeenCalledWith([]);
     expect(storageMocks.replaceStoredBooks).toHaveBeenCalledWith([]);

@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { useEffect, useRef, useState } from "react";
 import type { AppLaunchIntent } from "./appLaunch";
 import {

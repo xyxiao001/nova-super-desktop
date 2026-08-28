@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getSudoku } from "sudoku-gen";
 

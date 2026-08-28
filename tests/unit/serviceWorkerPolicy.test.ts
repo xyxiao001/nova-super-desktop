@@ -5,6 +5,10 @@ const source = readFileSync(
   new URL("../../public/sw.js", import.meta.url),
   "utf8",
 );
+const resourcePackages = readFileSync(
+  new URL("../../public/resource-packages.generated.js", import.meta.url),
+  "utf8",
+);
 
 describe("service worker resource policy", () => {
   it("keeps the install shell minimal and avoids recursive chunk discovery", () => {
@@ -14,11 +18,12 @@ describe("service worker resource policy", () => {
   });
 
   it("keeps large features in independent on-demand caches", () => {
-    expect(source).toContain('id: "magic-tower"');
-    expect(source).toContain('id: "chess-engine"');
-    expect(source).toContain('id: "books"');
-    expect(source).toContain('id: "photos"');
-    expect(source).toContain('id: "apps"');
+    expect(source).toContain('importScripts("/resource-packages.generated.js")');
+    expect(resourcePackages).toContain('"id": "magic-tower"');
+    expect(resourcePackages).toContain('"id": "chess-engine"');
+    expect(resourcePackages).toContain('"id": "books"');
+    expect(resourcePackages).toContain('"id": "photos"');
+    expect(resourcePackages).toContain('"id": "apps"');
     expect(source).toContain("GET_RESOURCE_CACHE_STATUS");
     expect(source).toContain("CLEAR_RESOURCE_CACHE");
   });

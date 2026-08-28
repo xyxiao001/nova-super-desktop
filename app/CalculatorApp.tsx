@@ -1,5 +1,7 @@
 "use client";
 
+import "./games-tools.css";
+
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   clearCalculatorHistory,

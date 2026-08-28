@@ -1,5 +1,7 @@
 "use client";
 
+import "./reader.css";
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { AppLaunchIntent } from "./appLaunch";
 import {
