@@ -2,13 +2,20 @@
 
 import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AppLoadBoundary from "./AppLoadBoundary";
+import StartMenu from "./StartMenu";
+import {
+  APP_REGISTRY,
+  LAUNCHER_APPS,
+  REGISTERED_APPS,
+  type AppDefinition,
+  type WindowAppId,
+} from "./appRegistry";
 import {
   createAppLaunchIntent,
   launchIntentFor,
   type AppLaunchIntent,
   type AppLaunchTarget,
 } from "./appLaunch";
-import type { GameAppId } from "./GameHall";
 import {
   applyDesktopFileOperation,
   desktopFileOperationConflicts,
@@ -70,9 +77,7 @@ import {
   type WindowSnapMode,
 } from "./windowGeometry";
 
-type WindowAppId = "photo" | "notes" | "viewer" | "reader" | "games" | "settings" | "explorer" | "folder" | "recycle" | GameAppId | "calculator" | "drawing" | "focus";
 type AppId = "desktop" | WindowAppId;
-type AppDefinition = { id:WindowAppId; label:string; icon:string; kind:string; launcher:boolean; taskbarPinned:boolean; windowIcon?:string; taskbarIcon?:string };
 type WindowState = { open:boolean; minimized:boolean; maximized:boolean; z:number; snapMode?:WindowSnapMode };
 type WindowStateMap = Record<WindowAppId,WindowState>;
 type ContextMenuState = { x: number; y: number; itemId?: string; appKey?: WindowAppId };
@@ -93,28 +98,6 @@ type FileUndoAction = {
 };
 const POSITION_STORAGE_KEY = "nova-desktop-positions";
 const WINDOW_GEOMETRY_PREFIX = "nova-window-geometry:";
-const APP_REGISTRY:Record<WindowAppId,AppDefinition> = {
-  photo:{id:"photo",label:"照片实验室",icon:"✦",kind:"photo",launcher:true,taskbarPinned:true},
-  explorer:{id:"explorer",label:"文件资源管理器",icon:"▰",kind:"explorer",launcher:true,taskbarPinned:true},
-  notes:{id:"notes",label:"记事本",icon:"▤",kind:"notes",launcher:true,taskbarPinned:true},
-  viewer:{id:"viewer",label:"照片",icon:"▧",kind:"viewer",launcher:true,taskbarPinned:true,windowIcon:"✿"},
-  reader:{id:"reader",label:"NOVA 阅读",icon:"阅",kind:"reader",launcher:true,taskbarPinned:true},
-  games:{id:"games",label:"游戏大厅",icon:"",kind:"games",launcher:true,taskbarPinned:false},
-  settings:{id:"settings",label:"设置",icon:"⚙",kind:"settings",launcher:true,taskbarPinned:false},
-  folder:{id:"folder",label:"文件夹",icon:"▱",kind:"folder",launcher:false,taskbarPinned:false},
-  recycle:{id:"recycle",label:"回收站",icon:"▥",kind:"recycle",launcher:true,taskbarPinned:false,windowIcon:"▨",taskbarIcon:"▨"},
-  mines:{id:"mines",label:"扫雷",icon:"✹",kind:"mines",launcher:false,taskbarPinned:false},
-  chess:{id:"chess",label:"国际象棋",icon:"♞",kind:"chess",launcher:false,taskbarPinned:false},
-  gomoku:{id:"gomoku",label:"五子棋",icon:"●",kind:"gomoku",launcher:false,taskbarPinned:false},
-  go:{id:"go",label:"围棋",icon:"◉",kind:"go",launcher:false,taskbarPinned:false},
-  sudoku:{id:"sudoku",label:"数独",icon:"九",kind:"sudoku",launcher:false,taskbarPinned:false},
-  voyage:{id:"voyage",label:"星港远征",icon:"✧",kind:"voyage",launcher:false,taskbarPinned:false},
-  calculator:{id:"calculator",label:"计算器",icon:"＋",kind:"calculator",launcher:true,taskbarPinned:false},
-  drawing:{id:"drawing",label:"NOVA 画板",icon:"✎",kind:"drawing",launcher:true,taskbarPinned:false},
-  focus:{id:"focus",label:"专注时钟",icon:"◷",kind:"focus",launcher:true,taskbarPinned:false},
-};
-const REGISTERED_APPS=Object.values(APP_REGISTRY);
-const LAUNCHER_APPS=REGISTERED_APPS.filter((app)=>app.launcher);
 const SETTINGS_SEARCH_ENTRIES=[
   {key:"settings:theme",sectionId:"theme",label:"主题",detail:"设置 · 个性化",keywords:"明亮 深色 跟随系统"},
   {key:"settings:sound",sectionId:"sound",label:"声音与音量",detail:"设置 · 声音",keywords:"静音 音效 音量"},
@@ -266,7 +249,7 @@ export default function Home() {
     {windowStates.photo.open&&<AppWindow {...windowProps("photo")}><LazyPhotoEditor key={photoSourceItem?.id??"default-photo"} active={focused==="photo"&&!windowStates.photo.minimized} initialImage={photoEditorSource} onSave={savePhotoEdit}/></AppWindow>}
     {windowStates.explorer.open&&<AppWindow {...windowProps("explorer",activeFolder?.name??APP_REGISTRY.explorer.label)}><LazyFileExplorer items={items} folderId={activeFolderId} launchIntent={launchIntentFor(launchIntent,"explorer")} onLaunchHandled={handleLaunchHandled} clipboard={fileClipboard} canUndo={!!fileUndo} onNavigate={(folderId)=>{setActiveFolderId(folderId);if(folderId)updateItem(folderId,{lastOpenedAt:Date.now()})}} onOpen={openItem} onOpenWith={openItemWith} onCreateFolder={createFolder} onCreateText={createText} onRename={beginRename} onSetClipboard={setClipboard} onPaste={pasteClipboard} onFileOperation={requestFileOperation} onTrash={(ids)=>{moveManyToRecycleBin(ids);focusWindow("explorer")}} onUndo={undoFileOperation} onOpenRecycle={()=>openWindow("recycle")}/></AppWindow>}
     {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><LazyNotepadApp items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
-    {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><LazyPhotoViewerApp images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
+    {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><LazyPhotoViewerApp images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} focused={focused==="viewer"&&!windowStates.viewer.minimized} open={(item)=>setActiveImageId(item.id)} clearActive={()=>setActiveImageId(null)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
     {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><LazyReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
     {windowStates.games.open&&<AppWindow {...windowProps("games")}><LazyGameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open}} onLaunch={openWindow}/></AppWindow>}
     {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><LazyFolderViewApp folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
@@ -277,12 +260,12 @@ export default function Home() {
     {windowStates.go.open&&<AppWindow {...windowProps("go")}><LazyGoGame/></AppWindow>}
     {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><LazySudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
     {windowStates.voyage.open&&<AppWindow {...windowProps("voyage")}><LazyStarVoyageGame active={focused==="voyage"&&!windowStates.voyage.minimized}/></AppWindow>}
-    {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><LazyCalculatorApp/></AppWindow>}
+    {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><LazyCalculatorApp active={focused==="calculator"&&!windowStates.calculator.minimized}/></AppWindow>}
     {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><LazyDrawingApp onSave={savePhoto}/></AppWindow>}
     {windowStates.focus.open&&<AppWindow {...windowProps("focus")}><LazyFocusClockApp active={focused==="focus"&&!windowStates.focus.minimized}/></AppWindow>}
     {windowStates.settings.open&&<AppWindow {...windowProps("settings")}><LazySettingsApp settings={settings} launchIntent={launchIntentFor(launchIntent,"settings")} onLaunchHandled={handleLaunchHandled} onChange={updateSettings}/></AppWindow>}
     {altTab&&<section className="window-switcher" role="dialog" aria-label="切换窗口">{altTab.apps.filter((app)=>windowStates[app].open).map((app)=>{const definition=APP_REGISTRY[app];return <div key={app} className={altTab.active===app?"active":""}><span className={`app-glyph ${app}-glyph`}>{definition.windowIcon??definition.icon}</span><strong>{taskbarLabel(definition)}</strong></div>})}</section>}
-    {startOpen&&<section className="start-menu"><label className="start-search">⌕ <input autoFocus value={searchQuery} onChange={(event)=>{setSearchQuery(event.target.value);setSearchIndex(0)}} onKeyDown={(event)=>{if(event.key==="ArrowDown"){event.preventDefault();setSearchIndex((current)=>Math.max(0,Math.min(searchResults.length-1,current+1)))}if(event.key==="ArrowUp"){event.preventDefault();setSearchIndex((current)=>Math.max(0,current-1))}if(event.key==="Enter"){event.preventDefault();runSearchResult(searchIndex)}}} placeholder="搜索应用、文件、书籍和设置"/></label>{searchText?<div className="start-results"><header><strong>搜索结果</strong><span>{searchResults.length} 项</span></header>{searchResults.map((result,index)=><button key={result.key} className={index===searchIndex?"active":""} onPointerEnter={()=>setSearchIndex(index)} onClick={()=>runSearchResult(index)}><i>{result.icon}</i><span><strong>{result.label}</strong><small>{result.detail}</small></span></button>)}{!searchResults.length&&<p>没有找到“{searchQuery}”</p>}</div>:<><header><strong>已固定</strong><span>所有应用</span></header><div className="start-apps">{appEntries.map((app)=><button key={app.key} onClick={app.open}><i className={`start-${app.kind}`}>{app.icon}</i><span>{app.label}</span></button>)}</div></>}<footer><span>◉</span><strong>NOVA 用户</strong><button onClick={()=>{setStartOpen(false);setSearchQuery("");setSearchIndex(0)}}>⏻</button></footer></section>}
+    {startOpen&&<StartMenu apps={appEntries} searchQuery={searchQuery} searchIndex={searchIndex} searchResults={searchResults} onSearchQueryChange={setSearchQuery} onSearchIndexChange={setSearchIndex} onRunSearchResult={runSearchResult} onClose={()=>{setStartOpen(false);setSearchQuery("");setSearchIndex(0)}}/>}
     {systemPanelOpen&&<aside className="system-panel" aria-label="日期与通知">
       <section className="calendar-panel">
         <header><strong>{calendarTitle}</strong><div><button aria-label="上个月" onClick={()=>setCalendarMonth((current)=>new Date(current.getFullYear(),current.getMonth()-1,1))}>‹</button><button aria-label="回到本月" onClick={()=>setCalendarMonth(new Date(new Date().getFullYear(),new Date().getMonth(),1))}>●</button><button aria-label="下个月" onClick={()=>setCalendarMonth((current)=>new Date(current.getFullYear(),current.getMonth()+1,1))}>›</button></div></header>

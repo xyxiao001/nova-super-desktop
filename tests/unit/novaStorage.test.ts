@@ -39,7 +39,7 @@ beforeEach(() => {
   cacheDelete.mockReset().mockResolvedValue(true);
   vi.stubGlobal("localStorage", new MemoryStorage());
   vi.stubGlobal("caches", {
-    keys: vi.fn().mockResolvedValue(["nova-pwa-v1:shell", "unrelated-cache"]),
+    keys: vi.fn().mockResolvedValue(["nova-pwa-v2:shell", "unrelated-cache"]),
     open: vi.fn().mockResolvedValue({
       keys: vi.fn().mockResolvedValue([new Request("https://nova.test/app.js")]),
       match: vi.fn().mockResolvedValue(new Response("cached")),
@@ -85,6 +85,6 @@ describe("novaStorage", () => {
     await clearNovaStorageCategory("offline");
 
     expect(cacheDelete).toHaveBeenCalledOnce();
-    expect(cacheDelete).toHaveBeenCalledWith("nova-pwa-v1:shell");
+    expect(cacheDelete).toHaveBeenCalledWith("nova-pwa-v2:shell");
   });
 });

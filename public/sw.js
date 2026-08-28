@@ -1,5 +1,5 @@
 // Bump this value when the offline asset policy changes.
-const VERSION = "nova-pwa-v1";
+const VERSION = "nova-pwa-v2";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RUNTIME_CACHE = `${VERSION}:runtime`;
 const CORE_ASSETS = [
@@ -59,7 +59,7 @@ const cacheShellAssets = async () => {
         continue;
       }
       const nextPath = url.pathname + url.search;
-      if (url.origin !== self.location.origin || url.pathname.startsWith("/books/") || discovered.has(nextPath)) continue;
+      if (url.origin !== self.location.origin || url.pathname.startsWith("/books/") || url.pathname.startsWith("/photos/") || discovered.has(nextPath)) continue;
       discovered.add(nextPath);
       pending.push(nextPath);
     }
@@ -126,6 +126,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(networkFirstNavigation(request));
     return;
   }
+  if (url.pathname.startsWith("/photos/")) return;
   if (url.pathname.startsWith("/books/") && url.pathname.endsWith(".txt")) return;
   if (url.pathname === "/books/catalog.json") {
     event.respondWith(staleWhileRevalidate(request));
