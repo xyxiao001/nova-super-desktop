@@ -106,7 +106,6 @@
 .mines-shortcut { background: linear-gradient(145deg, #8c9aa5, #3f4950); color: #ffe664; }
 .chess-shortcut { background: linear-gradient(145deg, #f4f6f7, #39745b); color: #17221d; }
 .gomoku-shortcut { background: linear-gradient(145deg, #ddb86c, #a8732f); color: #191715; }
-.go-shortcut { background: linear-gradient(145deg, #e0bc73, #8d602a); color: #f6f3ea; }
 .calculator-shortcut { background: linear-gradient(145deg, #5c6671, #1f252b); color: #fff; font-weight: 700; }
 .drawing-shortcut { background: linear-gradient(145deg, #fff, #d9e0e5); color: #2778d4; font-size: 28px; }
 
@@ -186,9 +185,7 @@
 .settings-window { inset:auto; width:min(660px,86vw); height:min(510px,76vh); left:22vw; top:82px; }
 .windows-desktop .mines-window { inset: auto; width: min(860px,90vw); height: min(700px,84vh); min-width: min(520px,calc(100vw - 8px)); min-height: min(680px,calc(100vh - 57px)); left: 12vw; top: 52px; }
 .windows-desktop .chess-window { inset: auto; width: min(860px,90vw); height: min(720px,86vh); min-width: min(600px,calc(100vw - 8px)); min-height: 560px; left: 14vw; top: 42px; }
-.windows-desktop .gomoku-window, .windows-desktop .go-window { inset:auto; width:min(840px,90vw); height:min(720px,86vh); min-width:min(580px,calc(100vw - 8px)); min-height:560px; left:13vw; top:44px; }
-.windows-desktop .sudoku-window { inset:auto; width:min(860px,90vw); height:min(690px,86vh); min-width:min(640px,calc(100vw - 8px)); min-height:570px; left:14vw; top:46px; }
-.windows-desktop .voyage-window { inset:auto; width:min(1040px,94vw); height:min(780px,90vh); min-width:min(760px,calc(100vw - 8px)); min-height:610px; left:8vw; top:30px; }
+.windows-desktop .gomoku-window { inset:auto; width:min(840px,90vw); height:min(720px,86vh); min-width:min(580px,calc(100vw - 8px)); min-height:560px; left:13vw; top:44px; }
 .windows-desktop .tower-window { inset:auto; width:min(980px,92vw); height:min(720px,88vh); min-width:min(680px,calc(100vw - 8px)); min-height:560px; left:10vw; top:40px; }
 .windows-desktop .calculator-window { inset:auto; width:380px; height:600px; min-width:min(350px,calc(100vw - 8px)); min-height:min(540px,calc(100vh - 57px)); left:36vw; top:52px; }
 .drawing-window { inset: auto; width: min(960px,90vw); height: min(700px,84vh); left: 10vw; top: 48px; }
@@ -219,7 +216,6 @@
 .mines-glyph { background: #59656e; color: #ffe664; }
 .chess-glyph { background: #39745b; color: #fff; }
 .gomoku-glyph { background:#c99a50; color:#171513; }
-.go-glyph { background:#ad7a36; color:#f5f0e5; }
 .tower-glyph { border:1px solid #7a6843; background:#24231b; color:#d8b965; font-family:Georgia,"Songti SC",serif; }
 .calculator-glyph { background: #303941; }
 .reader-glyph { background: linear-gradient(145deg,#ff7a36,#d9481e); }
@@ -388,7 +384,6 @@
 .task-app.mines-app > span { background: #59656e; color: #ffe664; }
 .task-app.chess-app > span { background:#39745b; color:#fff; }
 .task-app.gomoku-app > span { background:#c99a50; color:#171513; }
-.task-app.go-app > span { background:#ad7a36; color:#fff; }
 .task-app.calculator-app > span { background: #303941; }
 .task-app.drawing-app > span { background: #f8fafb; color: #2778d4; }
 .task-app.active::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 3px; border-radius: 3px; background: #1687d7; }
@@ -520,7 +515,7 @@
 
 @media (max-width: 900px) {
   .photo-window { inset: 8px 6px 56px; }
-  .notes-window, .viewer-window, .reader-window, .games-window, .settings-window, .explorer-window, .folder-window, .recycle-window, .mines-window, .chess-window, .gomoku-window, .go-window, .sudoku-window, .voyage-window, .tower-window, .calculator-window, .drawing-window, .focus-window { left: 5vw; width: 90vw; }
+  .notes-window, .viewer-window, .reader-window, .games-window, .settings-window, .explorer-window, .folder-window, .recycle-window, .mines-window, .chess-window, .gomoku-window, .tower-window, .calculator-window, .drawing-window, .focus-window { left: 5vw; width: 90vw; }
   .desktop-files { left: 4px; }
   .taskbar-tray span { display: none; }
 }

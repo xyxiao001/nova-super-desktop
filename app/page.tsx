@@ -58,7 +58,6 @@ import {
   LazyFocusClockApp,
   LazyFolderViewApp,
   LazyGameHall,
-  LazyGoGame,
   LazyGomokuGame,
   LazyMagicTowerGame,
   LazyMinesweeperGame,
@@ -68,8 +67,6 @@ import {
   LazyReaderApp,
   LazyRecycleBinApp,
   LazySettingsApp,
-  LazyStarVoyageGame,
-  LazySudokuGame,
 } from "./lazyApps";
 import {
   canMeasureWindowGeometry,
@@ -261,9 +258,6 @@ export default function Home() {
     {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><LazyMinesweeperGame/></AppWindow>}
     {windowStates.chess.open&&<AppWindow {...windowProps("chess")}><LazyChessGame/></AppWindow>}
     {windowStates.gomoku.open&&<AppWindow {...windowProps("gomoku")}><LazyGomokuGame/></AppWindow>}
-    {windowStates.go.open&&<AppWindow {...windowProps("go")}><LazyGoGame/></AppWindow>}
-    {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><LazySudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
-    {windowStates.voyage.open&&<AppWindow {...windowProps("voyage")}><LazyStarVoyageGame active={focused==="voyage"&&!windowStates.voyage.minimized}/></AppWindow>}
     {windowStates.tower.open&&<AppWindow {...windowProps("tower")}><LazyMagicTowerGame active={focused==="tower"&&!windowStates.tower.minimized}/></AppWindow>}
     {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><LazyCalculatorApp active={focused==="calculator"&&!windowStates.calculator.minimized}/></AppWindow>}
     {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><LazyDrawingApp onSave={savePhoto}/></AppWindow>}

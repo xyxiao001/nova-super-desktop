@@ -1,4 +1,4 @@
-export type GameId = "mines"|"chess"|"gomoku"|"go"|"sudoku"|"voyage"|"tower";
+export type GameId = "mines"|"chess"|"gomoku"|"tower";
 export type GameResult = "win"|"loss"|"draw";
 export type GameRecord = {
   played:number;
@@ -16,7 +16,7 @@ const PROGRESS_PREFIX="nova-game-progress:";
 const CHANGE_EVENT="nova-game-records-change";
 const RESET_EVENT="nova-game-reset";
 const GAME_AUXILIARY_KEYS=["nova-mines-difficulty","nova-mines-best"];
-const GAME_IDS:GameId[]=["mines","chess","gomoku","go","sudoku","voyage","tower"];
+const GAME_IDS:GameId[]=["mines","chess","gomoku","tower"];
 const emptyRecord=():GameRecord=>({played:0,wins:0,losses:0,draws:0,lastPlayed:null,lastResult:null,hasProgress:false});
 
 export const readGameRecords=():GameRecords=>{
@@ -70,7 +70,9 @@ export const requestNewGame=(id:GameId)=>{
 const clearStoredGameData=()=>{
   localStorage.removeItem(RECORDS_KEY);
   for(const key of GAME_AUXILIARY_KEYS)localStorage.removeItem(key);
-  for(const id of GAME_IDS)localStorage.removeItem(`${PROGRESS_PREFIX}${id}`);
+  const progressKeys=Array.from({length:localStorage.length},(_,index)=>localStorage.key(index))
+    .filter((key):key is string=>key?.startsWith(PROGRESS_PREFIX)??false);
+  for(const key of progressKeys)localStorage.removeItem(key);
 };
 export const resetAllGameData=()=>{
   clearStoredGameData();

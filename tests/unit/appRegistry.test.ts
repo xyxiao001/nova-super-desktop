@@ -35,5 +35,6 @@ describe("appRegistry", () => {
     expect(LAUNCHER_APPS.some((app) => app.id === "games")).toBe(true);
     expect(GAME_CATALOG.every((game) => APP_REGISTRY[game.id])).toBe(true);
     expect(GAME_CATALOG.every((game) => !APP_REGISTRY[game.id].launcher)).toBe(true);
+    expect(Object.keys(APP_REGISTRY)).not.toEqual(expect.arrayContaining(["go", "sudoku", "voyage"]));
   });
 });

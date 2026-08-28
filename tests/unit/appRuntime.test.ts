@@ -5,12 +5,12 @@ import { createInitialWindowManagerState, windowReducer } from "../../app/window
 describe("app runtime", () => {
   it("treats only the focused visible window as active", () => {
     let state = createInitialWindowManagerState();
-    state = windowReducer(state, { type: "open", app: "sudoku" });
+    state = windowReducer(state, { type: "open", app: "gomoku" });
 
-    expect(appIsActive(state.windows, state.focused, "sudoku")).toBe(true);
+    expect(appIsActive(state.windows, state.focused, "gomoku")).toBe(true);
     expect(appIsActive(state.windows, state.focused, "reader")).toBe(false);
 
-    state = windowReducer(state, { type: "minimize", app: "sudoku" });
-    expect(appIsActive(state.windows, state.focused, "sudoku")).toBe(false);
+    state = windowReducer(state, { type: "minimize", app: "gomoku" });
+    expect(appIsActive(state.windows, state.focused, "gomoku")).toBe(false);
   });
 });

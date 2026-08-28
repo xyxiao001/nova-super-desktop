@@ -5,15 +5,11 @@ import "./games-tools.css";
 import { useEffect, useState } from "react";
 import { useAppRuntime } from "./AppRuntime";
 import { readGameRecords, requestNewGame, subscribeGameRecords, type GameId, type GameRecords } from "./gameStorage";
-import { VoyageEmblem } from "./StarVoyageArt";
 
 export const GAME_CATALOG = [
   {id:"mines",label:"扫雷",category:"逻辑",meta:"经典 · 三档难度"},
   {id:"chess",label:"国际象棋",category:"策略",meta:"Stockfish 18"},
   {id:"gomoku",label:"五子棋",category:"棋类",meta:"Alpha-Beta AI"},
-  {id:"go",label:"围棋",category:"棋类",meta:"9 路 · Monte Carlo"},
-  {id:"sudoku",label:"数独",category:"逻辑",meta:"四档难度 · 离线题库"},
-  {id:"voyage",label:"星港远征",category:"构筑",meta:"卡牌 · 随机航线"},
   {id:"tower",label:"魔塔",category:"角色扮演",meta:"77 层 · 完整剧情"},
 ] as const;
 
@@ -23,10 +19,7 @@ function GameArtwork({id}:{id:GameAppId}){
   if(id==="mines")return <span className="game-artwork mines-artwork" aria-hidden="true"><i/><i/><i/></span>;
   if(id==="chess")return <span className="game-artwork chess-artwork" aria-hidden="true">♞</span>;
   if(id==="gomoku")return <span className="game-artwork gomoku-artwork" aria-hidden="true"><i/><i/><i/></span>;
-  if(id==="go")return <span className="game-artwork go-artwork" aria-hidden="true"><i/><i/></span>;
-  if(id==="sudoku")return <span className="game-artwork sudoku-artwork" aria-hidden="true">{["8","3","7","2","9","4","6","1","5"].map((value)=><i key={value}>{value}</i>)}</span>;
-  if(id==="tower")return <span className="game-artwork tower-artwork" aria-hidden="true"><i/><i/><i/><b/></span>;
-  return <span className="game-artwork voyage-artwork" aria-hidden="true"><VoyageEmblem/></span>;
+  return <span className="game-artwork tower-artwork" aria-hidden="true"><i/><i/><i/><b/></span>;
 }
 
 export default function GameHall(){
