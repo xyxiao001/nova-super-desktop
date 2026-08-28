@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canMeasureWindowGeometry,
   edgeSnapMode,
   snappedWindowGeometry,
   windowShortcutAction,
 } from "../../app/windowGeometry";
+
+describe("canMeasureWindowGeometry", () => {
+  it("ignores hidden window dimensions while minimized", () => {
+    expect(canMeasureWindowGeometry(true, false, 0, 0)).toBe(false);
+    expect(canMeasureWindowGeometry(false, false, 0, 0)).toBe(false);
+    expect(canMeasureWindowGeometry(false, true, 820, 600)).toBe(false);
+    expect(canMeasureWindowGeometry(false, false, 820, 600)).toBe(true);
+  });
+});
 
 describe("snappedWindowGeometry", () => {
   it("creates non-overlapping left and right halves", () => {

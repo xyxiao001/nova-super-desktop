@@ -15,6 +15,15 @@ export type WindowSnapMode =
 
 export type WindowShortcutAction = WindowSnapMode | "maximize" | "restore" | "minimize";
 
+export function canMeasureWindowGeometry(
+  minimized: boolean,
+  maximized: boolean,
+  width: number,
+  height: number,
+) {
+  return !minimized && !maximized && width > 0 && height > 0;
+}
+
 export function snappedWindowGeometry(
   mode: WindowSnapMode,
   viewportWidth: number,
