@@ -22,6 +22,7 @@ export type StartMenuSearchResult = {
 };
 
 export default function StartMenu({
+  mode,
   apps,
   searchQuery,
   searchIndex,
@@ -31,6 +32,7 @@ export default function StartMenu({
   onRunSearchResult,
   onClose,
 }: {
+  mode: "launcher" | "search";
   apps: StartMenuAppEntry[];
   searchQuery: string;
   searchIndex: number;
@@ -74,44 +76,47 @@ export default function StartMenu({
     <i className={`start-${app.kind}`} aria-hidden="true">{app.icon}</i>
   );
 
-  return <section className="start-menu" role="dialog" aria-label="开始菜单">
-    <label className="start-search">
-      <span aria-hidden="true">⌕</span>
-      <input
-        ref={searchRef}
-        value={searchQuery}
-        onChange={(event) => {
-          onSearchQueryChange(event.target.value);
-          onSearchIndexChange(0);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            onClose();
-            return;
-          }
-          if (!searchText && event.key === "ArrowDown") {
-            event.preventDefault();
-            focusFirstApp();
-            return;
-          }
-          if (!searchText) return;
-          if (event.key === "ArrowDown") {
-            event.preventDefault();
-            onSearchIndexChange(Math.max(0, Math.min(searchResults.length - 1, searchIndex + 1)));
-          }
-          if (event.key === "ArrowUp") {
-            event.preventDefault();
-            onSearchIndexChange(Math.max(0, searchIndex - 1));
-          }
-          if (event.key === "Enter") {
-            event.preventDefault();
-            onRunSearchResult(searchIndex);
-          }
-        }}
-        placeholder="搜索应用、文件、书籍和设置"
-      />
-    </label>
+  return <section className={`start-menu ${mode === "search" ? "mobile-search-mode" : ""}`} role="dialog" aria-label={mode === "search" ? "搜索" : "开始菜单"}>
+    <div className="start-search-row">
+      <label className="start-search">
+        <span aria-hidden="true">⌕</span>
+        <input
+          ref={searchRef}
+          value={searchQuery}
+          onChange={(event) => {
+            onSearchQueryChange(event.target.value);
+            onSearchIndexChange(0);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              onClose();
+              return;
+            }
+            if (!searchText && event.key === "ArrowDown") {
+              event.preventDefault();
+              focusFirstApp();
+              return;
+            }
+            if (!searchText) return;
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              onSearchIndexChange(Math.max(0, Math.min(searchResults.length - 1, searchIndex + 1)));
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              onSearchIndexChange(Math.max(0, searchIndex - 1));
+            }
+            if (event.key === "Enter") {
+              event.preventDefault();
+              onRunSearchResult(searchIndex);
+            }
+          }}
+          placeholder="搜索应用、文件、书籍和设置"
+        />
+      </label>
+      <button className="start-search-close" type="button" aria-label="关闭搜索" onClick={onClose}>×</button>
+    </div>
 
     <div ref={contentRef} className="start-menu-content">
       {searchText ? <div className="start-results">
@@ -126,8 +131,8 @@ export default function StartMenu({
         {!searchResults.length && <p>没有找到“{searchQuery}”</p>}
       </div> : view === "pinned" ? <section className="start-pinned-view">
         <header className="start-section-header">
-          <strong>已固定</strong>
-          <button type="button" onClick={() => setView("all")}>所有应用 <span aria-hidden="true">›</span></button>
+          <strong>{mode === "search" ? "建议" : "已固定"}</strong>
+          {mode === "launcher" && <button type="button" onClick={() => setView("all")}>所有应用 <span aria-hidden="true">›</span></button>}
         </header>
         <div className="start-apps">
           {pinnedApps.map((app) => <button
@@ -135,7 +140,10 @@ export default function StartMenu({
             data-start-app
             key={app.key}
             onKeyDown={(event) => moveAppFocus(event, 0)}
-            onClick={app.open}
+            onClick={() => {
+              app.open();
+              onClose();
+            }}
           >{renderIcon(app)}<span>{app.label}</span></button>)}
         </div>
       </section> : <section className="start-all-view">
@@ -155,7 +163,10 @@ export default function StartMenu({
                 data-start-app
                 key={app.key}
                 onKeyDown={(event) => moveAppFocus(event, 1)}
-                onClick={app.open}
+                onClick={() => {
+                  app.open();
+                  onClose();
+                }}
               >{renderIcon(app)}<span><strong>{app.label}</strong><small>应用</small></span><b aria-hidden="true">›</b></button>)}
             </section>;
           })}
@@ -163,10 +174,10 @@ export default function StartMenu({
       </section>}
     </div>
 
-    <footer>
+    {mode === "launcher" && <footer>
       <span aria-hidden="true">◉</span>
       <strong>NOVA 用户</strong>
       <button type="button" aria-label="关闭开始菜单" title="关闭开始菜单" onClick={onClose}>⏻</button>
-    </footer>
+    </footer>}
   </section>;
 }

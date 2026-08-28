@@ -2,7 +2,7 @@
 
 import "./games-tools.css";
 
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import GameResultDialog from "./GameResultDialog";
 import {
@@ -14,6 +14,11 @@ import {
   touchGame,
 } from "./gameStorage";
 import { playNovaSound } from "./novaSettings";
+import {
+  DESKTOP_ICON_LONG_PRESS_MS,
+  isCompactDesktopViewport,
+  movedBeyondLongPressTolerance,
+} from "./desktopIconInteraction";
 
 type MineCell = { mine: boolean; revealed: boolean; flagged: boolean; nearby: number };
 type MineDifficulty = "beginner" | "intermediate" | "expert";
@@ -75,6 +80,8 @@ export default function MinesweeperGame() {
     return saved ? JSON.parse(saved) : {};
   });
   const [resultDismissed, setResultDismissed] = useState(false);
+  const cellPressRef = useRef<{ index: number; x: number; y: number; timer: number } | null>(null);
+  const longPressedCellRef = useRef<number | null>(null);
   const config = MINE_LEVELS[difficulty];
   const flags = board.filter((cell) => cell.flagged).length;
 
@@ -166,12 +173,44 @@ export default function MinesweeperGame() {
     const neighbors = mineNeighbors(index, config.rows, config.columns);
     if (neighbors.filter((neighbor) => board[neighbor].flagged).length === cell.nearby) revealTargets(neighbors.filter((neighbor) => !board[neighbor].flagged));
   };
-  const flag = (event: ReactMouseEvent, index: number) => {
-    event.preventDefault();
+  const toggleFlag = (index: number) => {
     if (status === "won" || status === "lost" || board[index].revealed) return;
     playNovaSound("move");
     setBoard((current) => current.map((cell, cellIndex) => cellIndex === index && (!cell.flagged && flags >= config.mines) ? cell : cellIndex === index ? { ...cell, flagged: !cell.flagged } : cell));
   };
+  const clearCellPress = () => {
+    if (cellPressRef.current) window.clearTimeout(cellPressRef.current.timer);
+    cellPressRef.current = null;
+  };
+  const triggerCellFlag = (index: number) => {
+    if (longPressedCellRef.current === index) return;
+    clearCellPress();
+    longPressedCellRef.current = index;
+    toggleFlag(index);
+  };
+  const beginCellPress = (index: number, event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!isCompactDesktopViewport() || event.button !== 0) return;
+    clearCellPress();
+    longPressedCellRef.current = null;
+    const x = event.clientX;
+    const y = event.clientY;
+    cellPressRef.current = {
+      index,
+      x,
+      y,
+      timer: window.setTimeout(() => triggerCellFlag(index), DESKTOP_ICON_LONG_PRESS_MS),
+    };
+  };
+  const moveCellPress = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const press = cellPressRef.current;
+    if (press && movedBeyondLongPressTolerance(
+      { x: press.x, y: press.y },
+      { x: event.clientX, y: event.clientY },
+    )) clearCellPress();
+  };
+  useEffect(() => () => {
+    if (cellPressRef.current) window.clearTimeout(cellPressRef.current.timer);
+  }, []);
   const face = status === "won" ? "😎" : status === "lost" ? "😵" : status === "playing" ? "🙂" : "😊";
   const statusText = status === "won" ? "雷区已清除" : status === "lost" ? "本局结束" : status === "playing" ? "进行中" : "准备开始";
 
@@ -182,7 +221,17 @@ export default function MinesweeperGame() {
       const row = Math.floor(index / config.columns) + 1;
       const column = index % config.columns + 1;
       const label = cell.revealed ? (cell.mine ? "地雷" : cell.nearby ? `数字 ${cell.nearby}` : "空白") : cell.flagged ? "已标记" : "未翻开";
-      return <button key={index} aria-label={`第 ${row} 行第 ${column} 列，${label}`} className={`${cell.revealed ? "revealed" : ""} ${cell.mine && cell.revealed ? "mine" : ""} n${cell.nearby}`} onClick={() => reveal(index)} onDoubleClick={() => chord(index)} onContextMenu={(event) => flag(event, index)}>{cell.revealed ? (cell.mine ? "✹" : cell.nearby || "") : cell.flagged ? "⚑" : ""}</button>;
+      return <button key={index} aria-label={`第 ${row} 行第 ${column} 列，${label}`} className={`${cell.revealed ? "revealed" : ""} ${cell.mine && cell.revealed ? "mine" : ""} n${cell.nearby}`} onPointerDown={(event) => beginCellPress(index, event)} onPointerMove={moveCellPress} onPointerUp={clearCellPress} onPointerCancel={clearCellPress} onClick={() => {
+        if (longPressedCellRef.current === index) {
+          longPressedCellRef.current = null;
+          return;
+        }
+        reveal(index);
+      }} onDoubleClick={() => chord(index)} onContextMenu={(event) => {
+        event.preventDefault();
+        if (isCompactDesktopViewport()) triggerCellFlag(index);
+        else toggleFlag(index);
+      }}>{cell.revealed ? (cell.mine ? "✹" : cell.nearby || "") : cell.flagged ? "⚑" : ""}</button>;
     })}</div>
     <footer><span>{statusText}</span><span>最佳 {bestTimes[difficulty] === undefined ? "---" : `${bestTimes[difficulty]}s`}</span></footer>
     {(status === "won" || status === "lost") && !resultDismissed && <GameResultDialog tone={status === "won" ? "win" : "loss"} title={status === "won" ? "雷区已清除" : "踩到地雷"} detail={status === "won" ? `${elapsed} 秒完成 ${config.label}难度` : "本局未能完成"} onDismiss={() => setResultDismissed(true)} onRestart={() => reset()}/>}

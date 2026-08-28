@@ -109,11 +109,147 @@
 .windows-desktop.theme-dark .settings-section.search-focus { animation-name:settingsFocusDark; }
 @keyframes settingsFocusDark { 0%,100%{background:transparent}20%,70%{background:#254354} }
 
-@media (max-width: 680px) {
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
   .game-hall { grid-template-rows:60px minmax(0,1fr) 28px; }.game-hall-header { padding:0 13px; }.game-library { padding:10px; grid-auto-rows:158px; gap:8px; }.game-tile { min-height:0; grid-template-columns:1fr; grid-template-rows:minmax(86px,1fr) 72px; }.game-artwork { width:66px; height:66px; }.chess-artwork { font-size:61px; }.mines-artwork { transform:scale(.78); }.gomoku-artwork i { width:28px; height:28px; }.game-tile-info { padding:8px 10px; }.game-tile-info strong { font-size:13px; }.game-tile-info footer i { width:23px; height:23px; }.game-hall-footer { padding:0 13px; }
   .tower-artwork { width:58px; height:64px; }.magic-tower-hostbar { grid-template-columns:1fr auto 34px; }.magic-tower-connection span { display:none; }
   .chess-toolbar { min-height:108px; grid-template-columns:minmax(0,1fr) auto; gap:7px; }.chess-mode-controls { grid-column:1 / -1; grid-row:2; }.chess-mode-controls select { flex:1; }.chess-layout { padding:8px; grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 116px; }.chess-sidebar { grid-template-rows:30px minmax(0,1fr) 30px; border-left:0; border-top:1px solid #c8d0cc; }.chess-piece { font-size:28px; }
   .board-game-toolbar { min-height:92px; grid-template-columns:minmax(0,1fr) auto; }.board-game-toolbar > label { grid-column:1 / -1; grid-row:2; }.oriental-game-layout { padding:8px; grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 88px; }.board-game-panel { display:grid; grid-template-columns:repeat(4,1fr); border-left:0; border-top:1px solid #bdb3a5; }.board-game-panel section { min-height:42px; padding:5px 8px; }.board-game-panel p { display:none; }.game-rules { padding:12px; }
   .focus-clock { grid-template-rows:92px minmax(0,1fr); }.focus-clock-header { padding:9px 12px; align-items:flex-start; flex-direction:column; gap:7px; }.focus-clock-body { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 150px; }.focus-timer { padding:10px; border-right:0; border-bottom:1px solid #ccd1cc; gap:8px; }.focus-dial { width:min(230px,40vh); }.focus-insights { padding:8px 13px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }.focus-insights > section { padding:5px 0; border-bottom:0; }.focus-history > div { max-height:82px; }
   .drawing-toolbar { gap:9px; }.drawing-size { min-width:135px; }.drawing-size input { width:90px; }
+}
+
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .game-hall { grid-template-rows:58px minmax(0,1fr) 30px; }
+  .game-hall-header { padding-inline:12px; background:#151b20e8; backdrop-filter:blur(20px); }
+  .game-hall-brand > div { gap:2px; }
+  .game-hall-brand strong { font-size:16px; }
+  .game-hall-brand small { display:none; }
+  .game-hall-status { max-width:42%; text-align:right; }
+  .game-library { padding:10px 10px calc(14px + env(safe-area-inset-bottom)); grid-template-columns:1fr; grid-auto-rows:148px; }
+  .game-tile { grid-template-columns:112px minmax(0,1fr); grid-template-rows:1fr; border-radius:8px; box-shadow:none; }
+  .game-tile:active { border-color:#ffffff52; transform:scale(.985); }
+  .game-tile-info { padding:12px 10px; }
+  .game-tile-info footer button { min-height:38px; touch-action:manipulation; }
+  .game-tile-info .new-game-button { width:38px; }
+  .game-tile-info .launch-game-button { min-width:66px; padding-inline:10px; font-size:10px; }
+  .game-hall-footer { padding-inline:12px; }
+  .magic-tower-host { grid-template-rows:48px minmax(0,1fr); }
+  .magic-tower-hostbar { padding-inline:10px 7px; grid-template-columns:minmax(0,1fr) auto 42px; }
+  .magic-tower-hostbrand > span { width:30px; height:30px; }
+  .magic-tower-hostbar > button { width:40px; height:40px; font-size:18px; touch-action:manipulation; }
+  .minesweeper { padding:10px 8px calc(12px + env(safe-area-inset-bottom)); gap:9px; overflow:hidden; }
+  .mine-difficulties { height:46px; }
+  .mine-difficulties button { min-height:40px; flex-direction:column; gap:2px; font-size:12px; touch-action:manipulation; }
+  .mine-score { height:58px; padding-inline:10px; }
+  .mine-score button { width:42px; height:42px; }
+  .mine-score strong { min-width:42px; font-size:18px; }
+  .mine-board { margin:auto 0; max-height:calc(100% - 130px); touch-action:manipulation; }
+  .mine-board button { border-width:1px; font-size:clamp(7px,3vw,12px); touch-action:manipulation; -webkit-touch-callout:none; }
+  .minesweeper > footer { min-height:20px; font-size:9px; }
+  .game-result-layer { align-items:end; padding:0; }
+  .game-result-layer > div { width:100%; padding:24px 18px calc(20px + env(safe-area-inset-bottom)); border-width:1px 0 0; border-radius:12px 12px 0 0; }
+  .game-result-layer footer { width:100%; }
+  .game-result-layer button { min-width:0; height:44px; flex:1; font-size:13px; }
+  .chess-toolbar { min-height:98px; padding:7px 8px; gap:6px; }
+  .chess-actions { overflow-x:auto; scrollbar-width:none; }
+  .chess-actions::-webkit-scrollbar { display:none; }
+  .chess-actions button { width:40px; height:40px; flex:none; touch-action:manipulation; }
+  .chess-mode-controls select,.board-game-toolbar select { height:40px; font-size:13px; }
+  .chess-game > .chess-clock-modes { height:46px; padding:4px 8px; }
+  .chess-clock-modes button { min-width:0; height:38px; font-size:10px; }
+  .chess-layout { padding:6px; gap:6px; grid-template-rows:minmax(0,1fr) 96px; }
+  .chess-board { width:min(100%,calc(100dvh - 292px)); height:auto; max-height:100%; }
+  .chess-sidebar { grid-template-rows:28px minmax(0,1fr) 28px; }
+  .chess-piece { font-size:clamp(20px,8vw,34px); }
+  .board-game-toolbar { min-height:90px; padding:7px 8px; gap:6px; }
+  .board-game-actions { overflow-x:auto; }
+  .board-game-actions button { min-width:40px; height:40px; padding:0; touch-action:manipulation; }
+  .oriental-game-layout { padding:6px; gap:6px; grid-template-rows:minmax(0,1fr) 78px; }
+  .gomoku-board { width:min(100%,calc(100dvh - 236px)); height:auto; max-height:100%; border-width:5px; }
+  .board-game-panel section { min-width:0; }
+  .board-game-panel section strong { overflow:hidden; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+  .game-rules { align-items:end; padding:0; }
+  .game-rules > div { width:100%; max-height:82%; border-width:1px 0 0; border-radius:12px 12px 0 0; }
+  .game-rules header { height:52px; }
+  .game-rules header button { width:40px; height:40px; }
+  .game-rules article { padding:10px 18px calc(20px + env(safe-area-inset-bottom)); }
+  .game-rules h3 { font-size:14px; }
+  .game-rules p,.game-rules dl { font-size:12px; }
+  .calculator { grid-template-rows:48px 128px 38px minmax(0,1fr); padding-bottom:env(safe-area-inset-bottom); }
+  .calculator-mode { padding-inline:12px; }
+  .calculator-mode > button { width:40px; height:40px; border-radius:8px; }
+  .calculator-display { padding:12px 15px 10px; }
+  .calculator output { font-size:48px; }
+  .calculator output.medium { font-size:36px; }
+  .calculator output.small { font-size:27px; }
+  .calculator-memory { padding-inline:8px; }
+  .calculator-memory button { height:36px; font-size:11px; }
+  .calculator-keys { padding:7px 8px 9px; gap:7px; }
+  .calculator-keys button { border-radius:8px; font-size:21px; touch-action:manipulation; }
+  .calculator-keys button.utility { font-size:15px; }
+  .calculator-history-panel { inset:48px 0 env(safe-area-inset-bottom); }
+  .calculator-history-panel > header { height:50px; }
+  .calculator-history-panel > header button { height:38px; }
+  .drawing-app { grid-template-rows:98px minmax(0,1fr) 28px; }
+  .drawing-toolbar { min-height:98px; padding:6px 8px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-rows:42px 38px; gap:6px 7px; overflow:hidden; }
+  .drawing-tools { grid-column:1; grid-row:1; }
+  .drawing-tools button { min-width:44px; height:42px; padding:0; }
+  .drawing-tools button span { display:none; }
+  .drawing-colors { min-width:0; grid-column:1 / 3; grid-row:2; gap:4px; overflow-x:auto; }
+  .drawing-colors button { width:26px; height:26px; flex:none; }
+  .drawing-colors input { width:30px; height:30px; flex:none; }
+  .drawing-size { min-width:96px; grid-column:3; grid-row:2; gap:4px; }
+  .drawing-size span { display:none; }
+  .drawing-size input { width:66px; }
+  .drawing-actions { grid-column:2 / 4; grid-row:1; justify-self:end; }
+  .drawing-actions button { min-width:42px; height:42px; padding:0; touch-action:manipulation; }
+  .drawing-actions .drawing-save { width:42px; justify-content:center; }
+  .drawing-actions .drawing-save span { display:none; }
+  .drawing-stage { padding:6px; }
+  .drawing-app > footer { padding-bottom:env(safe-area-inset-bottom); }
+  .focus-clock { grid-template-rows:96px minmax(0,1fr); }
+  .focus-clock-header { padding:9px 12px 8px; background:#fafaf7e8; backdrop-filter:blur(20px); }
+  .focus-clock-header > div { flex-direction:row; align-items:baseline; gap:8px; }
+  .focus-clock-header strong { font-size:18px; }
+  .focus-clock-header nav { width:100%; }
+  .focus-clock-header nav button { height:38px; min-width:0; flex:1; font-size:11px; touch-action:manipulation; }
+  .focus-clock-body { grid-template-rows:minmax(0,1fr) minmax(138px,29%); }
+  .focus-timer { padding:9px; gap:9px; }
+  .focus-presets button { min-width:72px; height:36px; font-size:10px; }
+  .timer-duration input { height:40px; font-size:16px; }
+  .focus-dial { width:min(64vw,260px,42dvh); }
+  .focus-dial strong { font-size:clamp(38px,13vw,58px); }
+  .focus-controls { grid-template-columns:44px minmax(110px,132px) 44px; }
+  .focus-controls button { height:44px; border-radius:22px; font-size:10px; touch-action:manipulation; }
+  .focus-insights { padding:7px 11px calc(8px + env(safe-area-inset-bottom)); gap:12px; }
+  .focus-summary article { min-height:54px; }
+  .settings-app { grid-template-rows:62px minmax(0,1fr); background:#f2f2f7; }
+  .settings-app > header { height:62px; padding:0 16px; background:#f9f9fbe8; backdrop-filter:blur(20px); }
+  .settings-app > header strong { font-size:20px; }
+  .settings-section { margin:16px 14px 0; padding-bottom:18px; }
+  .settings-section > div:first-child strong { font-size:15px; }
+  .settings-section > div:first-child span { font-size:11px; line-height:1.45; }
+  .theme-options { gap:6px; }
+  .theme-options button { height:88px; padding:7px; border-radius:8px; touch-action:manipulation; }
+  .theme-options i { height:48px; }
+  .settings-switch { min-height:44px; font-size:13px; }
+  .settings-switch i { width:42px; height:24px; border-radius:12px; }
+  .settings-switch i::after { width:20px; height:20px; }
+  .settings-switch[aria-checked=true] i::after { transform:translateX(18px); }
+  .sound-settings > label:not(.settings-switch) { grid-template-columns:42px minmax(0,1fr) 40px; min-height:44px; font-size:12px; }
+  .sound-settings > button { width:108px; height:42px; font-size:12px; }
+  .storage-group-heading { align-items:flex-start; }
+  .storage-group-heading span { max-width:68%; line-height:1.45; }
+  .storage-list article { min-height:82px; padding:8px 0; grid-template-columns:4px minmax(0,1fr) auto; grid-template-rows:minmax(36px,auto) 36px; gap:4px 9px; }
+  .storage-kind { grid-row:1 / 3; }
+  .storage-list article strong { font-size:12px; }
+  .storage-list article small { font-size:10px; white-space:normal; line-height:1.35; }
+  .storage-list output { font-size:10px; }
+  .storage-list button { grid-column:2 / 4; width:82px; height:34px; justify-self:end; font-size:11px; }
+  .backup-actions { display:grid; grid-template-columns:1fr 1fr; }
+  .backup-actions button { height:44px; padding:0 8px; font-size:12px; }
+  .backup-settings { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+  .settings-restore-layer { align-items:end; padding:0; }
+  .settings-restore-layer > section { width:100%; max-height:88%; padding:20px 18px calc(18px + env(safe-area-inset-bottom)); overflow:auto; border-width:1px 0 0; border-radius:12px 12px 0 0; }
+  .settings-restore-layer button { height:44px; font-size:13px; }
 }

@@ -22,6 +22,11 @@ import {
 } from "./desktopFiles";
 import type { AppLaunchIntent } from "./appLaunch";
 import { fileOpenOptions, type FileOpenApp } from "./fileAssociations";
+import {
+  DESKTOP_ICON_LONG_PRESS_MS,
+  isCompactDesktopViewport,
+  movedBeyondLongPressTolerance,
+} from "./desktopIconInteraction";
 
 type ExplorerLocation = "folder" | "recent" | "images" | "documents";
 type SortMode = "name" | "type" | "date";
@@ -146,6 +151,13 @@ export default function FileExplorer({
     startLocalY: number;
     baseIds: string[];
   } | null>(null);
+  const itemPressRef = useRef<{
+    id: string;
+    x: number;
+    y: number;
+    timer: number;
+  } | null>(null);
+  const longPressedItemRef = useRef<string | null>(null);
 
   const liveItems = useMemo(() => visibleDesktopItems(items), [items]);
   const currentFolder = folderId
@@ -257,6 +269,48 @@ export default function FileExplorer({
     if (item.type === "folder") requestNavigation(item.id);
     else onOpen(item);
   };
+  const clearItemPress = () => {
+    if (itemPressRef.current) window.clearTimeout(itemPressRef.current.timer);
+    itemPressRef.current = null;
+  };
+  const showItemContextMenu = (item: DesktopItem, clientX: number, clientY: number) => {
+    clearItemPress();
+    longPressedItemRef.current = item.id;
+    if (!selectedIds.includes(item.id)) setSelectedIds([item.id]);
+    selectionAnchorRef.current = item.id;
+    const bounds = contentRef.current?.closest(".file-explorer")?.getBoundingClientRect();
+    if (!bounds) return;
+    setContextMenu({
+      x: Math.min(clientX - bounds.left, bounds.width - 178),
+      y: Math.min(clientY - bounds.top, bounds.height - 230),
+    });
+  };
+  const beginItemPress = (item: DesktopItem, event: PointerEvent<HTMLButtonElement>) => {
+    if (!isCompactDesktopViewport() || event.button !== 0) return;
+    clearItemPress();
+    longPressedItemRef.current = null;
+    const x = event.clientX;
+    const y = event.clientY;
+    itemPressRef.current = {
+      id: item.id,
+      x,
+      y,
+      timer: window.setTimeout(
+        () => showItemContextMenu(item, x, y),
+        DESKTOP_ICON_LONG_PRESS_MS,
+      ),
+    };
+  };
+  const moveItemPress = (event: PointerEvent<HTMLButtonElement>) => {
+    const press = itemPressRef.current;
+    if (
+      press
+      && movedBeyondLongPressTolerance(
+        { x: press.x, y: press.y },
+        { x: event.clientX, y: event.clientY },
+      )
+    ) clearItemPress();
+  };
 
   const openLocation = (next: ExplorerLocation) => {
     setLocation(next);
@@ -346,6 +400,8 @@ export default function FileExplorer({
 
   const startLasso = (event: PointerEvent<HTMLElement>) => {
     if (
+      isCompactDesktopViewport()
+      ||
       event.button !== 0
       || (event.target as HTMLElement).closest(".explorer-items > button,.explorer-list-header")
     ) return;
@@ -402,6 +458,9 @@ export default function FileExplorer({
     setSelectionBox(null);
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
+  useEffect(() => () => {
+    if (itemPressRef.current) window.clearTimeout(itemPressRef.current.timer);
+  }, []);
 
   const selectedTreeIds = selectedItems.reduce((result, item) => {
     for (const id of descendantIds(liveItems, [item.id])) result.add(id);
@@ -543,9 +602,31 @@ export default function FileExplorer({
             draggable
             aria-pressed={selectedIds.includes(item.id)}
             className={`${selectedIds.includes(item.id) ? "selected" : ""} ${clipboard?.mode === "move" && clipboard.ids.includes(item.id) ? "cut" : ""} ${dropTargetId === item.id ? "drop-target" : ""}`}
-            onClick={(event) => selectItem(item, event)}
-            onDoubleClick={() => activateItem(item)}
-            onDragStart={(event) => writeDrag(event, item)}
+            onPointerDown={(event) => beginItemPress(item, event)}
+            onPointerMove={moveItemPress}
+            onPointerUp={clearItemPress}
+            onPointerCancel={clearItemPress}
+            onClick={(event) => {
+              if (isCompactDesktopViewport()) {
+                if (longPressedItemRef.current === item.id) {
+                  longPressedItemRef.current = null;
+                  return;
+                }
+                activateItem(item);
+                return;
+              }
+              selectItem(item, event);
+            }}
+            onDoubleClick={() => {
+              if (!isCompactDesktopViewport()) activateItem(item);
+            }}
+            onDragStart={(event) => {
+              if (isCompactDesktopViewport()) {
+                event.preventDefault();
+                return;
+              }
+              writeDrag(event, item);
+            }}
             onDragEnd={() => setDropTargetId(null)}
             onDragOver={(event) => {
               if (item.type !== "folder" || !event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) return;
@@ -560,15 +641,7 @@ export default function FileExplorer({
             }}
             onContextMenu={(event) => {
               event.preventDefault();
-              if (!selectedIds.includes(item.id)) setSelectedIds([item.id]);
-              selectionAnchorRef.current = item.id;
-              const bounds = event.currentTarget.closest(".file-explorer")?.getBoundingClientRect();
-              if (bounds) {
-                setContextMenu({
-                  x: Math.min(event.clientX - bounds.left, bounds.width - 178),
-                  y: Math.min(event.clientY - bounds.top, bounds.height - 230),
-                });
-              }
+              showItemContextMenu(item, event.clientX, event.clientY);
             }}
           >
             <ItemIcon item={item} />

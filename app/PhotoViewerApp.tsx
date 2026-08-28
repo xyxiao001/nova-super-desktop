@@ -2,7 +2,14 @@
 
 import "./productivity-apps.css";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import type { DesktopItem } from "./desktopFiles";
 import {
   clampPhotoZoom,
@@ -36,6 +43,7 @@ export default function PhotoViewerApp({ images, active, focused, open, clearAct
   const [zoomState, setZoomState] = useState({ photoId: "", zoom: 1 });
   const [dimensions, setDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const canvasRef = useRef<HTMLDivElement>(null);
+  const photoGestureRef = useRef<{ x: number; y: number } | null>(null);
 
   const currentId = active ? `desktop:${active.id}` : selectedId;
   const current = photos.find((photo) => photo.id === currentId) ?? null;
@@ -68,6 +76,19 @@ export default function PhotoViewerApp({ images, active, focused, open, clearAct
     const index = currentIndex < 0 ? 0 : (currentIndex + offset + photos.length) % photos.length;
     selectPhoto(photos[index]);
   }, [currentIndex, photos, selectPhoto]);
+  const beginPhotoGesture = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType === "mouse" || zoom !== 1) return;
+    photoGestureRef.current = { x: event.clientX, y: event.clientY };
+  };
+  const finishPhotoGesture = (event: ReactPointerEvent<HTMLElement>) => {
+    const origin = photoGestureRef.current;
+    photoGestureRef.current = null;
+    if (!origin) return;
+    const deltaX = event.clientX - origin.x;
+    const deltaY = event.clientY - origin.y;
+    if (Math.abs(deltaX) < 52 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) return;
+    stepPhoto(deltaX < 0 ? 1 : -1);
+  };
   useEffect(() => {
     if (!focused || !currentId) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -146,7 +167,7 @@ export default function PhotoViewerApp({ images, active, focused, open, clearAct
         <button aria-label="重置为100%" title="重置为100%" onClick={() => changeZoom(1)}>100%</button>
       </div>
     </header>
-    <section className="photo-stage">
+    <section className="photo-stage" onPointerDown={beginPhotoGesture} onPointerUp={finishPhotoGesture} onPointerCancel={() => { photoGestureRef.current = null; }}>
       <button className="photo-step previous" aria-label="上一张" title="上一张" onClick={() => stepPhoto(-1)}>‹</button>
       <div ref={canvasRef} className="photo-canvas">
         <img
