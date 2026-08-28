@@ -2,7 +2,7 @@
 
 import "./reader.css";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { AppLaunchIntent } from "./appLaunch";
 import {
   chapterParagraphs,
@@ -349,6 +349,7 @@ export default function ReaderApp({
 
   const activateBook = (book: StoredBook, parsed: ReaderChapter[]) => {
     const position = readReaderLocation(book.id, parsed);
+    const compact = hasCompactReaderViewport();
     semanticLocationRef.current = {
       paragraphIndex: position.paragraphIndex,
       characterOffset: position.characterOffset,
@@ -364,7 +365,11 @@ export default function ReaderApp({
     setSearchQuery("");
     setSearchResults([]);
     setMessage("");
-    setSidebarOpen(!hasCompactReaderViewport());
+    setSidebarOpen(!compact);
+    setImmersive(compact);
+    setChromeHidden(false);
+    if (chromeTimerRef.current) window.clearTimeout(chromeTimerRef.current);
+    if (compact) chromeTimerRef.current = window.setTimeout(() => setChromeHidden(true), 2200);
   };
 
   const openBook = async (book: StoredBook | StoredBookSummary) => {
@@ -681,8 +686,18 @@ export default function ReaderApp({
       chromeTimerRef.current = null;
     }
   };
+  const toggleMobileChrome = () => {
+    if (!immersive || !hasCompactReaderViewport()) return;
+    if (chromeTimerRef.current) {
+      window.clearTimeout(chromeTimerRef.current);
+      chromeTimerRef.current = null;
+    }
+    setChromeHidden((current) => !current);
+  };
   const beginPageGesture = (event: React.PointerEvent<HTMLElement>) => {
-    if (preferences.readingMode === "page") pagePointerRef.current = { x: event.clientX, y: event.clientY };
+    if (preferences.readingMode === "page" || immersive && hasCompactReaderViewport()) {
+      pagePointerRef.current = { x: event.clientX, y: event.clientY };
+    }
   };
   const finishPageGesture = (event: React.PointerEvent<HTMLElement>) => {
     const start = pagePointerRef.current;
@@ -693,9 +708,15 @@ export default function ReaderApp({
       return;
     }
     setSelectedExcerpt("");
-    if (!start || preferences.readingMode !== "page") return;
+    if (!start) return;
     const horizontal = event.clientX - start.x;
     const vertical = event.clientY - start.y;
+    const interactiveTarget = (event.target as HTMLElement).closest("button,input,textarea,select,label");
+    if (!interactiveTarget && immersive && hasCompactReaderViewport() && Math.abs(horizontal) < 12 && Math.abs(vertical) < 12) {
+      toggleMobileChrome();
+      return;
+    }
+    if (preferences.readingMode !== "page") return;
     if (Math.abs(horizontal) < 44 || Math.abs(horizontal) <= Math.abs(vertical)) return;
     if (horizontal < 0) nextPage();
     else previousPage();
@@ -757,7 +778,7 @@ export default function ReaderApp({
     saveReaderBookmarks(activeBook.id, next);
   };
   const revealChrome = () => {
-    if (!immersive) return;
+    if (!immersive || hasCompactReaderViewport()) return;
     setChromeHidden(false);
     if (chromeTimerRef.current) window.clearTimeout(chromeTimerRef.current);
     chromeTimerRef.current = window.setTimeout(() => setChromeHidden(true), 2200);
@@ -873,7 +894,14 @@ export default function ReaderApp({
       {sidebarOpen && <button className="reader-sidebar-scrim" aria-label="关闭目录" onClick={() => setSidebarOpen(false)}/>}
       {sidebarOpen && <aside className="reader-chapters"><header><div><button className={sidebarTab === "chapters" ? "active" : ""} onClick={() => setSidebarTab("chapters")}>目录</button><button className={sidebarTab === "bookmarks" ? "active" : ""} onClick={() => setSidebarTab("bookmarks")}>书签</button></div><span>{sidebarTab === "chapters" ? `${chapters.length} 章` : `${bookmarks.length} 个`}</span></header>{sidebarTab === "chapters" ? <div>{chapters.map((item, index) => <button key={`${item.title}-${index}`} className={index === chapterIndex ? "active" : ""} onClick={() => selectChapter(index)}><span>{item.title}</span>{index === chapterIndex && <small>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1}/${pageCount}`}</small>}</button>)}</div> : <div className="reader-bookmarks">{bookmarks.map((bookmark) => <article key={bookmark.id}><button onClick={() => jumpToLocation(bookmark)}><strong>{bookmark.chapterTitle}</strong><span>{bookmark.excerpt}</span></button><button aria-label="删除书签" title="删除书签" onClick={() => removeBookmark(bookmark.id)}>×</button></article>)}{!bookmarks.length && <p>还没有书签</p>}</div>}</aside>}
       <main key={`${activeBook.id}-${chapterIndex}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture}>
-        <article ref={pageRef} className="reader-page" style={{ fontSize: preferences.fontSize, lineHeight: preferences.lineHeight }}>
+        <article
+          ref={pageRef}
+          className="reader-page"
+          style={{
+            "--reader-font-size": `${preferences.fontSize}px`,
+            lineHeight: preferences.lineHeight,
+          } as CSSProperties}
+        >
           <header><span>{activeBook.title}</span><span>{chapter?.title}</span></header>
           {preferences.readingMode === "scroll" && <h1>{chapter?.title}</h1>}
           {preferences.readingMode === "scroll" ? <div className="reader-content">{paragraphSegments.map((segment, segmentIndex) => <section className="reader-paragraph-segment" data-reader-segment={segmentIndex} key={segmentIndex}>{segment.map((paragraph) => <p key={paragraph.index} data-reader-paragraph={paragraph.index}>{paragraph.text}</p>)}</section>)}</div> : <div className="reader-page-viewport" ref={pageViewportRef}><div className="reader-page-flow" ref={pageFlowRef} style={{ columnWidth: pageWidth || undefined, columnGap: PAGE_GAP }}><h1>{chapter?.title}</h1>{paragraphs.map((paragraph) => <p key={paragraph.index}>{paragraph.text}</p>)}</div></div>}
@@ -886,5 +914,11 @@ export default function ReaderApp({
       {searchOpen && <aside className="reader-search-panel"><header><label><span aria-hidden="true">⌕</span><input value={searchQuery} onChange={(event) => { const value = event.target.value; setSearchQuery(value); if (!value.trim()) { setSearchResults([]); setSearching(false); } }} aria-label="搜索书内内容" placeholder="搜索当前书籍"/></label><button aria-label="关闭搜索" onClick={() => setSearchOpen(false)}>×</button></header><div>{searching ? <p>正在搜索…</p> : searchResults.map((result) => <button key={result.id} onClick={() => jumpToLocation(result)}><strong>{result.chapterTitle}</strong><span>{result.excerpt}</span></button>)}{!searching && searchQuery && !searchResults.length && <p>没有找到相关内容</p>}</div></aside>}
       {settingsOpen && <aside className="reader-settings"><header><strong>阅读设置</strong><button aria-label="关闭阅读设置" onClick={() => setSettingsOpen(false)}>×</button></header><span className="reader-setting-label">阅读方式</span><div className="reading-mode-options"><button className={preferences.readingMode === "scroll" ? "active" : ""} onClick={() => setReadingMode("scroll")}>上下滚动</button><button className={preferences.readingMode === "page" ? "active" : ""} onClick={() => setReadingMode("page")}>左右翻页</button></div><span className="reader-setting-label">阅读背景</span><div className="theme-options">{(["paper", "green", "night"] as ReaderTheme[]).map((theme) => <button key={theme} className={`${theme} ${preferences.theme === theme ? "active" : ""}`} onClick={() => setPreferences({ ...preferences, theme })}>{theme === "paper" ? "纸张" : theme === "green" ? "护眼" : "夜间"}</button>)}</div><span className="reader-setting-label">字号 <output>{preferences.fontSize}px</output></span><input aria-label="字号" type="range" min="15" max="30" value={preferences.fontSize} onChange={(event) => updateTypography({ fontSize: Number(event.target.value) })}/><span className="reader-setting-label">行距 <output>{preferences.lineHeight.toFixed(1)}</output></span><input aria-label="行距" type="range" min="1.5" max="2.3" step=".1" value={preferences.lineHeight} onChange={(event) => updateTypography({ lineHeight: Number(event.target.value) })}/>{preferences.readingMode === "page" && <><span className="reader-setting-label">翻页动画</span><div className="animation-options">{(["page", "slide", "none"] as const).map((animation) => <button key={animation} className={preferences.animation === animation ? "active" : ""} onClick={() => setPreferences({ ...preferences, animation })}>{animation === "page" ? "仿真" : animation === "slide" ? "滑动" : "无"}</button>)}</div></>}<p>进度、排版设置和已下载书籍都会保存在当前设备。</p></aside>}
     </div>
+    <nav className="reader-mobile-toolbar" aria-label="阅读工具">
+      <button aria-label={sidebarOpen ? "关闭目录" : "打开目录"} aria-expanded={sidebarOpen} onClick={toggleSidebar}><span aria-hidden="true">☰</span><small>目录</small></button>
+      <button aria-label="搜索书内内容" aria-expanded={searchOpen} onClick={toggleSearch}><span aria-hidden="true">⌕</span><small>搜索</small></button>
+      <button aria-label="添加书签" onClick={addBookmark}><span aria-hidden="true">☆</span><small>书签</small></button>
+      <button aria-label="阅读设置" aria-expanded={settingsOpen} onClick={toggleSettings}><span aria-hidden="true">Aa</span><small>设置</small></button>
+    </nav>
   </div>;
 }
