@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canMeasureWindowGeometry,
   edgeSnapMode,
+  fitWindowGeometry,
   snappedWindowGeometry,
   windowShortcutAction,
 } from "../../app/windowGeometry";
@@ -13,6 +14,26 @@ describe("canMeasureWindowGeometry", () => {
     expect(canMeasureWindowGeometry(false, false, 0, 0)).toBe(false);
     expect(canMeasureWindowGeometry(false, true, 820, 600)).toBe(false);
     expect(canMeasureWindowGeometry(false, false, 820, 600)).toBe(true);
+  });
+});
+
+describe("fitWindowGeometry", () => {
+  it("recovers a settings window that was saved too small or outside the viewport", () => {
+    expect(fitWindowGeometry(
+      { x: 880, y: -420, width: 320, height: 260 },
+      1200,
+      800,
+      560,
+      430,
+    )).toEqual({ x: 640, y: 0, width: 560, height: 430 });
+  });
+
+  it("replaces invalid numeric geometry with visible defaults", () => {
+    expect(fitWindowGeometry(
+      { x: Number.NaN, y: Number.POSITIVE_INFINITY, width: Number.NaN, height: 500 },
+      1000,
+      700,
+    )).toEqual({ x: 0, y: 0, width: 320, height: 500 });
   });
 });
 

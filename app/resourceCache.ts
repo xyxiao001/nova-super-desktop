@@ -32,7 +32,10 @@ const mergeResourceStats = (stats: ResourceCacheStats[] = []): NovaResourcePacka
 };
 
 const requestServiceWorker = async (
-  message: { type: "GET_RESOURCE_CACHE_STATUS" } | { type: "CLEAR_RESOURCE_CACHE"; packageId: string },
+  message:
+    | { type: "GET_RESOURCE_CACHE_STATUS" }
+    | { type: "CLEAR_RESOURCE_CACHE"; packageId: string }
+    | { type: "CLEAR_ALL_RESOURCE_CACHES" },
 ) => {
   if (!("serviceWorker" in navigator)) return null;
   const registration = await navigator.serviceWorker.getRegistration("/");
@@ -64,6 +67,12 @@ export async function clearResourceCache(packageId: string) {
     type: "CLEAR_RESOURCE_CACHE",
     packageId,
   });
+  if (!response) throw new Error("Service Worker 尚未接管页面");
+  if (!response.ok) throw new Error(response.error);
+}
+
+export async function clearAllResourceCaches() {
+  const response = await requestServiceWorker({ type: "CLEAR_ALL_RESOURCE_CACHES" });
   if (!response) throw new Error("Service Worker 尚未接管页面");
   if (!response.ok) throw new Error(response.error);
 }

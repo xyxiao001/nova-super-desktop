@@ -24,6 +24,28 @@ export function canMeasureWindowGeometry(
   return !minimized && !maximized && width > 0 && height > 0;
 }
 
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const finiteOr = (value: number, fallback: number) => Number.isFinite(value) ? value : fallback;
+
+export function fitWindowGeometry(
+  geometry: WindowGeometry,
+  viewportWidth: number,
+  viewportHeight: number,
+  minimumWidth = 320,
+  minimumHeight = 260,
+): WindowGeometry {
+  const maximumWidth = Math.max(minimumWidth, viewportWidth - 8);
+  const maximumHeight = Math.max(minimumHeight, viewportHeight - 57);
+  const width = clamp(finiteOr(geometry.width, minimumWidth), minimumWidth, maximumWidth);
+  const height = clamp(finiteOr(geometry.height, minimumHeight), minimumHeight, maximumHeight);
+  return {
+    x: clamp(finiteOr(geometry.x, 0), 0, Math.max(0, viewportWidth - width)),
+    y: clamp(finiteOr(geometry.y, 0), 0, Math.max(0, viewportHeight - 49 - height)),
+    width,
+    height,
+  };
+}
+
 export function snappedWindowGeometry(
   mode: WindowSnapMode,
   viewportWidth: number,

@@ -17,7 +17,11 @@ vi.mock("../../app/readerStorage", () => ({
   replaceStoredBooks: storageMocks.replaceStoredBooks,
 }));
 
-import { clearNovaStorageCategory, inspectNovaStorage } from "../../app/novaStorage";
+import {
+  clearAllNovaStorage,
+  clearNovaStorageCategory,
+  inspectNovaStorage,
+} from "../../app/novaStorage";
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -66,5 +70,26 @@ describe("novaStorage", () => {
     expect(localStorage.getItem("nova-game-records")).toBeNull();
     expect(localStorage.getItem("HumanBreak_settings")).toBeNull();
     expect(localStorage.getItem("nova-reader-bookmarks")).toBe("[]");
+  });
+
+  it("clears every managed user-data provider without touching unrelated storage", async () => {
+    storageMocks.loadDesktopItems.mockResolvedValue([{ id: "desktop-file" }]);
+    localStorage.setItem("nova-game-records", "{}");
+    localStorage.setItem("nova-reader-bookmarks", "[]");
+    localStorage.setItem("nova-focus-sessions", "[]");
+    localStorage.setItem("nova-settings", "{}");
+    localStorage.setItem("nova-custom-data", "value");
+    localStorage.setItem("unrelated", "keep");
+
+    await clearAllNovaStorage();
+
+    expect(storageMocks.deleteDesktopItems).toHaveBeenCalledWith(["desktop-file"]);
+    expect(storageMocks.replaceStoredBooks).toHaveBeenCalledWith([]);
+    expect(localStorage.getItem("nova-game-records")).toBeNull();
+    expect(localStorage.getItem("nova-reader-bookmarks")).toBeNull();
+    expect(localStorage.getItem("nova-focus-sessions")).toBeNull();
+    expect(localStorage.getItem("nova-settings")).toBeNull();
+    expect(localStorage.getItem("nova-custom-data")).toBeNull();
+    expect(localStorage.getItem("unrelated")).toBe("keep");
   });
 });

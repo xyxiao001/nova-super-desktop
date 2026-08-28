@@ -1,6 +1,6 @@
 importScripts("/resource-packages.generated.js");
 
-const VERSION = "nova-pwa-v4";
+const VERSION = "nova-pwa-v5";
 const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RESOURCE_CACHE_PREFIX = `${VERSION}:resource:`;
@@ -135,6 +135,18 @@ self.addEventListener("message", (event) => {
       .catch((error) => event.ports[0].postMessage({
         ok: false,
         error: error instanceof Error ? error.message : "缓存删除失败",
+      })));
+    return;
+  }
+  if (event.data?.type === "CLEAR_ALL_RESOURCE_CACHES" && event.ports[0]) {
+    event.waitUntil(caches.keys()
+      .then((names) => Promise.all(names
+        .filter((name) => name.startsWith(CACHE_PREFIX))
+        .map((name) => caches.delete(name))))
+      .then(() => event.ports[0].postMessage({ ok: true }))
+      .catch((error) => event.ports[0].postMessage({
+        ok: false,
+        error: error instanceof Error ? error.message : "缓存清理失败",
       })));
   }
 });

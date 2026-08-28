@@ -1,8 +1,9 @@
 export type NovaTheme = "system"|"light"|"dark";
-export type NovaSettings = { theme:NovaTheme; sound:boolean; volume:number };
+export type NovaWallpaper = "nova"|"harbor"|"dawn"|"grove"|"dusk"|"graphite";
+export type NovaSettings = { theme:NovaTheme; wallpaper:NovaWallpaper; sound:boolean; volume:number };
 export type NovaSound = "open"|"close"|"move"|"success"|"error";
 
-export const DEFAULT_SETTINGS:NovaSettings={theme:"system",sound:true,volume:.45};
+export const DEFAULT_SETTINGS:NovaSettings={theme:"system",wallpaper:"nova",sound:true,volume:.45};
 const SETTINGS_KEY="nova-settings";
 const SETTINGS_EVENT="nova-settings-change";
 

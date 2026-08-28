@@ -1,15 +1,24 @@
 .windows-desktop {
-  background: #0d6db2;
+  --wallpaper-base: linear-gradient(145deg,#061c4d,#0877ba 53%,#b4e9ed);
+  --wallpaper-pane: linear-gradient(135deg,#d8fbffcc,#27c2e6a8 48%,#1468b2a8);
+  --wallpaper-accent: #52d7ea7a;
+  --wallpaper-line: #ffffff17;
+  background: #102d48;
   color: #151515;
 }
+
+.windows-desktop.wallpaper-harbor { --wallpaper-base:linear-gradient(145deg,#202b31,#66818a 48%,#d9dedc); --wallpaper-pane:linear-gradient(135deg,#f4c46cb8,#c66f527f 54%,#334f5c99); --wallpaper-accent:#f2d7a46e; --wallpaper-line:#eef8fa20; }
+.windows-desktop.wallpaper-dawn { --wallpaper-base:linear-gradient(140deg,#3b304b,#ba5e68 50%,#f0c67c); --wallpaper-pane:linear-gradient(135deg,#f8e4c4a8,#ee8d7d80 48%,#5b436f91); --wallpaper-accent:#ffe0a86e; --wallpaper-line:#fff7e926; }
+.windows-desktop.wallpaper-grove { --wallpaper-base:linear-gradient(145deg,#16332d,#507763 52%,#ced1a0); --wallpaper-pane:linear-gradient(135deg,#e6e2a7a1,#77a2708c 50%,#204d4699); --wallpaper-accent:#d9b96f70; --wallpaper-line:#f4f3d51d; }
+.windows-desktop.wallpaper-dusk { --wallpaper-base:linear-gradient(145deg,#111726,#354a6b 54%,#d59672); --wallpaper-pane:linear-gradient(135deg,#edb0819c,#8b668290 46%,#1d2b4ca3); --wallpaper-accent:#e8c16b6b; --wallpaper-line:#fbeadd1c; }
+.windows-desktop.wallpaper-graphite { --wallpaper-base:linear-gradient(140deg,#171a1d,#4b5155 55%,#b7b4ac); --wallpaper-pane:linear-gradient(135deg,#e5e3dd8f,#8d92959a 50%,#292d31a6); --wallpaper-accent:#d0a65f70; --wallpaper-line:#ffffff1d; }
 
 .windows-wallpaper {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 72% 30%, #9ee8ff 0 5%, transparent 25%),
-    linear-gradient(135deg, #071e67 0%, #075ea7 35%, #38b7e7 68%, #a7e6f4 100%);
+  background:var(--wallpaper-base);
+  transition:background .35s ease,filter .2s ease;
 }
 
 .windows-wallpaper::before,
@@ -17,33 +26,28 @@
 .windows-wallpaper i {
   content: "";
   position: absolute;
-  border-radius: 58% 42% 66% 34% / 42% 55% 45% 58%;
-  filter: blur(2px);
 }
 
 .windows-wallpaper::before {
-  width: 70vw;
-  height: 48vw;
-  right: -17vw;
-  top: -16vw;
-  background: linear-gradient(140deg, #d6f9ffcc, #39c8f0bb 40%, #087cd5aa 73%, transparent);
-  transform: rotate(-16deg);
-  box-shadow: inset 25px -18px 75px #fff8;
+  width:78vw;
+  height:74vh;
+  right:-18vw;
+  top:-20vh;
+  clip-path:polygon(17% 0,100% 0,100% 72%,45% 100%,0 58%);
+  background:var(--wallpaper-pane);
+  box-shadow:inset 30px -24px 90px #ffffff40;
+  transform:rotate(-5deg);
 }
 
 .windows-wallpaper::after {
-  width: 64vw;
-  height: 54vw;
-  right: 4vw;
-  top: 13vh;
-  background: linear-gradient(150deg, #b8f1ffb8, #158bd4b5 48%, #123e95aa);
-  transform: rotate(31deg);
-  box-shadow: inset -35px 24px 80px #c4f7ff55;
+  inset:0;
+  background:repeating-linear-gradient(112deg,transparent 0 58px,var(--wallpaper-line) 59px 60px,transparent 61px 118px);
+  mask-image:linear-gradient(to bottom right,#0008,transparent 68%);
 }
 
-.windows-wallpaper i:nth-child(1) { width: 28vw; height: 72vw; left: 24vw; top: -9vw; background: #0a4ca6b0; transform: rotate(-34deg); filter: blur(22px); }
-.windows-wallpaper i:nth-child(2) { width: 38vw; height: 22vw; left: -10vw; bottom: -8vw; background: #1ca8d4aa; filter: blur(38px); }
-.windows-wallpaper i:nth-child(3) { width: 35vw; height: 20vw; right: -8vw; bottom: -6vw; background: #8ae7f3a8; filter: blur(42px); }
+.windows-wallpaper i:nth-child(1) { width:12vw; height:120vh; left:31vw; top:-20vh; background:#071d4b45; transform:rotate(28deg); }
+.windows-wallpaper i:nth-child(2) { width:48vw; height:18vh; left:-15vw; bottom:5vh; clip-path:polygon(0 28%,86% 0,100% 72%,12% 100%); background:var(--wallpaper-accent); }
+.windows-wallpaper i:nth-child(3) { width:42vw; height:24vh; right:-10vw; bottom:-6vh; clip-path:polygon(15% 0,100% 20%,100% 100%,0 100%); background:#ffffff24; }
 
 .desktop-files {
   position: absolute;
@@ -182,7 +186,7 @@
 .folder-window { inset: auto; width: min(760px, 82vw); height: min(520px, 74vh); left: 20vw; top: 82px; }
 .recycle-window { inset: auto; width: min(760px, 82vw); height: min(520px, 74vh); left: 22vw; top: 76px; }
 .games-window { inset:auto; width:min(900px,90vw); height:min(650px,82vh); left:15vw; top:58px; }
-.settings-window { inset:auto; width:min(660px,86vw); height:min(510px,76vh); left:22vw; top:82px; }
+.settings-window { inset:auto; width:min(660px,86vw); height:min(510px,76vh); min-width:min(560px,calc(100vw - 8px)); min-height:min(430px,calc(100vh - 57px)); left:22vw; top:82px; }
 .windows-desktop .mines-window { inset: auto; width: min(860px,90vw); height: min(700px,84vh); min-width: min(520px,calc(100vw - 8px)); min-height: min(680px,calc(100vh - 57px)); left: 12vw; top: 52px; }
 .windows-desktop .chess-window { inset: auto; width: min(860px,90vw); height: min(720px,86vh); min-width: min(600px,calc(100vw - 8px)); min-height: 560px; left: 14vw; top: 42px; }
 .windows-desktop .gomoku-window { inset:auto; width:min(840px,90vw); height:min(720px,86vh); min-width:min(580px,calc(100vw - 8px)); min-height:560px; left:13vw; top:44px; }
@@ -423,9 +427,10 @@
 .taskbar-window-menu { position:absolute; z-index:132; bottom:55px; width:184px; padding:7px; display:flex; flex-direction:column; border:1px solid #ffffffa8; border-radius:7px; background:#f3f6f8f2; color:#202a30; box-shadow:0 14px 36px #0007; backdrop-filter:blur(20px); }.taskbar-window-menu > strong { padding:7px 8px 8px; overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }.taskbar-window-menu button { height:31px; padding:0 9px; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; font-size:10px; }.taskbar-window-menu button:hover { background:#dce8ef; }.taskbar-window-menu > span { height:1px; margin:4px 3px; background:#cbd5db; }.taskbar-window-menu button.danger { color:#b92d2d; }
 .window-switcher { position:absolute; z-index:180; left:50%; top:44%; max-width:min(760px,90vw); padding:14px; display:flex; gap:10px; border:1px solid #ffffff70; border-radius:8px; background:#172029e8; box-shadow:0 24px 70px #000a; transform:translate(-50%,-50%); backdrop-filter:blur(24px); }.window-switcher > div { width:108px; min-width:0; height:94px; padding:13px 8px 9px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:8px; border:1px solid transparent; border-radius:6px; color:#d8e1e6; }.window-switcher > div.active { border-color:#65b8ef; background:#ffffff18; box-shadow:inset 0 0 0 1px #65b8ef55; }.window-switcher .app-glyph { width:42px; height:42px; font-size:20px; }.window-switcher strong { width:100%; overflow:hidden; font-size:9px; font-weight:500; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
 
-.windows-desktop.theme-dark .windows-wallpaper { filter:brightness(.58) saturate(.8); }
+.windows-desktop.theme-dark .windows-wallpaper { filter:brightness(.78) saturate(.88); }
 .windows-desktop.theme-dark .desktop-window { border-color:#71808b; box-shadow:0 22px 60px #000b; }
 .windows-desktop.theme-dark .window-chrome { border-bottom-color:#39434a; background:#20272c; color:#e8edf0; }
+.windows-desktop.theme-dark .window-identity strong { color:#edf2f4; }
 .windows-desktop.theme-dark .windows-controls button { color:#e8edf0; }
 .windows-desktop.theme-dark .snap-picker,
 .windows-desktop.theme-dark .system-panel { border-color:#ffffff24; background:#222a30f2; color:#e7ecef; }

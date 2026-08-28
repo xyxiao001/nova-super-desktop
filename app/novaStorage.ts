@@ -31,9 +31,20 @@ export async function inspectNovaStorage(): Promise<NovaStorageCategory[]> {
 
   return categories
     .filter((category) => category.showWhenEmpty || category.entries > 0)
-    .map(({ showWhenEmpty: _showWhenEmpty, ...category }) => category);
+    .map(({ id, label, description, entries, bytes, canClear }) => ({
+      id,
+      label,
+      description,
+      entries,
+      bytes,
+      canClear,
+    }));
 }
 
 export async function clearNovaStorageCategory(id: NovaStorageCategoryId) {
   await STORAGE_PROVIDER_BY_ID[id].clear();
+}
+
+export async function clearAllNovaStorage() {
+  await Promise.all(STORAGE_PROVIDERS.map((provider) => provider.clear()));
 }
