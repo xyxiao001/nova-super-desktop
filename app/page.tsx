@@ -119,7 +119,7 @@ const SETTINGS_SEARCH_ENTRIES=[
   {key:"settings:theme",sectionId:"theme",label:"主题",detail:"设置 · 个性化",keywords:"明亮 深色 跟随系统"},
   {key:"settings:sound",sectionId:"sound",label:"声音与音量",detail:"设置 · 声音",keywords:"静音 音效 音量"},
   {key:"settings:backup",sectionId:"backup",label:"本地备份与恢复",detail:"设置 · 本地数据",keywords:"导入 导出 存储 数据"},
-  {key:"settings:games",sectionId:"games",label:"清除游戏记录",detail:"设置 · 本地游戏数据",keywords:"存档 战绩 重置"},
+  {key:"settings:games",sectionId:"backup",label:"清除游戏记录",detail:"设置 · 本地数据",keywords:"存档 战绩 重置"},
 ];
 const readDesktopDragIds=(dataTransfer:DataTransfer)=>{try{const value=JSON.parse(dataTransfer.getData(NOVA_FILE_DRAG_TYPE));return Array.isArray(value)?value.filter((id):id is string=>typeof id==="string"):[]}catch{return[]}};
 const createInitialWindowState=()=>Object.fromEntries(REGISTERED_APPS.map((app)=>[app.id,{open:false,minimized:false,maximized:false,z:0}])) as WindowStateMap;

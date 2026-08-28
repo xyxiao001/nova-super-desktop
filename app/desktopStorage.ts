@@ -59,6 +59,20 @@ export async function replaceDesktopItems(items: DesktopItem[]) {
   });
 }
 
+export async function deleteDesktopItems(ids: string[]) {
+  if (ids.length === 0) return;
+  return serializeDesktopWrite(async () => {
+    const database = await openDesktopDatabase();
+    try {
+      const transaction = database.transaction("items", "readwrite");
+      await Promise.all(ids.map((id) => transaction.store.delete(id)));
+      await transaction.done;
+    } finally {
+      database.close();
+    }
+  });
+}
+
 async function persistDesktopChanges(previous: DesktopItem[], next: DesktopItem[]) {
   const previousById = new Map(previous.map((item) => [item.id, item]));
   const nextIds = new Set(next.map((item) => item.id));

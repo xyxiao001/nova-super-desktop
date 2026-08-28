@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DesktopItem } from "../../app/desktopFiles";
 import {
   createDesktopSyncQueue,
+  deleteDesktopItems,
   loadDesktopItems,
   replaceDesktopItems,
 } from "../../app/desktopStorage";
@@ -77,6 +78,14 @@ describe("desktopStorage", () => {
     await sync.enqueue([second]);
 
     await expect(loadDesktopItems(createStorage())).resolves.toEqual([second]);
+  });
+
+  it("deletes an explicit set of desktop records", async () => {
+    await replaceDesktopItems([item("first"), item("second"), item("third")]);
+
+    await deleteDesktopItems(["first", "third"]);
+
+    await expect(loadDesktopItems(createStorage())).resolves.toEqual([item("second")]);
   });
 
   it("serializes a full restore after previously queued incremental writes", async () => {
