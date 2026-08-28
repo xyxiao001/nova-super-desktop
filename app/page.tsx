@@ -51,6 +51,7 @@ import ReaderApp from "./ReaderApp";
 import type { StoredBookSummary } from "./readerCore";
 import { getStoredBookSummaries } from "./readerStorage";
 import SettingsApp from "./SettingsApp";
+import StarVoyageGame from "./StarVoyageGame";
 import SudokuGame from "./SudokuGame";
 import {
   edgeSnapMode,
@@ -107,6 +108,7 @@ const APP_REGISTRY:Record<WindowAppId,AppDefinition> = {
   gomoku:{id:"gomoku",label:"五子棋",icon:"●",kind:"gomoku",launcher:false,taskbarPinned:false},
   go:{id:"go",label:"围棋",icon:"◉",kind:"go",launcher:false,taskbarPinned:false},
   sudoku:{id:"sudoku",label:"数独",icon:"九",kind:"sudoku",launcher:false,taskbarPinned:false},
+  voyage:{id:"voyage",label:"星港远征",icon:"✧",kind:"voyage",launcher:false,taskbarPinned:false},
   calculator:{id:"calculator",label:"计算器",icon:"＋",kind:"calculator",launcher:true,taskbarPinned:false},
   drawing:{id:"drawing",label:"NOVA 画板",icon:"✎",kind:"drawing",launcher:true,taskbarPinned:false},
   focus:{id:"focus",label:"专注时钟",icon:"◷",kind:"focus",launcher:true,taskbarPinned:false},
@@ -320,7 +322,7 @@ export default function Home() {
     {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><Notepad items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
     {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><PhotoViewer images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
     {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><ReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
-    {windowStates.games.open&&<AppWindow {...windowProps("games")}><GameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open}} onLaunch={openWindow}/></AppWindow>}
+    {windowStates.games.open&&<AppWindow {...windowProps("games")}><GameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open}} onLaunch={openWindow}/></AppWindow>}
     {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><FolderView folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
     {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><RecycleBin items={trashedItems} restore={restoreMany} remove={permanentlyDeleteMany} empty={emptyRecycleBin}/></AppWindow>}
     {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><Minesweeper/></AppWindow>}
@@ -328,6 +330,7 @@ export default function Home() {
     {windowStates.gomoku.open&&<AppWindow {...windowProps("gomoku")}><GomokuGame/></AppWindow>}
     {windowStates.go.open&&<AppWindow {...windowProps("go")}><GoGame/></AppWindow>}
     {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><SudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
+    {windowStates.voyage.open&&<AppWindow {...windowProps("voyage")}><StarVoyageGame active={focused==="voyage"&&!windowStates.voyage.minimized}/></AppWindow>}
     {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><Calculator/></AppWindow>}
     {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><DrawingApp onSave={savePhoto}/></AppWindow>}
     {windowStates.focus.open&&<AppWindow {...windowProps("focus")}><FocusClockApp active={focused==="focus"&&!windowStates.focus.minimized}/></AppWindow>}
