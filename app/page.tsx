@@ -1,21 +1,14 @@
 "use client";
 
-import { ChangeEvent, DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import ChessGame from "./ChessGame";
-import DrawingApp from "./DrawingApp";
-import FileExplorer from "./FileExplorer";
-import FocusClockApp from "./FocusClockApp";
+import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import AppLoadBoundary from "./AppLoadBoundary";
 import {
   createAppLaunchIntent,
   launchIntentFor,
   type AppLaunchIntent,
   type AppLaunchTarget,
 } from "./appLaunch";
-import GameHall, { type GameAppId } from "./GameHall";
-import GameResultDialog from "./GameResultDialog";
-import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subscribeGameReset, touchGame } from "./gameStorage";
-import GoGame from "./GoGame";
-import GomokuGame from "./GomokuGame";
+import type { GameAppId } from "./GameHall";
 import {
   applyDesktopFileOperation,
   desktopFileOperationConflicts,
@@ -47,12 +40,28 @@ import {
 } from "./fileAssociations";
 import { playNovaSound, readNovaSettings, saveNovaSettings, type NovaSettings } from "./novaSettings";
 import PwaManager from "./PwaManager";
-import ReaderApp from "./ReaderApp";
 import type { StoredBookSummary } from "./readerCore";
 import { getStoredBookSummaries } from "./readerStorage";
-import SettingsApp from "./SettingsApp";
-import StarVoyageGame from "./StarVoyageGame";
-import SudokuGame from "./SudokuGame";
+import {
+  LazyCalculatorApp,
+  LazyChessGame,
+  LazyDrawingApp,
+  LazyFileExplorer,
+  LazyFocusClockApp,
+  LazyFolderViewApp,
+  LazyGameHall,
+  LazyGoGame,
+  LazyGomokuGame,
+  LazyMinesweeperGame,
+  LazyNotepadApp,
+  LazyPhotoEditor,
+  LazyPhotoViewerApp,
+  LazyReaderApp,
+  LazyRecycleBinApp,
+  LazySettingsApp,
+  LazyStarVoyageGame,
+  LazySudokuGame,
+} from "./lazyApps";
 import {
   edgeSnapMode,
   snappedWindowGeometry,
@@ -61,12 +70,6 @@ import {
   type WindowSnapMode,
 } from "./windowGeometry";
 
-type Mode = "调整" | "滤镜" | "裁剪";
-type Ratio = "原始" | "自由格式" | "正方形" | "16:9" | "4:5" | "5:7" | "4:3" | "3:5" | "3:2";
-type CropRect = { x: number; y: number; w: number; h: number };
-type Point = { x: number; y: number };
-type EditState = { values: Record<string, number>; filter: string; rotation: number; flipX: boolean; flipY: boolean; ratio: Ratio; crop: CropRect; redEyes: Point[] };
-type Control = { label: string; key: string; min?: number; max?: number };
 type WindowAppId = "photo" | "notes" | "viewer" | "reader" | "games" | "settings" | "explorer" | "folder" | "recycle" | GameAppId | "calculator" | "drawing" | "focus";
 type AppId = "desktop" | WindowAppId;
 type AppDefinition = { id:WindowAppId; label:string; icon:string; kind:string; launcher:boolean; taskbarPinned:boolean; windowIcon?:string; taskbarIcon?:string };
@@ -88,9 +91,6 @@ type FileUndoAction = {
   positions: Record<string, IconPosition>;
   label: string;
 };
-type MineCell = { mine:boolean; revealed:boolean; flagged:boolean; nearby:number };
-type MineDifficulty = "beginner" | "intermediate" | "expert";
-type MineProgress = { difficulty:MineDifficulty; board:MineCell[]; elapsed:number; startedAt:number };
 const POSITION_STORAGE_KEY = "nova-desktop-positions";
 const WINDOW_GEOMETRY_PREFIX = "nova-window-geometry:";
 const APP_REGISTRY:Record<WindowAppId,AppDefinition> = {
@@ -125,64 +125,10 @@ const readDesktopDragIds=(dataTransfer:DataTransfer)=>{try{const value=JSON.pars
 const createInitialWindowState=()=>Object.fromEntries(REGISTERED_APPS.map((app)=>[app.id,{open:false,minimized:false,maximized:false,z:0}])) as WindowStateMap;
 const topWindow=(states:WindowStateMap,exclude?:WindowAppId)=>REGISTERED_APPS.filter((app)=>app.id!==exclude&&states[app.id].open&&!states[app.id].minimized).sort((a,b)=>states[b.id].z-states[a.id].z)[0]?.id??"desktop";
 
-const MINE_LEVELS:Record<MineDifficulty,{label:string;rows:number;columns:number;mines:number}> = {
-  beginner:{label:"初级",rows:9,columns:9,mines:10},
-  intermediate:{label:"中级",rows:16,columns:16,mines:40},
-  expert:{label:"高级",rows:16,columns:30,mines:99},
-};
-
-const defaults: Record<string, number> = {
-  overallLight: 0, brilliance: 0, exposure: 0, highlights: 0, shadows: 0, brightness: 0, contrast: 0, blackPoint: 0,
-  overallColor: 0, saturation: 0, vibrance: 0, colorCast: 0,
-  overallBW: 0, bwIntensity: 50, bwNeutral: 0, bwTone: 0, bwGrain: 0,
-  temperature: 0, curve: 0, levelBlack: 0, levelMid: 0, levelWhite: 0, definition: 0,
-  selectiveHue: 0, selectiveSat: 0, selectiveLum: 0, selectiveRange: 50, noise: 0, sharpness: 0, vignette: 0,
-  vertical: 0, horizontal: 0,
-};
-const initialEdit: EditState = { values: defaults, filter: "原始状态", rotation: 0, flipX: false, flipY: false, ratio: "原始", crop: { x: 0, y: 0, w: 1, h: 1 }, redEyes: [] };
-
-const primary = [
-  { name: "光效", icon: "☀", main: "overallLight", controls: ["鲜明度:brilliance", "曝光:exposure", "高光:highlights", "阴影:shadows", "亮度:brightness", "对比度:contrast", "黑点:blackPoint"] },
-  { name: "颜色", icon: "◉", main: "overallColor", controls: ["饱和度:saturation", "自然饱和度:vibrance", "色偏:colorCast"] },
-  { name: "黑白", icon: "◐", main: "overallBW", controls: ["强度:bwIntensity", "中性:bwNeutral", "色调:bwTone", "颗粒:bwGrain"] },
-].map((group) => ({ ...group, controls: group.controls.map((value) => { const [label, key] = value.split(":"); return { label, key }; }) }));
-
-const advanced: { name: string; icon: string; controls: Control[]; visual?: string }[] = [
-  { name: "消除红眼", icon: "◉", controls: [] },
-  { name: "白平衡", icon: "▣", controls: [{ label: "色温", key: "temperature" }] },
-  { name: "曲线", icon: "⌁", controls: [{ label: "曲线", key: "curve" }], visual: "curve" },
-  { name: "色阶", icon: "▤", controls: [{ label: "黑场", key: "levelBlack" }, { label: "中间调", key: "levelMid" }, { label: "白场", key: "levelWhite" }], visual: "levels" },
-  { name: "清晰度", icon: "△", controls: [{ label: "数量", key: "definition", min: 0 }] },
-  { name: "可选颜色", icon: "✣", controls: [{ label: "色调", key: "selectiveHue" }, { label: "饱和度", key: "selectiveSat" }, { label: "亮度", key: "selectiveLum" }, { label: "范围", key: "selectiveRange", min: 0 }] },
-  { name: "噪点消除", icon: "▧", controls: [{ label: "数量", key: "noise", min: 0 }] },
-  { name: "锐化", icon: "◢", controls: [{ label: "强度", key: "sharpness", min: 0 }] },
-  { name: "晕影", icon: "◎", controls: [{ label: "强度", key: "vignette", min: 0 }] },
-];
-
-const filters = [
-  ["原始状态", "none"], ["鲜明", "saturate(1.35) contrast(1.08)"], ["鲜暖色", "saturate(1.3) sepia(.14) brightness(1.04)"],
-  ["鲜冷色", "saturate(1.25) hue-rotate(12deg)"], ["反差色", "contrast(1.28) saturate(1.12)"], ["反差暖色", "contrast(1.24) sepia(.18)"],
-  ["反差冷色", "contrast(1.25) hue-rotate(15deg)"], ["单色", "grayscale(1) contrast(1.08)"], ["银色调", "grayscale(1) contrast(1.28) brightness(1.05)"], ["黑白", "grayscale(1) contrast(1.45)"],
-] as const;
-const ratioValue: Record<Ratio, number | null> = { 原始: null, 自由格式: null, 正方形: 1, "16:9": 16/9, "4:5": 4/5, "5:7": 5/7, "4:3": 4/3, "3:5": 3/5, "3:2": 3/2 };
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const readBrowserFile=(file:File,mode:"text"|"data")=>new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result??""));reader.onerror=()=>reject(reader.error);if(mode==="text")reader.readAsText(file);else reader.readAsDataURL(file)});
 const fitWindowGeometry=(geometry:WindowGeometry):WindowGeometry=>{const width=clamp(geometry.width,320,Math.max(320,window.innerWidth-8)),height=clamp(geometry.height,260,Math.max(260,window.innerHeight-57));return{x:clamp(geometry.x,0,Math.max(0,window.innerWidth-width)),y:clamp(geometry.y,0,Math.max(0,window.innerHeight-49-height)),width,height}};
 const readWindowGeometry=(app:WindowAppId)=>{const saved=localStorage.getItem(`${WINDOW_GEOMETRY_PREFIX}${app}`);return saved?fitWindowGeometry(JSON.parse(saved) as WindowGeometry):null};
-
-function imageFilter(edit: EditState) {
-  const v = edit.values;
-  const selectiveAmount = v.selectiveRange / 50;
-  const bwEnabled = v.overallBW !== 0 || v.bwIntensity !== defaults.bwIntensity || v.bwNeutral !== 0 || v.bwTone !== 0 || v.bwGrain !== 0;
-  const brightness = 100 + v.overallLight*.35 + v.brightness*.5 + v.exposure*.7 + v.shadows*.1 - v.highlights*.05 + v.bwNeutral*.18 + v.selectiveLum*.08*selectiveAmount + v.levelMid*.12 + v.levelWhite*.08;
-  const contrast = 100 + v.brilliance*.25 + v.contrast*.65 + v.blackPoint*.2 + v.definition*.25 + v.sharpness*.14 + v.curve*.5 + v.levelBlack*.12 - v.levelMid*.08 + v.levelWhite*.1 + v.bwTone*.28;
-  const saturation = Math.max(0, 100 + v.overallColor*.55 + v.saturation*.75 + v.vibrance*.48 + v.selectiveSat*.15*selectiveAmount);
-  const bw = bwEnabled ? clamp(Math.abs(v.overallBW) + v.bwIntensity, 0, 100) : 0;
-  const preset = filters.find(([name]) => name === edit.filter)?.[1] ?? "none";
-  const presetFilter = preset === "none" ? "" : preset;
-  const warmth = v.temperature > 0 ? `sepia(${v.temperature*.32}%)` : `hue-rotate(${v.temperature*.16}deg)`;
-  return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) grayscale(${bw}%) ${warmth} hue-rotate(${(v.colorCast+v.selectiveHue*selectiveAmount)*.16}deg) blur(${v.noise*.004}px) ${presetFilter}`;
-}
 
 export default function Home() {
   const [items,setItems]=useState<DesktopItem[]>([]),[positions,setPositions]=useState<Record<string,IconPosition>>({}),[storageState,setStorageState]=useState<"loading"|"ready"|"error">("loading"),[selectedIds,setSelectedIds]=useState<string[]>([]);
@@ -317,24 +263,24 @@ export default function Home() {
     <div className="windows-wallpaper"><i/><i/><i/></div>
     <section className="desktop-files" aria-label="桌面图标">{appEntries.map((app,index)=><DesktopShortcut key={app.key} id={`app:${app.key}`} label={app.label} icon={app.icon} kind={app.kind} position={positionFor(`app:${app.key}`,index)} move={moveIcon} open={app.open} onContextMenu={(x,y)=>{setContextMenu({x:Math.min(x,window.innerWidth-225),y:Math.min(y,window.innerHeight-100),appKey:app.key});setStartOpen(false)}}/>)}{rootItems.map((item,index)=><DesktopFile key={item.id} item={item} position={positionFor(item.id,appEntries.length+index)} move={moveIcon} selected={selectedIds.includes(item.id)} cut={fileClipboard?.mode==="move"&&fileClipboard.ids.includes(item.id)} onSelect={(event)=>selectItem(item.id,event)} onOpen={()=>openItem(item)} onDragStart={(event)=>{const ids=selectedIds.includes(item.id)?selectedIds:[item.id];if(!selectedIds.includes(item.id))setSelectedIds(ids);event.dataTransfer.effectAllowed="copyMove";event.dataTransfer.setData(NOVA_FILE_DRAG_TYPE,JSON.stringify(ids));event.dataTransfer.setData("text/plain",ids.join(","))}} onFileDrop={item.type==="folder"?(event)=>{const ids=readDesktopDragIds(event.dataTransfer);if(!ids.length)return;event.preventDefault();event.stopPropagation();requestFileOperation(event.ctrlKey||event.metaKey?"copy":"move",ids,item.id)}:undefined} onContextMenu={(x,y)=>openItemMenu(item,x,y)}/>)}</section>
     {contextMenu&&<div className="desktop-menu" style={{left:contextMenu.x,top:contextMenu.y}}>{contextApp?<button onClick={contextApp.open}>打开 {contextApp.label}</button>:contextItem?<>{contextTargets.length===1?<><button onClick={()=>openItem(contextItem)}>打开</button>{fileOpenOptions(contextItem.type).filter((option)=>!option.primary).map((option)=><button key={option.app} onClick={()=>openItemWith(contextItem,option.app)}>使用{option.label}打开</button>)}<button onClick={()=>beginRename(contextItem)}>重命名</button>{contextItem.type==="folder"&&<><button onClick={()=>createFolder(contextItem.id)}>在文件夹中新建文件夹</button><button onClick={()=>createText(contextItem.id)}>在文件夹中新建文本</button>{fileClipboard&&<button onClick={()=>pasteClipboard(contextItem.id)}>粘贴到此文件夹</button>}</>}{contextItem.type!=="folder"&&<button onClick={()=>downloadItem(contextItem)}>保存到下载</button>}<span/></>:<p className="menu-summary">已选择 {contextTargets.length} 个项目</p>}<button onClick={()=>setClipboard("move",contextTargets.map((item)=>item.id))}>剪切</button><button onClick={()=>setClipboard("copy",contextTargets.map((item)=>item.id))}>复制</button><button className="danger" onClick={()=>moveManyToRecycleBin(contextTargets.map((item)=>item.id))}>移到回收站</button><button className="danger" onClick={()=>permanentlyDeleteMany(contextTargets.map((item)=>item.id))}>直接删除</button></>:<><button onClick={()=>createFolder()}>新建文件夹</button><button onClick={()=>createText()}>新建文本文稿</button>{fileClipboard&&<button onClick={()=>pasteClipboard(null)}>粘贴</button>}<button onClick={()=>{desktopUploadRef.current?.click();setContextMenu(null)}}>上传图片或 TXT</button>{fileUndo&&<button onClick={undoFileOperation}>撤销“{fileUndo.label}”</button>}<span/><button onClick={()=>arrangeIcons("name")}>按名称排序</button><button onClick={()=>arrangeIcons("type")}>按类型排序</button><button onClick={()=>arrangeIcons("clean")}>整理图标</button></>}</div>}
-    {windowStates.photo.open&&<AppWindow {...windowProps("photo")}><PhotoEditor key={photoSourceItem?.id??"default-photo"} active={focused==="photo"&&!windowStates.photo.minimized} initialImage={photoEditorSource} onSave={savePhotoEdit}/></AppWindow>}
-    {windowStates.explorer.open&&<AppWindow {...windowProps("explorer",activeFolder?.name??APP_REGISTRY.explorer.label)}><FileExplorer items={items} folderId={activeFolderId} launchIntent={launchIntentFor(launchIntent,"explorer")} onLaunchHandled={handleLaunchHandled} clipboard={fileClipboard} canUndo={!!fileUndo} onNavigate={(folderId)=>{setActiveFolderId(folderId);if(folderId)updateItem(folderId,{lastOpenedAt:Date.now()})}} onOpen={openItem} onOpenWith={openItemWith} onCreateFolder={createFolder} onCreateText={createText} onRename={beginRename} onSetClipboard={setClipboard} onPaste={pasteClipboard} onFileOperation={requestFileOperation} onTrash={(ids)=>{moveManyToRecycleBin(ids);focusWindow("explorer")}} onUndo={undoFileOperation} onOpenRecycle={()=>openWindow("recycle")}/></AppWindow>}
-    {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><Notepad items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
-    {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><PhotoViewer images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
-    {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><ReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
-    {windowStates.games.open&&<AppWindow {...windowProps("games")}><GameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open}} onLaunch={openWindow}/></AppWindow>}
-    {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><FolderView folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
-    {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><RecycleBin items={trashedItems} restore={restoreMany} remove={permanentlyDeleteMany} empty={emptyRecycleBin}/></AppWindow>}
-    {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><Minesweeper/></AppWindow>}
-    {windowStates.chess.open&&<AppWindow {...windowProps("chess")}><ChessGame/></AppWindow>}
-    {windowStates.gomoku.open&&<AppWindow {...windowProps("gomoku")}><GomokuGame/></AppWindow>}
-    {windowStates.go.open&&<AppWindow {...windowProps("go")}><GoGame/></AppWindow>}
-    {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><SudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
-    {windowStates.voyage.open&&<AppWindow {...windowProps("voyage")}><StarVoyageGame active={focused==="voyage"&&!windowStates.voyage.minimized}/></AppWindow>}
-    {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><Calculator/></AppWindow>}
-    {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><DrawingApp onSave={savePhoto}/></AppWindow>}
-    {windowStates.focus.open&&<AppWindow {...windowProps("focus")}><FocusClockApp active={focused==="focus"&&!windowStates.focus.minimized}/></AppWindow>}
-    {windowStates.settings.open&&<AppWindow {...windowProps("settings")}><SettingsApp settings={settings} launchIntent={launchIntentFor(launchIntent,"settings")} onLaunchHandled={handleLaunchHandled} onChange={updateSettings}/></AppWindow>}
+    {windowStates.photo.open&&<AppWindow {...windowProps("photo")}><LazyPhotoEditor key={photoSourceItem?.id??"default-photo"} active={focused==="photo"&&!windowStates.photo.minimized} initialImage={photoEditorSource} onSave={savePhotoEdit}/></AppWindow>}
+    {windowStates.explorer.open&&<AppWindow {...windowProps("explorer",activeFolder?.name??APP_REGISTRY.explorer.label)}><LazyFileExplorer items={items} folderId={activeFolderId} launchIntent={launchIntentFor(launchIntent,"explorer")} onLaunchHandled={handleLaunchHandled} clipboard={fileClipboard} canUndo={!!fileUndo} onNavigate={(folderId)=>{setActiveFolderId(folderId);if(folderId)updateItem(folderId,{lastOpenedAt:Date.now()})}} onOpen={openItem} onOpenWith={openItemWith} onCreateFolder={createFolder} onCreateText={createText} onRename={beginRename} onSetClipboard={setClipboard} onPaste={pasteClipboard} onFileOperation={requestFileOperation} onTrash={(ids)=>{moveManyToRecycleBin(ids);focusWindow("explorer")}} onUndo={undoFileOperation} onOpenRecycle={()=>openWindow("recycle")}/></AppWindow>}
+    {windowStates.notes.open&&<AppWindow {...windowProps("notes",activeNote?.name??"记事本")}><LazyNotepadApp items={noteItems} item={activeNote} select={setActiveNoteId} create={()=>createText()} update={updateItem} remove={removeNote}/></AppWindow>}
+    {windowStates.viewer.open&&<AppWindow {...windowProps("viewer",activeImage?.name??APP_REGISTRY.viewer.label)}><LazyPhotoViewerApp images={visibleItems.filter((item)=>item.type==="image")} active={activeImage} open={(item)=>setActiveImageId(item.id)} edit={(item)=>openItemWith(item,"photo")}/></AppWindow>}
+    {windowStates.reader.open&&<AppWindow {...windowProps("reader")}><LazyReaderApp active={focused==="reader"&&!windowStates.reader.minimized} launchIntent={launchIntentFor(launchIntent,"reader")} onLaunchHandled={handleLaunchHandled} onCreateExcerpt={createReaderExcerpt}/></AppWindow>}
+    {windowStates.games.open&&<AppWindow {...windowProps("games")}><LazyGameHall running={{mines:windowStates.mines.open,chess:windowStates.chess.open,gomoku:windowStates.gomoku.open,go:windowStates.go.open,sudoku:windowStates.sudoku.open,voyage:windowStates.voyage.open}} onLaunch={openWindow}/></AppWindow>}
+    {windowStates.folder.open&&activeFolder&&<AppWindow {...windowProps("folder",activeFolder.name)}><LazyFolderViewApp folder={activeFolder} items={visibleItems.filter((item)=>item.parentId===activeFolder.id)} open={openItem} createText={()=>createText(activeFolder.id)} createFolder={()=>createFolder(activeFolder.id)} goBack={()=>{if(activeFolder.parentId)setActiveFolderId(activeFolder.parentId);else closeWindow("folder")}} context={openItemMenu}/></AppWindow>}
+    {windowStates.recycle.open&&<AppWindow {...windowProps("recycle")}><LazyRecycleBinApp items={trashedItems} restore={restoreMany} remove={permanentlyDeleteMany} empty={emptyRecycleBin}/></AppWindow>}
+    {windowStates.mines.open&&<AppWindow {...windowProps("mines")}><LazyMinesweeperGame/></AppWindow>}
+    {windowStates.chess.open&&<AppWindow {...windowProps("chess")}><LazyChessGame/></AppWindow>}
+    {windowStates.gomoku.open&&<AppWindow {...windowProps("gomoku")}><LazyGomokuGame/></AppWindow>}
+    {windowStates.go.open&&<AppWindow {...windowProps("go")}><LazyGoGame/></AppWindow>}
+    {windowStates.sudoku.open&&<AppWindow {...windowProps("sudoku")}><LazySudokuGame active={focused==="sudoku"&&!windowStates.sudoku.minimized}/></AppWindow>}
+    {windowStates.voyage.open&&<AppWindow {...windowProps("voyage")}><LazyStarVoyageGame active={focused==="voyage"&&!windowStates.voyage.minimized}/></AppWindow>}
+    {windowStates.calculator.open&&<AppWindow {...windowProps("calculator")}><LazyCalculatorApp/></AppWindow>}
+    {windowStates.drawing.open&&<AppWindow {...windowProps("drawing")}><LazyDrawingApp onSave={savePhoto}/></AppWindow>}
+    {windowStates.focus.open&&<AppWindow {...windowProps("focus")}><LazyFocusClockApp active={focused==="focus"&&!windowStates.focus.minimized}/></AppWindow>}
+    {windowStates.settings.open&&<AppWindow {...windowProps("settings")}><LazySettingsApp settings={settings} launchIntent={launchIntentFor(launchIntent,"settings")} onLaunchHandled={handleLaunchHandled} onChange={updateSettings}/></AppWindow>}
     {altTab&&<section className="window-switcher" role="dialog" aria-label="切换窗口">{altTab.apps.filter((app)=>windowStates[app].open).map((app)=>{const definition=APP_REGISTRY[app];return <div key={app} className={altTab.active===app?"active":""}><span className={`app-glyph ${app}-glyph`}>{definition.windowIcon??definition.icon}</span><strong>{taskbarLabel(definition)}</strong></div>})}</section>}
     {startOpen&&<section className="start-menu"><label className="start-search">⌕ <input autoFocus value={searchQuery} onChange={(event)=>{setSearchQuery(event.target.value);setSearchIndex(0)}} onKeyDown={(event)=>{if(event.key==="ArrowDown"){event.preventDefault();setSearchIndex((current)=>Math.max(0,Math.min(searchResults.length-1,current+1)))}if(event.key==="ArrowUp"){event.preventDefault();setSearchIndex((current)=>Math.max(0,current-1))}if(event.key==="Enter"){event.preventDefault();runSearchResult(searchIndex)}}} placeholder="搜索应用、文件、书籍和设置"/></label>{searchText?<div className="start-results"><header><strong>搜索结果</strong><span>{searchResults.length} 项</span></header>{searchResults.map((result,index)=><button key={result.key} className={index===searchIndex?"active":""} onPointerEnter={()=>setSearchIndex(index)} onClick={()=>runSearchResult(index)}><i>{result.icon}</i><span><strong>{result.label}</strong><small>{result.detail}</small></span></button>)}{!searchResults.length&&<p>没有找到“{searchQuery}”</p>}</div>:<><header><strong>已固定</strong><span>所有应用</span></header><div className="start-apps">{appEntries.map((app)=><button key={app.key} onClick={app.open}><i className={`start-${app.kind}`}>{app.icon}</i><span>{app.label}</span></button>)}</div></>}<footer><span>◉</span><strong>NOVA 用户</strong><button onClick={()=>{setStartOpen(false);setSearchQuery("");setSearchIndex(0)}}>⏻</button></footer></section>}
     {systemPanelOpen&&<aside className="system-panel" aria-label="日期与通知">
@@ -379,195 +325,8 @@ function AppWindow({app,title,icon,minimized,maximized,snapMode,focused,zIndex,o
   const endResize=(event:ReactPointerEvent<HTMLButtonElement>)=>{if(!resize.current)return;resize.current=null;event.currentTarget.releasePointerCapture(event.pointerId)};
   const chooseSnap=(mode:WindowSnapMode)=>{onSnap(mode);setSnapPickerOpen(false)};
   const style:React.CSSProperties=geometry&&!maximized?{left:geometry.x,top:geometry.y,width:geometry.width,height:geometry.height,right:"auto",bottom:"auto",zIndex}:{zIndex};
-  return <section ref={windowRef} className={`desktop-window ${app}-window ${minimized?"minimized":""} ${maximized?"maximized":""} ${focused?"focused":""}`} style={style} onPointerDown={onFocus}><div className="window-chrome" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onDoubleClick={onMaximize}><div className="window-identity"><span className={`app-glyph ${app}-glyph`}>{icon}</span><strong>{title}</strong></div><div className="window-controls windows-controls"><button className="window-minimize" aria-label={`最小化${title}`} onClick={onMinimize}>—</button><div className="snap-control" onPointerEnter={()=>setSnapPickerOpen(true)} onPointerLeave={()=>setSnapPickerOpen(false)} onFocusCapture={()=>setSnapPickerOpen(true)} onBlurCapture={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setSnapPickerOpen(false)}}><button className="window-maximize" aria-label={maximized?`还原${title}`:`最大化${title}`} onClick={onMaximize}>□</button>{snapPickerOpen&&<aside className="snap-picker" aria-label="窗口贴靠布局"><strong>贴靠布局</strong><div><button aria-label="贴靠到左半屏" onClick={()=>chooseSnap("left")}><i/><i/></button><button aria-label="贴靠到右半屏" onClick={()=>chooseSnap("right")}><i/><i/></button><button aria-label="贴靠到左上角" onClick={()=>chooseSnap("top-left")}><i/><i/><i/><i/></button><button aria-label="贴靠到右上角" onClick={()=>chooseSnap("top-right")}><i/><i/><i/><i/></button><button aria-label="贴靠到左下角" onClick={()=>chooseSnap("bottom-left")}><i/><i/><i/><i/></button><button aria-label="贴靠到右下角" onClick={()=>chooseSnap("bottom-right")}><i/><i/><i/><i/></button></div></aside>}</div><button className="window-close" aria-label={`关闭${title}`} onClick={onClose}>×</button></div></div><div className="window-content">{children}</div>{!maximized&&<button className="window-resize-handle" aria-label={`调整${title}窗口大小`} title="拖动调整窗口大小" onPointerDown={startResize} onPointerMove={moveResize} onPointerUp={endResize} onPointerCancel={endResize}/>}</section>
+  return <section ref={windowRef} className={`desktop-window ${app}-window ${minimized?"minimized":""} ${maximized?"maximized":""} ${focused?"focused":""}`} style={style} onPointerDown={onFocus}><div className="window-chrome" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onDoubleClick={onMaximize}><div className="window-identity"><span className={`app-glyph ${app}-glyph`}>{icon}</span><strong>{title}</strong></div><div className="window-controls windows-controls"><button className="window-minimize" aria-label={`最小化${title}`} onClick={onMinimize}>—</button><div className="snap-control" onPointerEnter={()=>setSnapPickerOpen(true)} onPointerLeave={()=>setSnapPickerOpen(false)} onFocusCapture={()=>setSnapPickerOpen(true)} onBlurCapture={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setSnapPickerOpen(false)}}><button className="window-maximize" aria-label={maximized?`还原${title}`:`最大化${title}`} onClick={onMaximize}>□</button>{snapPickerOpen&&<aside className="snap-picker" aria-label="窗口贴靠布局"><strong>贴靠布局</strong><div><button aria-label="贴靠到左半屏" onClick={()=>chooseSnap("left")}><i/><i/></button><button aria-label="贴靠到右半屏" onClick={()=>chooseSnap("right")}><i/><i/></button><button aria-label="贴靠到左上角" onClick={()=>chooseSnap("top-left")}><i/><i/><i/><i/></button><button aria-label="贴靠到右上角" onClick={()=>chooseSnap("top-right")}><i/><i/><i/><i/></button><button aria-label="贴靠到左下角" onClick={()=>chooseSnap("bottom-left")}><i/><i/><i/><i/></button><button aria-label="贴靠到右下角" onClick={()=>chooseSnap("bottom-right")}><i/><i/><i/><i/></button></div></aside>}</div><button className="window-close" aria-label={`关闭${title}`} onClick={onClose}>×</button></div></div><div className="window-content"><AppLoadBoundary appName={title}>{children}</AppLoadBoundary></div>{!maximized&&<button className="window-resize-handle" aria-label={`调整${title}窗口大小`} title="拖动调整窗口大小" onPointerDown={startResize} onPointerMove={moveResize} onPointerUp={endResize} onPointerCancel={endResize}/>}</section>
 }
 function useDesktopIconDrag(id:string,position:IconPosition|undefined,move:((id:string,position:IconPosition)=>void)|undefined){const drag=useRef<{x:number;y:number;origin:IconPosition}|null>(null),moved=useRef(false);const start=(event:ReactPointerEvent<HTMLButtonElement>)=>{if(!position||!move||event.button!==0)return;event.stopPropagation();drag.current={x:event.clientX,y:event.clientY,origin:position};moved.current=false;event.currentTarget.setPointerCapture(event.pointerId)};const update=(event:ReactPointerEvent<HTMLButtonElement>)=>{if(!drag.current||!move)return;const parent=event.currentTarget.parentElement?.getBoundingClientRect();if(!parent)return;const dx=event.clientX-drag.current.x,dy=event.clientY-drag.current.y;if(Math.abs(dx)+Math.abs(dy)>3)moved.current=true;move(id,{x:clamp(drag.current.origin.x+dx,0,Math.max(0,parent.width-78)),y:clamp(drag.current.origin.y+dy,0,Math.max(0,parent.height-86))})};const end=(event:ReactPointerEvent<HTMLButtonElement>)=>{if(!drag.current)return;drag.current=null;event.currentTarget.releasePointerCapture(event.pointerId)};return{moved,start,update,end}}
 function DesktopShortcut({id,label,icon,kind,position,move,open,onContextMenu}:{id:string;label:string;icon:string;kind:string;position:IconPosition;move:(id:string,position:IconPosition)=>void;open:()=>void;onContextMenu:(x:number,y:number)=>void}){const drag=useDesktopIconDrag(id,position,move);return <button className="desktop-shortcut positioned" style={{left:position.x,top:position.y}} onPointerDown={drag.start} onPointerMove={drag.update} onPointerUp={drag.end} onPointerCancel={drag.end} onDoubleClick={()=>{if(!drag.moved.current)open()}} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();onContextMenu(event.clientX,event.clientY)}} onKeyDown={(event)=>{if(event.key==="Enter")open()}}><span className={`shortcut-icon ${kind}-shortcut`}>{icon}</span><strong>{label}</strong></button>}
 function DesktopFile({item,position,move,selected,cut=false,onSelect,onOpen,onDragStart,onFileDrop,onContextMenu}:{item:DesktopItem;position?:IconPosition;move?:(id:string,position:IconPosition)=>void;selected:boolean;cut?:boolean;onSelect:(event:ReactMouseEvent<HTMLButtonElement>)=>void;onOpen:()=>void;onDragStart?:(event:ReactDragEvent<HTMLButtonElement>)=>void;onFileDrop?:(event:ReactDragEvent<HTMLButtonElement>)=>void;onContextMenu?:(x:number,y:number)=>void}){const drag=useDesktopIconDrag(item.id,position,move);return <button draggable={!!onDragStart} className={`desktop-item ${position?"positioned":""} ${selected?"selected":""} ${cut?"cut":""}`} style={position?{left:position.x,top:position.y}:undefined} onPointerDown={drag.start} onPointerMove={drag.update} onPointerUp={drag.end} onPointerCancel={drag.end} onDragStart={onDragStart} onDragOver={(event)=>{if(!onFileDrop||!event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE))return;event.preventDefault();event.stopPropagation();event.currentTarget.classList.add("drop-target")}} onDragLeave={(event)=>event.currentTarget.classList.remove("drop-target")} onDrop={(event)=>{event.currentTarget.classList.remove("drop-target");onFileDrop?.(event)}} onClick={(event)=>{event.stopPropagation();if(!drag.moved.current)onSelect(event)}} onContextMenu={(event)=>{if(!onContextMenu)return;event.preventDefault();event.stopPropagation();onContextMenu(event.clientX,event.clientY)}} onDoubleClick={()=>{if(!drag.moved.current)onOpen()}} onKeyDown={(event)=>{if(event.key==="Enter")onOpen();if(event.shiftKey&&event.key==="F10"&&onContextMenu){event.preventDefault();const rect=event.currentTarget.getBoundingClientRect();onContextMenu(rect.left+20,rect.top+20)}}}>{item.type==="folder"?<span className="folder-icon"><i/></span>:item.type==="text"?<span className="text-icon"><b>TXT</b><i/><i/><i/></span>:<span className="image-icon" style={{backgroundImage:`url(${item.content})`}}/>}<strong>{item.name}</strong></button>}
-function Notepad({items,item,select,create,update,remove}:{items:DesktopItem[];item:DesktopItem|null;select:(id:string)=>void;create:()=>void;update:(id:string,patch:Partial<DesktopItem>)=>void;remove:(id:string)=>void}){
-  const [query,setQuery]=useState(""),[pendingDeleteId,setPendingDeleteId]=useState<string|null>(null);
-  const confirmDelete=!!item&&pendingDeleteId===item.id;
-  const search=query.trim().toLowerCase();
-  const visible=search?items.filter((note)=>note.name.toLowerCase().includes(search)||note.content.toLowerCase().includes(search)):items;
-  const formatDate=(value:number)=>new Intl.DateTimeFormat("zh-CN",{month:"numeric",day:"numeric"}).format(new Date(value));
-  const lines=item?.content.split(/\r?\n/).length??0;
-  const createNote=()=>{setPendingDeleteId(null);create()};
-  return <div className="notepad-app">
-    <aside className="note-sidebar">
-      <header><div><strong>文稿</strong><span>{items.length} 篇</span></div><button aria-label="新建文稿" title="新建文稿" onClick={createNote}>＋</button></header>
-      <label className="note-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="搜索文稿" aria-label="搜索文稿"/></label>
-      <div className="note-list">{visible.map((note)=>{
-        const preview=note.content.split(/\r?\n/).find((line)=>line.trim())?.trim()||"空白文稿";
-        return <button key={note.id} className={note.id===item?.id?"active":""} aria-current={note.id===item?.id?"page":undefined} onClick={()=>{setPendingDeleteId(null);select(note.id)}}><strong>{note.name||"未命名.txt"}</strong><p>{preview}</p><span>{formatDate(note.createdAt)}</span></button>;
-      })}{!visible.length&&<div className="note-list-empty"><span>{search?"⌕":"▤"}</span><strong>{search?"没有匹配的文稿":"还没有文稿"}</strong></div>}</div>
-    </aside>
-    <section className="note-workspace">{item?<><header className="note-editor-header"><input aria-label="文件名" value={item.name} onChange={(event)=>update(item.id,{name:event.target.value})}/><div><span>已自动保存</span><button className={confirmDelete?"confirm":""} aria-label={confirmDelete?"确认删除文稿":"删除文稿"} title={confirmDelete?"再次点击移到回收站":"删除文稿"} onClick={()=>{if(confirmDelete){remove(item.id);setPendingDeleteId(null)}else setPendingDeleteId(item.id)}}>{confirmDelete?"确认":"⌫"}</button></div></header><textarea key={item.id} aria-label="文本内容" autoFocus value={item.content} onChange={(event)=>update(item.id,{content:event.target.value})} placeholder="开始记录…"/><footer><span>{lines} 行</span><span>{item.content.length} 字符</span><span>存储在桌面</span></footer></>:<div className="note-welcome"><span aria-hidden="true">▤</span><strong>{items.length?"选择一篇文稿":"开始第一篇文稿"}</strong><p>{items.length?"从左侧列表继续编辑，或新建一篇文稿。":"文稿会实时保存，并作为 TXT 文件出现在桌面。"}</p><button onClick={createNote}>＋ 新建文稿</button></div>}</section>
-  </div>;
-}
-function PhotoViewer({images,active,open,edit}:{images:DesktopItem[];active:DesktopItem|null;open:(item:DesktopItem)=>void;edit:(item:DesktopItem)=>void}){return <div className="photo-viewer">{active?<><img src={active.content} alt={active.name}/><footer><strong>{active.name}</strong><span>存储在桌面</span><button onClick={()=>edit(active)}>✦ 在照片实验室中编辑</button></footer></>:images.length?<div className="photo-library">{images.map((image)=><button key={image.id} onDoubleClick={()=>open(image)} onClick={()=>open(image)}><img src={image.content} alt={image.name}/><span>{image.name}</span></button>)}</div>:<div className="app-empty"><span>✿</span><strong>桌面上还没有照片</strong><small>在照片实验室中完成编辑后，图片会出现在这里。</small></div>}</div>}
-function FolderView({folder,items,open,createText,createFolder,goBack,context}:{folder:DesktopItem;items:DesktopItem[];open:(item:DesktopItem)=>void;createText:()=>void;createFolder:()=>void;goBack:()=>void;context:(item:DesktopItem,x:number,y:number)=>void}){return <div className="folder-view"><header><div><button aria-label="返回上一级" onClick={goBack}>←</button><strong>{folder.name}</strong><button onClick={createFolder}>＋ 新建文件夹</button><button onClick={createText}>＋ 新建文本</button></div><span>{items.length} 个项目</span></header>{items.length?<div className="folder-items">{items.map((item)=><DesktopFile key={item.id} item={item} selected={false} onSelect={()=>{}} onOpen={()=>open(item)} onContextMenu={(x,y)=>context(item,x,y)}/>)}</div>:<div className="app-empty"><span>▱</span><strong>{folder.name}是空的</strong><small>可以继续新建文件夹或文本文稿。</small></div>}</div>}
-
-function RecycleBin({items,restore,remove,empty}:{items:DesktopItem[];restore:(ids:string[])=>void;remove:(ids:string[])=>void;empty:()=>void}){
-  const [selectedIds,setSelectedIds]=useState<string[]>([]);
-  const [pendingDelete,setPendingDelete]=useState<{all:boolean;ids:string[]}|null>(null);
-  useEffect(()=>setSelectedIds((current)=>current.filter((id)=>items.some((item)=>item.id===id))),[items]);
-  const format=(value?:number)=>value?new Intl.DateTimeFormat("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(value)):"";
-  const allSelected=!!items.length&&selectedIds.length===items.length;
-  const toggle=(id:string)=>setSelectedIds((current)=>current.includes(id)?current.filter((item)=>item!==id):[...current,id]);
-  const restoreIds=(ids:string[])=>{restore(ids);setSelectedIds((current)=>current.filter((id)=>!ids.includes(id)))};
-  const confirmDelete=()=>{if(!pendingDelete)return;if(pendingDelete.all)empty();else remove(pendingDelete.ids);setSelectedIds([]);setPendingDelete(null)};
-  return <div className="recycle-bin">
-    <header><div><strong>回收站</strong><span>{selectedIds.length?`已选择 ${selectedIds.length} 个项目`:`${items.length} 个项目`}</span></div><section><label><input type="checkbox" aria-label="选择全部回收站项目" checked={allSelected} onChange={()=>setSelectedIds(allSelected?[]:items.map((item)=>item.id))}/> 全选</label><button disabled={!selectedIds.length} onClick={()=>restoreIds(selectedIds)}>还原所选</button><button className="danger" disabled={!selectedIds.length} onClick={()=>setPendingDelete({all:false,ids:selectedIds})}>删除所选</button><button className="danger" disabled={!items.length} onClick={()=>setPendingDelete({all:true,ids:items.map((item)=>item.id)})}>清空回收站</button></section></header>
-    {items.length?<div className="recycle-list">{items.map((item)=><article key={item.id} className={selectedIds.includes(item.id)?"selected":""}><label><input type="checkbox" aria-label={`选择${item.name}`} checked={selectedIds.includes(item.id)} onChange={()=>toggle(item.id)}/></label><span className={`recycle-file-icon ${item.type}`}>{item.type==="image"?<i style={{backgroundImage:`url(${item.content})`}}/>:item.type==="folder"?"▱":"TXT"}</span><div><strong>{item.name}</strong><small>删除时间：{format(item.deletedAt)}</small></div><button onClick={()=>restoreIds([item.id])}>还原</button><button className="permanent-delete" onClick={()=>setPendingDelete({all:false,ids:[item.id]})}>永久删除</button></article>)}</div>:<div className="app-empty"><span>▥</span><strong>回收站为空</strong><small>从桌面删除的文件会暂时保存在这里。</small></div>}
-    {pendingDelete&&<div className="recycle-confirm-layer"><section role="dialog" aria-modal="true" aria-label="确认永久删除"><strong>{pendingDelete.all?"清空回收站？":`永久删除 ${pendingDelete.ids.length} 个项目？`}</strong><p>删除后无法通过回收站恢复。</p><div><button onClick={()=>setPendingDelete(null)}>取消</button><button className="danger" onClick={confirmDelete}>永久删除</button></div></section></div>}
-  </div>
-}
-
-function mineNeighbors(index:number,rows:number,columns:number){const row=Math.floor(index/columns),column=index%columns,neighbors:number[]=[];for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){const nextRow=row+y,nextColumn=column+x;if((x||y)&&nextRow>=0&&nextRow<rows&&nextColumn>=0&&nextColumn<columns)neighbors.push(nextRow*columns+nextColumn)}return neighbors}
-function makeMineBoard(level:MineDifficulty,safeIndex?:number,seed=1):MineCell[]{const config=MINE_LEVELS[level],length=config.rows*config.columns,empty=Array.from({length},()=>({mine:false,revealed:false,flagged:false,nearby:0}));if(safeIndex===undefined)return empty;let value=seed||1;const random=()=>{value=(value*1664525+1013904223)%4294967296;return value/4294967296},excluded=new Set([safeIndex,...mineNeighbors(safeIndex,config.rows,config.columns)]),candidates=Array.from({length},(_,index)=>index).filter((index)=>!excluded.has(index));for(let index=candidates.length-1;index>0;index--){const target=Math.floor(random()*(index+1));[candidates[index],candidates[target]]=[candidates[target],candidates[index]]}const mines=new Set(candidates.slice(0,config.mines));return empty.map((cell,index)=>({...cell,mine:mines.has(index),nearby:mineNeighbors(index,config.rows,config.columns).filter((neighbor)=>mines.has(neighbor)).length}))}
-function Minesweeper(){
-  const [restored]=useState(()=>loadGameProgress<MineProgress>("mines"));
-  const [difficulty,setDifficulty]=useState<MineDifficulty>(()=>restored?.difficulty??((localStorage.getItem("nova-mines-difficulty") as MineDifficulty)||"beginner"));
-  const [board,setBoard]=useState(()=>restored?.board??makeMineBoard(difficulty));
-  const [status,setStatus]=useState<"ready"|"playing"|"won"|"lost">(restored?"playing":"ready");
-  const [startedAt,setStartedAt]=useState<number|null>(restored?.startedAt??null);
-  const [elapsed,setElapsed]=useState(restored?.elapsed??0);
-  const [bestTimes,setBestTimes]=useState<Partial<Record<MineDifficulty,number>>>(()=>{const saved=localStorage.getItem("nova-mines-best");return saved?JSON.parse(saved):{}});
-  const [resultDismissed,setResultDismissed]=useState(false);
-  const config=MINE_LEVELS[difficulty],flags=board.filter((cell)=>cell.flagged).length;
-
-  useEffect(()=>{if(status!=="playing"||!startedAt)return;const tick=()=>setElapsed(Math.min(999,Math.floor((Date.now()-startedAt)/1000))),timer=setInterval(tick,250);tick();return()=>clearInterval(timer)},[startedAt,status]);
-  useEffect(()=>{touchGame("mines")},[]);
-  useEffect(()=>{if(status==="playing"&&startedAt)saveGameProgress<MineProgress>("mines",{difficulty,board,elapsed,startedAt})},[board,difficulty,elapsed,startedAt,status]);
-  useEffect(()=>subscribeGameReset("mines",()=>reset(difficulty)),[difficulty]);
-
-  function reset(level=difficulty){clearGameProgress("mines");touchGame("mines");setDifficulty(level);localStorage.setItem("nova-mines-difficulty",level);setBoard(makeMineBoard(level));setStatus("ready");setResultDismissed(false);setStartedAt(null);setElapsed(0)}
-  const finish=(next:MineCell[],start:number)=>{
-    if(next.some((cell)=>cell.mine&&cell.revealed)){for(const cell of next)if(cell.mine)cell.revealed=true;finishGame("mines","loss");playNovaSound("error");setStatus("lost");setResultDismissed(false);setStartedAt(null);setBoard(next);return}
-    if(next.every((cell)=>cell.mine||cell.revealed)){for(const cell of next)if(cell.mine)cell.flagged=true;const time=Math.min(999,Math.floor((Date.now()-start)/1000)),best=bestTimes[difficulty];finishGame("mines","win");playNovaSound("success");setElapsed(time);setStartedAt(null);setStatus("won");setResultDismissed(false);setBoard(next);if(best===undefined||time<best){const updated={...bestTimes,[difficulty]:time};setBestTimes(updated);localStorage.setItem("nova-mines-best",JSON.stringify(updated))}return}
-    setBoard(next);
-  };
-  const revealTargets=(targets:number[])=>{
-    if(status==="won"||status==="lost")return;
-    const start=startedAt??Date.now(),next=(status==="ready"?makeMineBoard(difficulty,targets[0],start):board).map((cell,index)=>({...cell,flagged:board[index]?.flagged??false})),queue=[...targets],seen=new Set<number>();
-    if(status==="ready"){setStartedAt(start);setStatus("playing")}
-    while(queue.length){const current=queue.shift()!;if(seen.has(current))continue;seen.add(current);const cell=next[current];if(!cell||cell.flagged||cell.revealed)continue;cell.revealed=true;if(cell.mine)break;if(cell.nearby===0)queue.push(...mineNeighbors(current,config.rows,config.columns))}
-    finish(next,start);
-  };
-  const reveal=(index:number)=>{if(!board[index].flagged&&!board[index].revealed)revealTargets([index])};
-  const chord=(index:number)=>{const cell=board[index];if(status!=="playing"||!cell.revealed||!cell.nearby)return;const neighbors=mineNeighbors(index,config.rows,config.columns);if(neighbors.filter((neighbor)=>board[neighbor].flagged).length===cell.nearby)revealTargets(neighbors.filter((neighbor)=>!board[neighbor].flagged))};
-  const flag=(event:ReactMouseEvent,index:number)=>{event.preventDefault();if(status==="won"||status==="lost"||board[index].revealed)return;playNovaSound("move");setBoard((current)=>current.map((cell,cellIndex)=>cellIndex===index&&(!cell.flagged&&flags>=config.mines)?cell:cellIndex===index?{...cell,flagged:!cell.flagged}:cell))};
-  const face=status==="won"?"😎":status==="lost"?"😵":status==="playing"?"🙂":"😊",statusText=status==="won"?"雷区已清除":status==="lost"?"本局结束":status==="playing"?"进行中":"准备开始";
-  return <div className="minesweeper">
-    <nav className="mine-difficulties" aria-label="扫雷难度">{(Object.keys(MINE_LEVELS) as MineDifficulty[]).map((level)=><button key={level} className={difficulty===level?"active":""} aria-pressed={difficulty===level} onClick={()=>reset(level)}>{MINE_LEVELS[level].label}<small>{MINE_LEVELS[level].columns}×{MINE_LEVELS[level].rows}</small></button>)}</nav>
-    <header className="mine-score"><span><small>剩余</small><strong>{String(config.mines-flags).padStart(3,"0")}</strong></span><button aria-label="重新开始" title="重新开始" onClick={()=>reset()}>{face}</button><span><small>用时</small><strong>{String(elapsed).padStart(3,"0")}</strong></span></header>
-    <div className="mine-board" style={{"--mine-columns":config.columns,"--mine-rows":config.rows} as React.CSSProperties}>{board.map((cell,index)=>{const row=Math.floor(index/config.columns)+1,column=index%config.columns+1,label=cell.revealed?(cell.mine?"地雷":cell.nearby?`数字 ${cell.nearby}`:"空白"):cell.flagged?"已标记":"未翻开";return <button key={index} aria-label={`第 ${row} 行第 ${column} 列，${label}`} className={`${cell.revealed?"revealed":""} ${cell.mine&&cell.revealed?"mine":""} n${cell.nearby}`} onClick={()=>reveal(index)} onDoubleClick={()=>chord(index)} onContextMenu={(event)=>flag(event,index)}>{cell.revealed?(cell.mine?"✹":cell.nearby||""):cell.flagged?"⚑":""}</button>})}</div>
-    <footer><span>{statusText}</span><span>最佳 {bestTimes[difficulty]===undefined?"---":`${bestTimes[difficulty]}s`}</span></footer>
-    {(status==="won"||status==="lost")&&!resultDismissed&&<GameResultDialog tone={status==="won"?"win":"loss"} title={status==="won"?"雷区已清除":"踩到地雷"} detail={status==="won"?`${elapsed} 秒完成 ${config.label}难度`:"本局未能完成"} onDismiss={()=>setResultDismissed(true)} onRestart={()=>reset()}/>}
-  </div>
-}
-
-function Calculator(){
-  const [display,setDisplay]=useState("0"),[stored,setStored]=useState<number|null>(null),[operation,setOperation]=useState<string|null>(null),[replace,setReplace]=useState(true),[formula,setFormula]=useState(""),[history,setHistory]=useState<string[]>([]);
-  const calculate=(left:number,right:number,op:string)=>op==="+"?left+right:op==="−"?left-right:op==="×"?left*right:right===0?0:left/right;
-  const showOperand=(value:string)=>setFormula(stored!==null&&operation?`${stored} ${operation} ${value}`:value);
-  const press=(key:string)=>{
-    if(/^\d$/.test(key)){const next=replace?key:display==="0"?key:display+key;setDisplay(next);showOperand(next);setReplace(false);return}
-    if(key==="."){const next=replace?"0.":display.includes(".")?display:display+".";setDisplay(next);showOperand(next);setReplace(false);return}
-    if(key==="C"){setDisplay("0");setStored(null);setOperation(null);setReplace(true);setFormula("");return}
-    if(key==="±"){const next=String(Number(display)*-1);setDisplay(next);showOperand(next);return}
-    if(key==="%"){const next=String(Number(display)/100);setDisplay(next);showOperand(next);return}
-    if(["+","−","×","÷"].includes(key)){const current=Number(display),next=stored!==null&&operation&&!replace?calculate(stored,current,operation):current;setStored(next);setDisplay(String(next));setOperation(key);setFormula(`${next} ${key}`);setReplace(true);return}
-    if(key==="="&&stored!==null&&operation){const result=calculate(stored,Number(display),operation),line=`${stored} ${operation} ${display} = ${result}`;setFormula(`${stored} ${operation} ${display} =`);setHistory((current)=>[line,...current].slice(0,4));setDisplay(String(result));setStored(null);setOperation(null);setReplace(true)}
-  };
-  return <div className="calculator"><header className="calculator-mode"><strong>标准</strong><button onClick={()=>setHistory([])}>清除历史</button></header><div className="calculator-history">{history.length?history.map((line,index)=><span key={`${line}-${index}`}>{line}</span>):<span>暂无计算历史</span>}</div><div className="calculator-formula">{formula||" "}</div><output>{display}</output><div className="calculator-keys">{["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","="].map((key)=><button key={key} className={`${["÷","×","−","+","="].includes(key)?"operator":""} ${key==="0"?"zero":""}`} onClick={()=>press(key)}>{key}</button>)}</div></div>
-}
-
-function PhotoEditor({active,initialImage,onSave}:{active:boolean;initialImage:PhotoSource|null;onSave:(mode:"copy"|"replace",name:string,content:string)=>void}) {
-  const [mode, setMode] = useState<Mode>("调整");
-  const [edit, setEdit] = useState<EditState>(initialEdit);
-  const [past, setPast] = useState<EditState[]>([]), [future, setFuture] = useState<EditState[]>([]);
-  const [openGroups, setOpenGroups] = useState(["光效", "颜色", "黑白"]);
-  const [openOptions, setOpenOptions] = useState<string[]>([]);
-  const [activeTool, setActiveTool] = useState<string | null>(null);
-  const [replaceSourceId, setReplaceSourceId] = useState(initialImage?.id??null);
-  const [replaceConfirm, setReplaceConfirm] = useState(false);
-  const [source, setSource] = useState<HTMLImageElement | null>(null), [sourceUrl, setSourceUrl] = useState(initialImage?.content??"/default-photo.jpg"), [fileName, setFileName] = useState(initialImage?.name??"海岸风光");
-  const [favorite, setFavorite] = useState(false), [zoom, setZoom] = useState(1), [pan, setPan] = useState({ x: 0, y: 0 }), [fit, setFit] = useState({ w: 900, h: 600 });
-  const canvasRef = useRef<HTMLCanvasElement>(null), viewportRef = useRef<HTMLDivElement>(null), stageRef = useRef<HTMLDivElement>(null), fileRef = useRef<HTMLInputElement>(null);
-  const cropDrag = useRef<{ startX:number; startY:number; crop:CropRect; handle:string } | null>(null);
-  const panDrag = useRef<{ startX:number; startY:number; pan:{x:number;y:number} } | null>(null);
-
-  const commit = useCallback((next: EditState) => { setPast((items) => [...items.slice(-59), edit]); setFuture([]); setEdit(next); }, [edit]);
-  const setValue = (key: string, value: number) => commit({ ...edit, values: { ...edit.values, [key]: value } });
-  const undo = () => { const previous=past.at(-1); if(!previous)return; setFuture((items)=>[edit,...items]);setEdit(previous);setPast((items)=>items.slice(0,-1)); };
-  const redo = () => { const next=future[0];if(!next)return;setPast((items)=>[...items,edit]);setEdit(next);setFuture((items)=>items.slice(1)); };
-
-  useEffect(() => { const img=new Image();img.onload=()=>setSource(img);img.src=initialImage?.content??"/default-photo.jpg"; }, [initialImage]);
-  useEffect(() => {
-    const viewport=viewportRef.current;if(!viewport||!source)return;
-    const update=()=>{const rect=viewport.getBoundingClientRect(), maxW=Math.max(120,rect.width-82), maxH=Math.max(120,rect.height-82), ratio=(Math.abs(edit.rotation%180)===90?source.height/source.width:source.width/source.height);let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio}setFit({w,h});};
-    update();const observer=new ResizeObserver(update);observer.observe(viewport);return()=>observer.disconnect();
-  },[source,edit.rotation]);
-
-  useEffect(()=>{const viewport=viewportRef.current;if(!viewport)return;const stop=(event:Event)=>{event.preventDefault();event.stopPropagation()};const wheel=(event:globalThis.WheelEvent)=>{stop(event);setZoom((current)=>{const next=clamp(current*Math.exp(-event.deltaY*(event.ctrlKey ? .008 : .0025)),1,5);if(next===1)setPan({x:0,y:0});return next})};viewport.addEventListener("wheel",wheel,{passive:false});viewport.addEventListener("gesturestart",stop,{passive:false});viewport.addEventListener("gesturechange",stop,{passive:false});return()=>{viewport.removeEventListener("wheel",wheel);viewport.removeEventListener("gesturestart",stop);viewport.removeEventListener("gesturechange",stop)}},[]);
-
-  const draw=useCallback(()=>{if(!source||!canvasRef.current)return;const canvas=canvasRef.current,ctx=canvas.getContext("2d");if(!ctx)return;const quarter=Math.abs(edit.rotation%180)===90,ratio=quarter?source.height/source.width:source.width/source.height;canvas.width=1600;canvas.height=Math.round(1600/ratio);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.filter=imageFilter(edit);ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(edit.rotation*Math.PI/180);ctx.scale(edit.flipX?-1:1,edit.flipY?-1:1);ctx.transform(1,edit.values.vertical/500,edit.values.horizontal/500,1,0,0);const boxW=quarter?canvas.height:canvas.width,boxH=quarter?canvas.width:canvas.height,scale=Math.max(boxW/source.width,boxH/source.height),w=source.width*scale,h=source.height*scale;ctx.drawImage(source,-w/2,-h/2,w,h);ctx.restore();for(const point of edit.redEyes){const x=point.x*canvas.width,y=point.y*canvas.height,r=Math.min(canvas.width,canvas.height)*.022,g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,"rgba(12,8,6,.9)");g.addColorStop(.45,"rgba(35,22,16,.72)");g.addColorStop(1,"rgba(35,22,16,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}if(edit.values.vignette>0){const g=ctx.createRadialGradient(canvas.width/2,canvas.height/2,Math.min(canvas.width,canvas.height)*.25,canvas.width/2,canvas.height/2,Math.max(canvas.width,canvas.height)*.7);g.addColorStop(0,"transparent");g.addColorStop(1,`rgba(0,0,0,${Math.min(.78,edit.values.vignette/130)})`);ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height)}if(edit.values.bwGrain>0){ctx.globalAlpha=edit.values.bwGrain/900;for(let i=0;i<2500;i++){const n=(i*9301+49297)%233280;ctx.fillStyle=i%2?"#fff":"#000";ctx.fillRect((n%canvas.width),((n*17)%canvas.height),2,2)}ctx.globalAlpha=1}},[source,edit]);
-  useEffect(()=>draw(),[draw]);
-
-  const loadFile=(file?:File)=>{if(!file||!file.type.startsWith("image/"))return;if(sourceUrl.startsWith("blob:"))URL.revokeObjectURL(sourceUrl);const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{setSource(img);setSourceUrl(url);setFileName(file.name.replace(/\.[^.]+$/,"")||"照片");setReplaceSourceId(null);setReplaceConfirm(false);setEdit(initialEdit);setPast([]);setFuture([]);setZoom(1);setPan({x:0,y:0})};img.src=url};
-  const onFile=(event:ChangeEvent<HTMLInputElement>)=>loadFile(event.target.files?.[0]);
-  const setZoomLevel=(value:number)=>{const next=clamp(value,1,5);setZoom(next);if(next===1)setPan({x:0,y:0})};
-  const updateZoomFromPointer=(event:ReactPointerEvent<HTMLLabelElement>)=>{const rect=event.currentTarget.getBoundingClientRect();setZoomLevel(1+clamp((event.clientX-rect.left)/rect.width,0,1)*4)};
-  const startPan=(event:ReactPointerEvent)=>{if(mode==="裁剪"||zoom<=1)return;panDrag.current={startX:event.clientX,startY:event.clientY,pan};stageRef.current?.setPointerCapture(event.pointerId)};
-  const movePan=(event:ReactPointerEvent)=>{const drag=panDrag.current;if(!drag)return;setPan({x:drag.pan.x+event.clientX-drag.startX,y:drag.pan.y+event.clientY-drag.startY})};
-  const endPan=(event:ReactPointerEvent)=>{if(!panDrag.current)return;panDrag.current=null;stageRef.current?.releasePointerCapture(event.pointerId)};
-  const startCanvas=(event:ReactPointerEvent)=>{if(activeTool==="消除红眼"&&mode==="调整"&&stageRef.current){event.preventDefault();const rect=stageRef.current.getBoundingClientRect(),point={x:clamp((event.clientX-rect.left)/rect.width,0,1),y:clamp((event.clientY-rect.top)/rect.height,0,1)};commit({...edit,redEyes:[...edit.redEyes,point]});return}startPan(event)};
-
-  const applyRatio=(ratio:Ratio)=>{if(!canvasRef.current||ratio==="自由格式"){commit({...edit,ratio});return}if(ratio==="原始"){commit({...edit,ratio,crop:{x:0,y:0,w:1,h:1}});return}const canvasRatio=canvasRef.current.width/canvasRef.current.height,target=ratioValue[ratio]??canvasRatio;let w=1,h=1;if(target>canvasRatio)h=canvasRatio/target;else w=target/canvasRatio;commit({...edit,ratio,crop:{x:(1-w)/2,y:(1-h)/2,w,h}})};
-  const startCrop=(event:ReactPointerEvent,handle:string)=>{event.preventDefault();event.stopPropagation();cropDrag.current={startX:event.clientX,startY:event.clientY,crop:edit.crop,handle};setPast((items)=>[...items.slice(-59),edit]);setFuture([]);stageRef.current?.setPointerCapture(event.pointerId)};
-  const moveCrop=(event:ReactPointerEvent)=>{const drag=cropDrag.current,stage=stageRef.current;if(!drag||!stage)return;const bounds=stage.getBoundingClientRect(),dx=(event.clientX-drag.startX)/bounds.width,dy=(event.clientY-drag.startY)/bounds.height;let{x,y,w,h}=drag.crop;const min=.06;if(drag.handle==="move"){x=clamp(x+dx,0,1-w);y=clamp(y+dy,0,1-h)}else{const right=x+w,bottom=y+h;if(drag.handle.includes("w")){x=clamp(x+dx,0,right-min);w=right-x}if(drag.handle.includes("e"))w=clamp(w+dx,min,1-x);if(drag.handle.includes("n")){y=clamp(y+dy,0,bottom-min);h=bottom-y}if(drag.handle.includes("s"))h=clamp(h+dy,min,1-y);const target=ratioValue[edit.ratio];if(target){const normalized=target/(canvasRef.current!.width/canvasRef.current!.height),anchorRight=drag.handle.includes("w"),anchorBottom=drag.handle.includes("n");if(w/h>normalized)h=w/normalized;else w=h*normalized;if(w>1-(anchorRight?0:x)){w=1-(anchorRight?0:x);h=w/normalized}if(h>1-(anchorBottom?0:y)){h=1-(anchorBottom?0:y);w=h*normalized}x=anchorRight?right-w:x;y=anchorBottom?bottom-h:y;x=clamp(x,0,1-w);y=clamp(y,0,1-h)}}setEdit((current)=>({...current,crop:{x,y,w,h}}))};
-  const endCrop=(event:ReactPointerEvent)=>{if(!cropDrag.current)return;cropDrag.current=null;stageRef.current?.releasePointerCapture(event.pointerId)};
-
-  const exportImage=(saveMode:"copy"|"replace")=>{const canvas=canvasRef.current;if(!canvas)return;const{x,y,w,h}=edit.crop,sx=Math.round(x*canvas.width),sy=Math.round(y*canvas.height),sw=Math.max(1,Math.round(w*canvas.width)),sh=Math.max(1,Math.round(h*canvas.height)),output=document.createElement("canvas");output.width=sw;output.height=sh;output.getContext("2d")?.drawImage(canvas,sx,sy,sw,sh,0,0,sw,sh);onSave(saveMode,`${fileName}-已编辑.jpg`,output.toDataURL("image/jpeg",.9));if(saveMode==="replace"){setEdit(initialEdit);setPast([]);setFuture([]);setZoom(1);setPan({x:0,y:0})}setReplaceConfirm(false)};
-  useEffect(()=>{if(!active)return;const shortcut=(event:KeyboardEvent)=>{if(!(event.ctrlKey||event.metaKey))return;const key=event.key.toLowerCase();if(key==="s"){event.preventDefault();if(replaceSourceId)setReplaceConfirm(true);else exportImage("copy")}else if(key==="z"){event.preventDefault();event.shiftKey?redo():undo()}else if(key==="y"){event.preventDefault();redo()}else if(key==="0"){event.preventDefault();setZoomLevel(1)}else if(key==="="||key==="+"){event.preventDefault();setZoomLevel(zoom+.25)}else if(key==="-"){event.preventDefault();setZoomLevel(zoom-.25)}};window.addEventListener("keydown",shortcut);return()=>window.removeEventListener("keydown",shortcut)},[active,edit,fileName,future,past,replaceSourceId,source,zoom]);
-  const switchMode=(next:Mode)=>{setMode(next);if(next==="裁剪"){setZoomLevel(1);setPan({x:0,y:0})}};
-  const clearImage=()=>{if(sourceUrl.startsWith("blob:"))URL.revokeObjectURL(sourceUrl);setSource(null);setSourceUrl("");setFileName("");setReplaceSourceId(null);setReplaceConfirm(false);setEdit(initialEdit);setPast([]);setFuture([]);setZoom(1);setPan({x:0,y:0});setMode("调整");setActiveTool(null)};
-
-  return <main className="editor-shell" onDragOver={(e)=>e.preventDefault()} onDrop={(e)=>{e.preventDefault();loadFile(e.dataTransfer.files[0])}}>
-    <input ref={fileRef} className="file-input" type="file" accept="image/*" onChange={onFile}/>
-    <header className="toolbar">
-      <div className="left-tools"><button className="clear-photo" aria-label="清空图片" title="清空图片" disabled={!source} onClick={clearImage}>×</button>{source&&mode!=="裁剪"&&<div className="zoom-control"><button aria-label="缩小" title="缩小" onClick={()=>setZoomLevel(zoom-.25)}>−</button><label className="zoom-track" onPointerDown={(e)=>{e.currentTarget.setPointerCapture(e.pointerId);updateZoomFromPointer(e)}} onPointerMove={(e)=>{if(e.buttons)updateZoomFromPointer(e)}}><input aria-label="缩放" type="range" min="1" max="5" step=".01" value={zoom} onChange={(e)=>setZoomLevel(Number(e.target.value))}/></label><button aria-label="放大" title="放大" onClick={()=>setZoomLevel(zoom+.25)}>＋</button></div>}</div>
-      <nav className="mode-tabs">{(["调整","滤镜","裁剪"] as Mode[]).map((item)=><button key={item} className={mode===item?"active":""} onClick={()=>switchMode(item)}>{item}</button>)}</nav>
-      <div className="actions"><button aria-label="导入照片" title="导入照片" onClick={()=>fileRef.current?.click()}>＋</button><button aria-label="撤销编辑" title="撤销" disabled={!past.length} onClick={undo}>↶</button><button aria-label="重做编辑" title="重做" disabled={!future.length} onClick={redo}>↷</button><button aria-label={favorite?"取消收藏":"收藏"} title={favorite?"取消收藏":"收藏"} className={favorite?"selected":""} onClick={()=>setFavorite(!favorite)}>{favorite?"♥":"♡"}</button><button aria-label="旋转照片" title="旋转" onClick={()=>commit({...edit,rotation:(edit.rotation+90)%360})}>↻</button><button aria-label="自动增强" title="自动增强" className="magic" onClick={()=>commit({...edit,values:{...edit.values,brilliance:24,exposure:7,highlights:-12,shadows:17,contrast:8,vibrance:18,definition:14}})}>✦</button>{replaceSourceId&&<button className="save-copy" title="另存为桌面副本" onClick={()=>exportImage("copy")}>另存</button>}<button className="done" title={replaceSourceId?"覆盖原图":"存储到桌面"} onClick={()=>replaceSourceId?setReplaceConfirm(true):exportImage("copy")}>{replaceSourceId?"保存":"完成"}</button></div>
-    </header>
-    <section className="workspace">
-      <div ref={viewportRef} className="canvas-viewport" onDoubleClick={()=>source&&setZoomLevel(zoom===1?2:1)}>
-        {source?<><div ref={stageRef} className={`canvas-stage ${mode==="裁剪"?"cropping":""} ${zoom>1?"zoomed":""} ${activeTool==="消除红眼"?"red-eye-active":""}`} style={{width:fit.w,height:fit.h,transform:`translate3d(${pan.x}px,${pan.y}px,0) scale(${zoom})`}} onPointerDown={startCanvas} onPointerMove={(e)=>{movePan(e);moveCrop(e)}} onPointerUp={(e)=>{endPan(e);endCrop(e)}} onPointerCancel={(e)=>{endPan(e);endCrop(e)}}>
-          <canvas ref={canvasRef} aria-label="照片编辑画布"/>{mode==="裁剪"&&<CropOverlay crop={edit.crop} start={startCrop}/>}
-        </div>{zoom>1&&mode!=="裁剪"&&<span className="zoom-badge">{Math.round(zoom*100)}%</span>}<div className="image-caption"><span>{fileName}</span><small>{source.width} × {source.height}</small></div></>:<button className="empty-state" onClick={()=>fileRef.current?.click()}><span>＋</span><strong>打开一张照片</strong><small>点击选择，或将图片拖到这里</small></button>}
-      </div>
-      <aside className="inspector">
-        {!source?<div className="empty-inspector">打开照片后显示编辑工具</div>:<>{mode==="调整"&&<AdjustPanel edit={edit} sourceUrl={sourceUrl} openGroups={openGroups} openOptions={openOptions} activeTool={activeTool} toggleGroup={(name)=>{setOpenGroups((items)=>items.includes(name)?items.filter((i)=>i!==name):[...items,name]);if(name==="消除红眼")setActiveTool((current)=>current==="消除红眼"?null:"消除红眼")}} toggleOptions={(name)=>setOpenOptions((items)=>items.includes(name)?items.filter((i)=>i!==name):[...items,name])} setValue={setValue} commit={commit}/>}
-        {mode==="滤镜"&&<FilterPanel sourceUrl={sourceUrl} selected={edit.filter} select={(filter)=>commit({...edit,filter})}/>} {mode==="裁剪"&&<CropPanel edit={edit} commit={commit} applyRatio={applyRatio}/>}</>}
-      </aside>
-    </section>
-    {replaceConfirm&&<div className="photo-save-layer"><section role="dialog" aria-modal="true" aria-label="确认覆盖原图"><strong>覆盖原图？</strong><p>编辑结果将替换桌面中的原图片。</p><div><button onClick={()=>setReplaceConfirm(false)}>取消</button><button className="confirm" onClick={()=>exportImage("replace")}>覆盖原图</button></div></section></div>}
-  </main>;
-}
-
-function CropOverlay({crop,start}:{crop:CropRect;start:(e:ReactPointerEvent,h:string)=>void}){return <div className="crop-box" style={{left:`${crop.x*100}%`,top:`${crop.y*100}%`,width:`${crop.w*100}%`,height:`${crop.h*100}%`}} onPointerDown={(e)=>start(e,"move")}><span className="crop-lines"/>{["nw","n","ne","e","se","s","sw","w"].map((h)=><i key={h} className={`handle ${h}`} onPointerDown={(e)=>start(e,h)}/>)}</div>}
-function PanelTitle({children}:{children:string}){return <><h2>{children}</h2><div className="divider"/></>}
-
-function AdjustPanel({edit,sourceUrl,openGroups,openOptions,activeTool,toggleGroup,toggleOptions,setValue,commit}:{edit:EditState;sourceUrl:string;openGroups:string[];openOptions:string[];activeTool:string|null;toggleGroup:(n:string)=>void;toggleOptions:(n:string)=>void;setValue:(k:string,v:number)=>void;commit:(e:EditState)=>void}){
-  const resetKeys=(keys:string[])=>commit({...edit,values:{...edit.values,...Object.fromEntries(keys.map((key)=>[key,defaults[key]]))}});
-  const primaryAuto:Record<string,Record<string,number>>={光效:{overallLight:22,brilliance:20,exposure:6,highlights:-12,shadows:15,brightness:5,contrast:8,blackPoint:4},颜色:{overallColor:22,saturation:8,vibrance:20,colorCast:0},黑白:{overallBW:50,bwIntensity:50,bwNeutral:0,bwTone:8,bwGrain:5}};
-  const advancedAuto:Record<string,Record<string,number>>={白平衡:{temperature:8},曲线:{curve:12},色阶:{levelBlack:-8,levelMid:5,levelWhite:8},清晰度:{definition:28},可选颜色:{selectiveHue:8,selectiveSat:14,selectiveLum:5,selectiveRange:50},噪点消除:{noise:24},锐化:{sharpness:28},晕影:{vignette:20}};
-  const applyValues=(values:Record<string,number>)=>commit({...edit,values:{...edit.values,...values}});
-  return <div className="panel-content adjust-panel"><PanelTitle>调整</PanelTitle>{primary.map((group)=>{const keys=[group.main,...group.controls.map((c)=>c.key)],open=openGroups.includes(group.name),options=openOptions.includes(group.name),active=keys.some((key)=>edit.values[key]!==defaults[key]);return <section className={`photo-adjust ${open?"open":""}`} key={group.name}><div className="adjust-title"><button className="disclosure" onClick={()=>toggleGroup(group.name)}>⌄</button><span className="adjust-icon">{group.icon}</span><strong>{group.name}</strong>{active&&<button className="undo-section" onClick={()=>resetKeys(keys)}>↶</button>}<button className="auto-pill" onClick={()=>active?resetKeys(keys):applyValues(primaryAuto[group.name])}>自动</button><button aria-label={`清除${group.name}调整`} title={active?"清除调整":"尚未调整"} className={`active-ring ${active?"on":""}`} disabled={!active} onClick={()=>resetKeys(keys)}/></div>{open&&<><PreviewSlider sourceUrl={sourceUrl} value={edit.values[group.main]} mode={group.name} onChange={(value)=>setValue(group.main,value)}/><button className={`options-button ${options?"open":""}`} onClick={()=>toggleOptions(group.name)}>› <span>选项</span></button>{options&&<div className="option-sliders">{group.controls.map((control)=><ControlSlider key={control.key} control={control} value={edit.values[control.key]} onChange={setValue}/>)}</div>}</>}</section>})}
-  {advanced.map((group)=>{const open=openGroups.includes(group.name),isRedEye=group.name==="消除红眼",active=isRedEye?edit.redEyes.length>0:group.controls.some((c)=>edit.values[c.key]!==defaults[c.key]);const reset=()=>isRedEye?commit({...edit,redEyes:[]}):resetKeys(group.controls.map((c)=>c.key));return <section className={`advanced-adjust ${open?"open":""}`} key={group.name}><div className="adjust-title"><button className="disclosure" onClick={()=>toggleGroup(group.name)}>⌄</button><span className="adjust-icon">{group.icon}</span><strong>{group.name}</strong>{active&&<button className="undo-section" onClick={reset}>↶</button>}{group.controls.length>0&&<button className="auto-pill" onClick={()=>active?reset():applyValues(advancedAuto[group.name])}>自动</button>}<button aria-label={`清除${group.name}调整`} title={active?"清除调整":"尚未调整"} className={`active-ring ${active?"on":""}`} disabled={!active} onClick={reset}/></div>{open&&<div className="advanced-body">{group.visual==="curve"&&<div className="curve-visual"><i/><b style={{transform:`rotate(${-45+edit.values.curve*.18}deg)`}}/></div>}{group.visual==="levels"&&<div className="histogram"><i/><i/><i/><i/><i/></div>}{group.controls.length?group.controls.map((control)=><ControlSlider key={control.key} control={control} value={edit.values[control.key]} onChange={setValue}/>):<p className={`tool-hint ${activeTool==="消除红眼"?"active":""}`}>{activeTool==="消除红眼"?"已启用：在照片上点击红眼区域":"展开后可在照片上点击红眼区域"}</p>}</div>}</section>})}<button className="reset" disabled={JSON.stringify(edit)===JSON.stringify(initialEdit)} onClick={()=>commit(initialEdit)}>还原调整</button></div>}
-
-function PreviewSlider({sourceUrl,value,mode,onChange}:{sourceUrl:string;value:number;mode:string;onChange:(n:number)=>void}){const filter=mode==="光效"?`brightness(${100+value*.5}%) contrast(${100+value*.18}%)`:mode==="颜色"?`saturate(${100+value*.75}%)`:`grayscale(${Math.abs(value)}%) contrast(${100+Math.abs(value)*.2}%)`;const update=(event:ReactPointerEvent<HTMLLabelElement>)=>{const rect=event.currentTarget.getBoundingClientRect();onChange(Math.round(clamp(((event.clientX-rect.left)/rect.width)*200-100,-100,100)))};return <label className="preview-slider" onPointerDown={(e)=>{e.currentTarget.setPointerCapture(e.pointerId);update(e)}} onPointerMove={(e)=>{if(e.buttons)update(e)}}><span style={{backgroundImage:`url(${sourceUrl})`,filter}}/><i style={{left:`${(value+100)/2}%`}}/><input aria-label={`${mode}总强度`} type="range" min="-100" max="100" value={value} onChange={(e)=>onChange(Number(e.target.value))}/></label>}
-function ControlSlider({control,value,onChange}:{control:Control;value:number;onChange:(k:string,v:number)=>void}){const min=control.min??-100,max=control.max??100;return <label className="control-slider"><span>{control.label}</span><output>{value>0?"+":""}{value.toFixed(2)}</output><input type="range" min={min} max={max} value={value} onChange={(e)=>onChange(control.key,Number(e.target.value))}/></label>}
-function FilterPanel({sourceUrl,selected,select}:{sourceUrl:string;selected:string;select:(s:string)=>void}){return <div className="panel-content"><PanelTitle>滤镜</PanelTitle><div className="filter-list">{filters.map(([name,css])=><button key={name} className={`filter-card ${selected===name?"active":""}`} onClick={()=>select(name)}><span className="filter-thumb" style={{backgroundImage:`url(${sourceUrl})`,filter:css}}/><strong>{name}</strong></button>)}</div></div>}
-function CropPanel({edit,commit,applyRatio}:{edit:EditState;commit:(e:EditState)=>void;applyRatio:(r:Ratio)=>void}){return <div className="panel-content crop-panel"><PanelTitle>裁剪</PanelTitle>{[{label:"校正",key:"rotation",value:edit.rotation},{label:"垂直",key:"vertical",value:edit.values.vertical},{label:"水平",key:"horizontal",value:edit.values.horizontal}].map((item)=><label className="crop-control" key={item.key}><span>{item.label}</span><output>{item.value}°</output><input type="range" min="-45" max="45" value={item.value} onChange={(e)=>item.key==="rotation"?commit({...edit,rotation:Number(e.target.value)}):commit({...edit,values:{...edit.values,[item.key]:Number(e.target.value)}})}/></label>)}<button className="flip" onClick={()=>commit({...edit,flipX:!edit.flipX})}>↔ <span>翻转</span></button><h3>宽高比</h3><div className="ratio-list">{(Object.keys(ratioValue) as Ratio[]).map((ratio)=><button key={ratio} className={edit.ratio===ratio?"active":""} onClick={()=>applyRatio(ratio)}><span>{edit.ratio===ratio?"✓":""}</span>{ratio}</button>)}</div><p className="crop-tip">可拖动四角、四边改变大小；拖动选区中心移动位置</p><div className="crop-actions"><button onClick={()=>commit({...edit,ratio:"原始",crop:{x:0,y:0,w:1,h:1},rotation:0,flipX:false,flipY:false,values:{...edit.values,vertical:0,horizontal:0}})}>自动</button><button onClick={()=>commit(initialEdit)}>还原</button></div></div>}
