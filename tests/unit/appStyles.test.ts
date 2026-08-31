@@ -27,6 +27,8 @@ describe("application style loading", () => {
     expect(reader).toContain('className="reader-mobile-toolbar"');
     expect(reader).toContain("setImmersive(compact)");
     expect(reader).toContain("toggleMobileChrome()");
+    expect(reader).toContain("DESKTOP_ICON_LONG_PRESS_MS");
+    expect(reader).toContain('className="reader-turn-layer"');
     expect(notes).toContain('import "./productivity-apps.css"');
     expect(games).toContain('import "./games-tools.css"');
   });
@@ -50,7 +52,7 @@ describe("application style loading", () => {
     expect(globals).toContain('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),textarea,select{font-size:16px!important}');
     expect(globals).toContain("background:#0b4d7c");
     expect(desktop).toContain("env(safe-area-inset-bottom)");
-    expect(desktop).toContain(".desktop-window.maximized { inset:env(safe-area-inset-top) 0 0!important");
+    expect(desktop).toContain(".desktop-window.maximized { position:fixed; inset:0!important; width:100vw!important; height:100dvh!important");
     expect(desktop).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(desktop).toContain(".shortcut-icon { width:62px; height:62px; min-height:62px; flex:none");
     expect(desktop).toContain("font-size:14px; line-height:18px");
@@ -69,6 +71,9 @@ describe("application style loading", () => {
     expect(reader).toContain(".reader-book-info>strong{font-size:19px");
     expect(reader).toContain(".reader-shelf{grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(reader).toContain(".reader-reading.immersive.chrome-hidden>.reader-mobile-toolbar");
+    expect(reader).toContain(".reader-library.editing .reader-book-delete{display:block}");
+    expect(reader).toContain("@keyframes readerPageForward");
+    expect(reader).not.toContain(".reader-window{inset:3px 2px 51px");
     expect(productivity).toContain(".notepad-app.mobile-editor-open .note-workspace");
     expect(productivity).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(games).toContain(".focus-dial { width:min(64vw,260px,42dvh)");

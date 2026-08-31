@@ -39,6 +39,11 @@ import {
   summarizeStoredBook,
   storeBook,
 } from "./readerStorage";
+import {
+  DESKTOP_ICON_LONG_PRESS_MS,
+  isCompactDesktopViewport,
+  movedBeyondLongPressTolerance,
+} from "./desktopIconInteraction";
 import ReaderWorker from "./reader.worker?worker";
 
 type DownloadMetadata = Record<string, { version: string; downloadedAt: number }>;
@@ -77,6 +82,7 @@ export default function ReaderApp({
   const [shelfFilter, setShelfFilter] = useState<ShelfFilter>("all");
   const [activity, setActivity] = useState<ReaderActivity>(readReaderActivity);
   const [storageUsage, setStorageUsage] = useState<number | null>(null);
+  const [shelfEditing, setShelfEditing] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<{ id: string; type: "local" | "cloud" } | null>(null);
   const [activeBook, setActiveBook] = useState<StoredBook | null>(null);
   const [chapters, setChapters] = useState<ReaderChapter[]>([]);
@@ -105,8 +111,11 @@ export default function ReaderApp({
   const pageRef = useRef<HTMLElement>(null);
   const pageViewportRef = useRef<HTMLDivElement>(null);
   const pageFlowRef = useRef<HTMLDivElement>(null);
+  const turnLayerRef = useRef<HTMLDivElement>(null);
   const pendingLastPageRef = useRef(false);
   const pagePointerRef = useRef<{ x: number; y: number } | null>(null);
+  const shelfPressRef = useRef<{ id: string; x: number; y: number; timer: number } | null>(null);
+  const suppressShelfOpenRef = useRef<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const workerRequestRef = useRef(0);
   const workerPendingRef = useRef(new Map<number, { resolve: (result: ReaderWorkerPayload) => void; reject: (error: Error) => void }>());
@@ -163,6 +172,7 @@ export default function ReaderApp({
       pendingRequests.clear();
       if (progressTimerRef.current) window.clearTimeout(progressTimerRef.current);
       if (scrollFrameRef.current) cancelAnimationFrame(scrollFrameRef.current);
+      if (shelfPressRef.current) window.clearTimeout(shelfPressRef.current.timer);
       scrollFrameRef.current = null;
     };
   }, []);
@@ -259,24 +269,18 @@ export default function ReaderApp({
   useEffect(() => {
     if (
       preferences.readingMode !== "page"
-      || preferences.animation === "none"
+      || preferences.animation !== "slide"
       || !turn.token
       || window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) return;
     const page = pageRef.current;
     if (!page) return;
     const isForward = turn.direction === "forward";
-    const frames = preferences.animation === "page"
-      ? [
-          { opacity: .35, transform: `rotateY(${isForward ? -12 : 12}deg) translateX(${isForward ? 14 : -14}px)` },
-          { opacity: 1, transform: "none" },
-        ]
-      : [
-          { opacity: .3, transform: `translateX(${isForward ? 38 : -38}px)` },
-          { opacity: 1, transform: "none" },
-        ];
-    page.animate(frames, {
-      duration: preferences.animation === "page" ? 360 : 270,
+    page.animate([
+      { opacity: .3, transform: `translateX(${isForward ? 38 : -38}px)` },
+      { opacity: 1, transform: "none" },
+    ], {
+      duration: 270,
       easing: "ease",
     });
   }, [preferences.animation, preferences.readingMode, turn]);
@@ -489,6 +493,44 @@ export default function ReaderApp({
 
   const cancelDownload = (id: string) => downloadControllersRef.current.get(id)?.abort();
 
+  const clearShelfPress = () => {
+    if (shelfPressRef.current) window.clearTimeout(shelfPressRef.current.timer);
+    shelfPressRef.current = null;
+  };
+  const beginShelfPress = (event: React.PointerEvent<HTMLElement>, id: string, manageable: boolean) => {
+    if (!manageable || event.button !== 0 || !isCompactDesktopViewport()) return;
+    clearShelfPress();
+    const x = event.clientX;
+    const y = event.clientY;
+    shelfPressRef.current = {
+      id,
+      x,
+      y,
+      timer: window.setTimeout(() => {
+        suppressShelfOpenRef.current = id;
+        setShelfEditing(true);
+        setDeleteCandidate(null);
+        shelfPressRef.current = null;
+      }, DESKTOP_ICON_LONG_PRESS_MS),
+    };
+  };
+  const updateShelfPress = (event: React.PointerEvent<HTMLElement>) => {
+    const press = shelfPressRef.current;
+    if (press && movedBeyondLongPressTolerance(press, { x: event.clientX, y: event.clientY })) clearShelfPress();
+  };
+  const finishShelfPress = () => clearShelfPress();
+  const handleShelfOpen = (id: string, open: () => void) => {
+    if (suppressShelfOpenRef.current === id) {
+      suppressShelfOpenRef.current = null;
+      return;
+    }
+    if (shelfEditing && isCompactDesktopViewport()) {
+      setShelfEditing(false);
+      return;
+    }
+    open();
+  };
+
   const importBook = async (file?: File) => {
     if (!file) return;
     if (file.type !== "text/plain" && !file.name.toLowerCase().endsWith(".txt")) {
@@ -535,7 +577,33 @@ export default function ReaderApp({
     }
   };
 
-  const animate = useCallback((direction: "forward" | "back") => setTurn((current) => ({ direction, token: current.token + 1 })), []);
+  const animate = useCallback((direction: "forward" | "back") => {
+    setTurn((current) => ({ direction, token: current.token + 1 }));
+    if (
+      preferences.readingMode !== "page"
+      || preferences.animation !== "page"
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) return;
+    const page = pageRef.current;
+    const layer = turnLayerRef.current;
+    const stage = stageRef.current;
+    if (!page || !layer || !stage) return;
+    layer.replaceChildren();
+    const pageRect = page.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const snapshot = page.cloneNode(true) as HTMLElement;
+    snapshot.classList.add("reader-page-turning", direction);
+    snapshot.setAttribute("aria-hidden", "true");
+    snapshot.style.left = `${pageRect.left - stageRect.left}px`;
+    snapshot.style.top = `${pageRect.top - stageRect.top}px`;
+    snapshot.style.width = `${pageRect.width}px`;
+    snapshot.style.height = `${pageRect.height}px`;
+    layer.appendChild(snapshot);
+    const sourceViewport = page.querySelector<HTMLElement>(".reader-page-viewport");
+    const snapshotViewport = snapshot.querySelector<HTMLElement>(".reader-page-viewport");
+    if (sourceViewport && snapshotViewport) snapshotViewport.scrollLeft = sourceViewport.scrollLeft;
+    snapshot.addEventListener("animationend", () => snapshot.remove(), { once: true });
+  }, [preferences.animation, preferences.readingMode]);
   const resetScroll = useCallback(() => {
     pendingLocationRef.current = null;
     semanticLocationRef.current = { paragraphIndex: 0, characterOffset: 0 };
@@ -865,24 +933,24 @@ export default function ReaderApp({
     || shelfFilter === "cloud" && !downloads[book.id]
   ));
 
-  if (!activeBook) return <div className="reader-library">
-    <header className="reader-library-header"><div><span className="reader-brand">阅</span><div><strong>NOVA 阅读</strong><small>{localBooks.length + Object.keys(downloads).length} 本已存储</small></div></div><div className="reader-library-actions"><label className="reader-import-button">＋ 导入 TXT<input ref={importRef} aria-label="选择要导入的TXT书籍" type="file" accept=".txt,text/plain" onChange={(event) => { void importBook(event.target.files?.[0]); event.target.value = ""; }}/></label><button className="reader-refresh-button" aria-label="检查云端书库" title="检查云端书库" onClick={loadCatalog}>↻</button></div></header>
+  if (!activeBook) return <div className={`reader-library ${shelfEditing ? "editing" : ""}`}>
+    <header className="reader-library-header"><div><span className="reader-brand">阅</span><div><strong>NOVA 阅读</strong><small>{shelfEditing ? "管理书架" : `${localBooks.length + Object.keys(downloads).length} 本已存储`}</small></div></div><div className="reader-library-actions">{shelfEditing ? <button className="reader-library-done" aria-label="完成管理书架" title="完成" onClick={() => { setShelfEditing(false); setDeleteCandidate(null); }}><span aria-hidden="true">✓</span></button> : <><label className="reader-import-button">＋ 导入 TXT<input ref={importRef} aria-label="选择要导入的TXT书籍" type="file" accept=".txt,text/plain" onChange={(event) => { void importBook(event.target.files?.[0]); event.target.value = ""; }}/></label><button className="reader-refresh-button" aria-label="检查云端书库" title="检查云端书库" onClick={loadCatalog}>↻</button></>}</div></header>
     <section className="reader-library-tools">
       <label className="reader-library-search"><span aria-hidden="true">⌕</span><input value={shelfQuery} onChange={(event) => setShelfQuery(event.target.value)} aria-label="搜索书架" placeholder="搜索书名、作者"/></label>
       <div className="reader-library-filters">{(["all", "downloaded", "local", "cloud"] as ShelfFilter[]).map((filter) => <button key={filter} className={shelfFilter === filter ? "active" : ""} onClick={() => setShelfFilter(filter)}>{filter === "all" ? "全部" : filter === "downloaded" ? "已下载" : filter === "local" ? "本地" : "云端"}</button>)}</div>
       <span>{storageUsage === null ? "本地存储" : `已使用 ${formatSize(storageUsage)}`}</span>
     </section>
     {recentBook && recentActivity && <section className="reader-continue"><span className={`reader-cover cover-${recentBook.cover}`}><i>RECENT</i><strong>{recentBook.title}</strong><small>{recentBook.author}</small></span><div><small>最近阅读</small><strong>{recentBook.title}</strong><p>{recentActivity.progress}% · {new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(recentActivity.lastReadAt)}</p><i><span style={{ width: `${recentActivity.progress}%` }}/></i></div><button onClick={() => void openBook(recentBook)}>继续阅读</button></section>}
-    {!!visibleLocalBooks.length && <><header className="reader-shelf-title"><strong>本地书籍</strong><span>{visibleLocalBooks.length} 本</span></header><section className="reader-shelf reader-local-shelf">{visibleLocalBooks.map((book) => <article className="reader-book-card" key={book.id}><button className="reader-book-open" disabled={openingBookId === book.id} onClick={() => void openBook(book)}><span className={`reader-cover cover-${book.cover}`}><i>LOCAL</i><strong>{book.title}</strong><small>{book.author}</small></span><span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className="downloaded">{openingBookId === book.id ? "正在整理章节…" : `继续阅读 · ${formatSize(book.size)}`}</em></span></button><button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}`} title="删除本地书籍" onClick={() => setDeleteCandidate({ id: book.id, type: "local" })}>×</button>{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>移除这本书？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeLocalBook(book)}>删除</button></aside>}</article>)}</section></>}
+    {!!visibleLocalBooks.length && <><header className="reader-shelf-title"><strong>本地书籍</strong><span>{visibleLocalBooks.length} 本</span></header><section className="reader-shelf reader-local-shelf">{visibleLocalBooks.map((book) => <article className="reader-book-card manageable" key={book.id} onPointerDown={(event) => beginShelfPress(event, book.id, true)} onPointerMove={updateShelfPress} onPointerUp={finishShelfPress} onPointerCancel={finishShelfPress}><button className="reader-book-open" disabled={openingBookId === book.id} onClick={() => handleShelfOpen(book.id, () => void openBook(book))}><span className={`reader-cover cover-${book.cover}`}><i>LOCAL</i><strong>{book.title}</strong><small>{book.author}</small></span><span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className="downloaded">{openingBookId === book.id ? "正在整理章节…" : `继续阅读 · ${formatSize(book.size)}`}</em></span></button><button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}`} title="删除本地书籍" onClick={() => setDeleteCandidate({ id: book.id, type: "local" })}>×</button>{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>移除这本书？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeLocalBook(book)}>删除</button></aside>}</article>)}</section></>}
     {(shelfFilter === "all" || shelfFilter === "cloud" || shelfFilter === "downloaded") && <><header className="reader-shelf-title"><strong>{shelfFilter === "downloaded" ? "已下载书籍" : "云端书库"}</strong><span>{visibleCatalog.length} 本</span></header>
     {catalogState === "loading" ? <div className="reader-state"><i/><strong>正在查看云端书库</strong></div> : catalogState === "error" ? <div className="reader-state"><strong>云端书库暂时不可用</strong><button onClick={loadCatalog}>重新检查</button></div> : <section className="reader-shelf">{visibleCatalog.map((book) => {
       const downloaded = downloads[book.id];
       const current = downloaded?.version === book.version;
       const percent = downloadProgress[book.id];
-      return <article className="reader-book-card" key={book.id}><button className="reader-book-open" onClick={() => downloadOrOpen(book)} disabled={downloading.has(book.id) || openingBookId === book.id}>
+      return <article className={`reader-book-card ${downloaded ? "manageable" : ""}`} key={book.id} onPointerDown={(event) => beginShelfPress(event, book.id, !!downloaded)} onPointerMove={updateShelfPress} onPointerUp={finishShelfPress} onPointerCancel={finishShelfPress}><button className="reader-book-open" onClick={() => handleShelfOpen(book.id, () => void downloadOrOpen(book))} disabled={downloading.has(book.id) || openingBookId === book.id}>
           <span className={`reader-cover cover-${book.cover}`}><i>NOVA</i><strong>{book.title}</strong><small>{book.author}</small></span>
           <span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className={current ? "downloaded" : "cloud"}>{downloading.has(book.id) ? `正在下载 ${percent ?? 0}%` : openingBookId === book.id ? "正在整理章节…" : current ? `继续阅读 · ${formatSize(book.size)}` : downloaded ? "发现云端更新" : `云端 · ${formatSize(book.size)}`}</em></span>
-        </button>{downloading.has(book.id) ? <button className="reader-book-delete" aria-label={`取消下载${book.title}`} title="取消下载" onClick={() => cancelDownload(book.id)}>×</button> : downloaded && <button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}下载`} title="删除下载" onClick={() => setDeleteCandidate({ id: book.id, type: "cloud" })}>×</button>}{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>删除本地下载？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeCloudDownload(book)}>删除</button></aside>}</article>;
+        </button>{downloading.has(book.id) ? <button className="reader-book-delete cancel-download" aria-label={`取消下载${book.title}`} title="取消下载" onClick={() => cancelDownload(book.id)}>×</button> : downloaded && <button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}下载`} title="删除下载" onClick={() => setDeleteCandidate({ id: book.id, type: "cloud" })}>×</button>}{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>删除本地下载？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeCloudDownload(book)}>删除</button></aside>}</article>;
     })}</section>}</>}
     {!visibleLocalBooks.length && !visibleCatalog.length && catalogState === "ready" && <div className="reader-state"><strong>没有匹配的书籍</strong><button onClick={() => { setShelfQuery(""); setShelfFilter("all"); }}>清除筛选</button></div>}
     {message && <div className="reader-message">{message}</div>}
@@ -893,7 +961,8 @@ export default function ReaderApp({
     <div className="reader-body">
       {sidebarOpen && <button className="reader-sidebar-scrim" aria-label="关闭目录" onClick={() => setSidebarOpen(false)}/>}
       {sidebarOpen && <aside className="reader-chapters"><header><div><button className={sidebarTab === "chapters" ? "active" : ""} onClick={() => setSidebarTab("chapters")}>目录</button><button className={sidebarTab === "bookmarks" ? "active" : ""} onClick={() => setSidebarTab("bookmarks")}>书签</button></div><span>{sidebarTab === "chapters" ? `${chapters.length} 章` : `${bookmarks.length} 个`}</span></header>{sidebarTab === "chapters" ? <div>{chapters.map((item, index) => <button key={`${item.title}-${index}`} className={index === chapterIndex ? "active" : ""} onClick={() => selectChapter(index)}><span>{item.title}</span>{index === chapterIndex && <small>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1}/${pageCount}`}</small>}</button>)}</div> : <div className="reader-bookmarks">{bookmarks.map((bookmark) => <article key={bookmark.id}><button onClick={() => jumpToLocation(bookmark)}><strong>{bookmark.chapterTitle}</strong><span>{bookmark.excerpt}</span></button><button aria-label="删除书签" title="删除书签" onClick={() => removeBookmark(bookmark.id)}>×</button></article>)}{!bookmarks.length && <p>还没有书签</p>}</div>}</aside>}
-      <main key={`${activeBook.id}-${chapterIndex}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture}>
+      <main key={`${activeBook.id}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture} onPointerCancel={() => { pagePointerRef.current = null; }}>
+        <div className="reader-turn-layer" ref={turnLayerRef} aria-hidden="true"/>
         <article
           ref={pageRef}
           className="reader-page"
