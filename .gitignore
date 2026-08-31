@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/.chrome-pwa-test.*/
+*.tsbuildinfo
 
 # next.js
 /.next/
