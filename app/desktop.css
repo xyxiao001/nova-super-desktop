@@ -103,6 +103,8 @@
 .notes-shortcut { background: linear-gradient(#55aaf5 0 17%, #f8fbff 17%); color: #35648c; }
 .viewer-shortcut { background: linear-gradient(145deg, #1987da, #71d4ff); }
 .reader-shortcut { background: linear-gradient(145deg,#ff7a36,#d9481e); font: 700 18px/1 Georgia,serif; }
+.calendar-shortcut { position:relative; padding-top:9px; background:#f8faf9; color:#263237; font:800 18px/1 "Avenir Next","PingFang SC",sans-serif; }
+.calendar-shortcut::before { content:""; position:absolute; inset:0 0 auto; height:10px; border-radius:10px 10px 0 0; background:#d94a3f; }
 .games-shortcut { position:relative; overflow:hidden; background:linear-gradient(145deg,#27313b,#11161c); font-size:0; }
 .games-shortcut::before { content:""; width:9px; height:9px; border-radius:50%; background:#f3ca52; box-shadow:14px 0 #55aee9,0 14px #df6758,14px 14px #6cad70; transform:translate(-7px,-7px); }
 .settings-shortcut { background:linear-gradient(145deg,#6d7d89,#35414a); color:#fff; font-size:23px; }
@@ -194,6 +196,7 @@
 .windows-desktop .calculator-window { inset:auto; width:380px; height:600px; min-width:min(350px,calc(100vw - 8px)); min-height:min(540px,calc(100vh - 57px)); left:36vw; top:52px; }
 .drawing-window { inset: auto; width: min(960px,90vw); height: min(700px,84vh); left: 10vw; top: 48px; }
 .focus-window { inset:auto; width:min(820px,88vw); height:min(600px,80vh); min-width:min(620px,calc(100vw - 8px)); min-height:520px; left:17vw; top:66px; }
+.calendar-window { inset:auto; width:min(920px,90vw); height:min(650px,84vh); min-width:min(700px,calc(100vw - 8px)); min-height:min(520px,calc(100vh - 57px)); left:14vw; top:48px; }
 
 .windows-desktop .window-chrome {
   height: 38px;
@@ -223,6 +226,7 @@
 .tower-glyph { border:1px solid #7a6843; background:#24231b; color:#d8b965; font-family:Georgia,"Songti SC",serif; }
 .calculator-glyph { background: #303941; }
 .reader-glyph { background: linear-gradient(145deg,#ff7a36,#d9481e); }
+.calendar-glyph { border-top:5px solid #d94a3f; background:#f5f7f6; color:#263237; font:800 8px/1 "Avenir Next","PingFang SC",sans-serif; }
 .drawing-glyph { background: #f8fafb; color: #2778d4; }
 .games-glyph { position:relative; overflow:hidden; background:#1b222a; font-size:0; }
 .games-glyph::before { content:""; width:4px; height:4px; border-radius:50%; background:#f3ca52; box-shadow:7px 0 #55aee9,0 7px #df6758,7px 7px #6cad70; transform:translate(-3.5px,-3.5px); }
@@ -315,6 +319,7 @@
 .start-go { background:#ad7a36; color:#fff!important; }
 .start-calculator { background: #303941; }
 .start-reader { background: linear-gradient(145deg,#ff7a36,#d9481e); }
+.start-calendar { border-top:7px solid #d94a3f; background:#f5f7f6; color:#263237!important; font-weight:800; }
 .start-drawing { background: #f8fafb; color: #2778d4!important; }
 .start-focus { background:#286ba8; color:#fff!important; }
 .start-all-list { min-height:0; padding:5px 2px 8px; overflow:auto; scrollbar-gutter:stable; }
@@ -392,6 +397,7 @@
 .task-app.chess-app > span { background:#39745b; color:#fff; }
 .task-app.gomoku-app > span { background:#c99a50; color:#171513; }
 .task-app.calculator-app > span { background: #303941; }
+.task-app.calendar-app > span { border-top:5px solid #d94a3f; background:#f5f7f6; color:#263237; font:800 9px/1 "Avenir Next","PingFang SC",sans-serif; }
 .task-app.drawing-app > span { background: #f8fafb; color: #2778d4; }
 .task-app.active::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 3px; border-radius: 3px; background: #1687d7; }
 .taskbar-preview { position:absolute; z-index:5; left:50%; bottom:49px; width:210px; height:142px; overflow:hidden; border:1px solid #ffffffa8; border-radius:7px; background:#eef3f6ed; color:#24313a; box-shadow:0 16px 38px #0007; transform:translateX(-50%); backdrop-filter:blur(18px); }.taskbar-preview header { height:38px; padding:0 8px; display:flex; align-items:center; gap:7px; border-bottom:1px solid #bdc8cf; }.taskbar-preview header .app-glyph { width:23px; height:23px; font-size:12px; }.taskbar-preview header strong { min-width:0; flex:1; overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }.windows-taskbar .taskbar-preview header button { width:25px; height:25px; border-radius:3px; font-size:15px; }.windows-taskbar .taskbar-preview header button:hover { background:#d9483b; color:#fff; }.taskbar-preview > div { position:relative; height:104px; padding:10px; overflow:hidden; background:linear-gradient(145deg,#dfe8ed,#f8fafb); }.taskbar-preview > div span { position:relative; z-index:2; color:#64727b; font-size:9px; }.taskbar-preview > div i { position:absolute; right:16px; bottom:9px; color:#8d9ca5; font:normal 54px/1 Georgia,serif; opacity:.34; }
@@ -524,7 +530,7 @@
 
 @media (max-width: 900px) {
   .photo-window { inset: 8px 6px 56px; }
-  .notes-window, .viewer-window, .reader-window, .games-window, .settings-window, .explorer-window, .folder-window, .recycle-window, .mines-window, .chess-window, .gomoku-window, .tower-window, .calculator-window, .drawing-window, .focus-window { left: 5vw; width: 90vw; }
+  .notes-window, .viewer-window, .reader-window, .calendar-window, .games-window, .settings-window, .explorer-window, .folder-window, .recycle-window, .mines-window, .chess-window, .gomoku-window, .tower-window, .calculator-window, .drawing-window, .focus-window { left: 5vw; width: 90vw; }
   .desktop-files { left: 4px; }
   .taskbar-tray span { display: none; }
 }

@@ -29,6 +29,11 @@ describe("appRegistry", () => {
     expect(START_PINNED_APPS).toHaveLength(8);
     expect(START_PINNED_APPS.every((app) => app.launcher)).toBe(true);
     expect(LAUNCHER_APPS.every((app) => app.startGroup && groupIds.has(app.startGroup))).toBe(true);
+    expect(APP_REGISTRY.calendar).toMatchObject({
+      label: "日历",
+      launcher: true,
+      startGroup: "productivity",
+    });
   });
 
   it("registers every catalog game as a non-launcher window", () => {

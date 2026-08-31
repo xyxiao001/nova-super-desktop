@@ -44,6 +44,7 @@ export const APP_MANIFESTS = defineAppManifests({
   notes: { label: "记事本", icon: "▤", kind: "notes", launcher: true, taskbarPinned: true, startPinned: true, startGroup: "productivity", load: () => import("./NotepadApp") },
   viewer: { label: "照片", icon: "▧", kind: "viewer", launcher: true, taskbarPinned: true, startPinned: true, startGroup: "create", windowIcon: "✿", resourcePackageIds: ["photos"], load: () => import("./PhotoViewerApp") },
   reader: { label: "NOVA 阅读", icon: "阅", kind: "reader", launcher: true, taskbarPinned: true, startPinned: true, startGroup: "create", resourcePackageIds: ["books"], load: () => import("./ReaderApp") },
+  calendar: { label: "日历", icon: "31", kind: "calendar", launcher: true, taskbarPinned: false, startGroup: "productivity", load: () => import("./CalendarApp") },
   games: { label: "游戏大厅", icon: "", kind: "games", launcher: true, taskbarPinned: false, startPinned: true, startGroup: "system", load: () => import("./GameHall") },
   settings: { label: "设置", icon: "⚙", kind: "settings", launcher: true, taskbarPinned: false, startPinned: true, startGroup: "system", load: () => import("./SettingsApp") },
   folder: { label: "文件夹", icon: "▱", kind: "folder", launcher: false, taskbarPinned: false, load: () => import("./FolderViewApp") },

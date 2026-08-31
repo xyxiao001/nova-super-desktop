@@ -17,11 +17,13 @@ describe("application style loading", () => {
   });
 
   it("loads each style group from its lazy application modules", async () => {
-    const [reader, flipBook, notes, games] = await Promise.all([
+    const [reader, flipBook, notes, games, calendar, almanac] = await Promise.all([
       readWorkspaceFile("app/ReaderApp.tsx"),
       readWorkspaceFile("app/ReaderFlipBook.tsx"),
       readWorkspaceFile("app/NotepadApp.tsx"),
       readWorkspaceFile("app/GameHall.tsx"),
+      readWorkspaceFile("app/CalendarApp.tsx"),
+      readWorkspaceFile("app/calendarAlmanac.ts"),
     ]);
 
     expect(reader).toContain('import "./reader.css"');
@@ -47,6 +49,10 @@ describe("application style loading", () => {
     expect(flipBook).toContain("translate3d(${-targetPage * (flowPageWidth + pageGap)}px");
     expect(notes).toContain('import "./productivity-apps.css"');
     expect(games).toContain('import "./games-tools.css"');
+    expect(calendar).toContain('import "./calendar.css"');
+    expect(calendar).toContain('lazy(() => import("./CalendarAlmanacPanel"))');
+    expect(calendar).toContain('type="checkbox"');
+    expect(almanac).toContain('from "lunar-typescript"');
   });
 
   it("keeps the mobile desktop and reader inside the dynamic viewport", async () => {

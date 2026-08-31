@@ -12,6 +12,7 @@ export const LazyFileExplorer = lazy(APP_MANIFESTS.explorer.load);
 export const LazyNotepadApp = lazy(APP_MANIFESTS.notes.load);
 export const LazyPhotoViewerApp = lazy(APP_MANIFESTS.viewer.load);
 export const LazyReaderApp = lazy(APP_MANIFESTS.reader.load);
+export const LazyCalendarApp = lazy(APP_MANIFESTS.calendar.load);
 export const LazyGameHall = lazy(APP_MANIFESTS.games.load);
 export const LazySettingsApp = lazy(APP_MANIFESTS.settings.load);
 export const LazyFolderViewApp = lazy(APP_MANIFESTS.folder.load);
