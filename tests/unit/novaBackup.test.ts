@@ -5,6 +5,8 @@ const storageMocks = vi.hoisted(() => ({
   replaceDesktopItems: vi.fn(),
   getAllStoredBooks: vi.fn(),
   replaceStoredBooks: vi.fn(),
+  getAllCalendarEvents: vi.fn(),
+  replaceCalendarEvents: vi.fn(),
 }));
 
 vi.mock("../../app/desktopStorage", () => ({
@@ -15,6 +17,11 @@ vi.mock("../../app/desktopStorage", () => ({
 vi.mock("../../app/readerStorage", () => ({
   getAllStoredBooks: storageMocks.getAllStoredBooks,
   replaceStoredBooks: storageMocks.replaceStoredBooks,
+}));
+
+vi.mock("../../app/calendarEventStorage", () => ({
+  getAllCalendarEvents: storageMocks.getAllCalendarEvents,
+  replaceCalendarEvents: storageMocks.replaceCalendarEvents,
 }));
 
 import {
@@ -49,6 +56,8 @@ beforeEach(() => {
   storageMocks.replaceDesktopItems.mockReset().mockResolvedValue(undefined);
   storageMocks.getAllStoredBooks.mockReset().mockResolvedValue([]);
   storageMocks.replaceStoredBooks.mockReset().mockResolvedValue(undefined);
+  storageMocks.getAllCalendarEvents.mockReset().mockResolvedValue([]);
+  storageMocks.replaceCalendarEvents.mockReset().mockResolvedValue(undefined);
   vi.stubGlobal("localStorage", new MemoryStorage());
 });
 
@@ -60,11 +69,12 @@ describe("novaBackup", () => {
   it("normalizes and summarizes a version 1 NOVA backup", () => {
     const parsed = parseNovaBackup(JSON.stringify(backup));
 
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect(summarizeNovaBackup(parsed)).toEqual({
       exportedAt: backup.exportedAt,
       desktopItems: 0,
       readerBooks: 0,
+      calendarEvents: 0,
       localSettings: 1,
     });
   });
@@ -87,7 +97,7 @@ describe("novaBackup", () => {
     }))).toThrow("备份文件格式无效");
   });
 
-  it("creates a version 2 backup from every storage provider", async () => {
+  it("creates a version 3 backup from every storage provider", async () => {
     const desktopItem = {
       id: "note",
       type: "text" as const,
@@ -102,9 +112,10 @@ describe("novaBackup", () => {
 
     const result = await createNovaBackup();
 
-    expect(result.version).toBe(2);
+    expect(result.version).toBe(3);
     expect(result.providers.desktop).toEqual([desktopItem]);
     expect(result.providers.reader).toEqual([]);
+    expect(result.providers.calendar).toEqual([]);
     expect(result.providers.settings).toEqual({
       localStorage: { "nova-settings": "{}" },
     });
@@ -120,8 +131,28 @@ describe("novaBackup", () => {
 
     expect(storageMocks.replaceDesktopItems).toHaveBeenCalledWith([]);
     expect(storageMocks.replaceStoredBooks).toHaveBeenCalledWith([]);
+    expect(storageMocks.replaceCalendarEvents).toHaveBeenCalledWith([]);
     expect(localStorage.getItem("nova-settings")).toBe("{\"theme\":\"dark\"}");
     expect(localStorage.getItem("nova-stale")).toBeNull();
     expect(localStorage.getItem("unrelated")).toBe("keep");
+  });
+
+  it("adds an empty calendar provider when importing a version 2 backup", () => {
+    const parsed = parseNovaBackup(JSON.stringify({
+      version: 2,
+      exportedAt: backup.exportedAt,
+      providers: {
+        desktop: [],
+        reader: [],
+        games: { localStorage: {}, magicTower: [] },
+        reading: { localStorage: {} },
+        focus: { localStorage: {} },
+        settings: { localStorage: {} },
+        other: { localStorage: {} },
+      },
+    }));
+
+    expect(parsed.version).toBe(3);
+    expect(parsed.providers.calendar).toEqual([]);
   });
 });

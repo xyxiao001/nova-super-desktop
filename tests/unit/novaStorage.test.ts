@@ -5,6 +5,8 @@ const storageMocks = vi.hoisted(() => ({
   deleteDesktopItems: vi.fn(),
   getAllStoredBooks: vi.fn(),
   replaceStoredBooks: vi.fn(),
+  getAllCalendarEvents: vi.fn(),
+  replaceCalendarEvents: vi.fn(),
 }));
 
 vi.mock("../../app/desktopStorage", () => ({
@@ -15,6 +17,11 @@ vi.mock("../../app/desktopStorage", () => ({
 vi.mock("../../app/readerStorage", () => ({
   getAllStoredBooks: storageMocks.getAllStoredBooks,
   replaceStoredBooks: storageMocks.replaceStoredBooks,
+}));
+
+vi.mock("../../app/calendarEventStorage", () => ({
+  getAllCalendarEvents: storageMocks.getAllCalendarEvents,
+  replaceCalendarEvents: storageMocks.replaceCalendarEvents,
 }));
 
 import {
@@ -38,6 +45,8 @@ beforeEach(() => {
   storageMocks.deleteDesktopItems.mockReset().mockResolvedValue(undefined);
   storageMocks.getAllStoredBooks.mockReset().mockResolvedValue([]);
   storageMocks.replaceStoredBooks.mockReset().mockResolvedValue(undefined);
+  storageMocks.getAllCalendarEvents.mockReset().mockResolvedValue([]);
+  storageMocks.replaceCalendarEvents.mockReset().mockResolvedValue(undefined);
   vi.stubGlobal("localStorage", new MemoryStorage());
 });
 
@@ -58,6 +67,7 @@ describe("novaStorage", () => {
     expect(categories.find((item) => item.id === "games")?.entries).toBe(2);
     expect(categories.find((item) => item.id === "reading")?.entries).toBe(1);
     expect(categories.find((item) => item.id === "settings")?.entries).toBe(1);
+    expect(categories.find((item) => item.id === "calendar")?.entries).toBe(0);
   });
 
   it("clears only the selected local data category", async () => {
@@ -85,6 +95,7 @@ describe("novaStorage", () => {
 
     expect(storageMocks.deleteDesktopItems).toHaveBeenCalledWith(["desktop-file"]);
     expect(storageMocks.replaceStoredBooks).toHaveBeenCalledWith([]);
+    expect(storageMocks.replaceCalendarEvents).toHaveBeenCalledWith([]);
     expect(localStorage.getItem("nova-game-records")).toBeNull();
     expect(localStorage.getItem("nova-reader-bookmarks")).toBeNull();
     expect(localStorage.getItem("nova-focus-sessions")).toBeNull();

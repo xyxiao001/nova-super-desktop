@@ -2,8 +2,9 @@
 
 import "./calendar.css";
 
-import { lazy, Suspense, useMemo, useState, type KeyboardEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 
+import CalendarEventEditor from "./CalendarEventEditor";
 import {
   HOLIDAY_DATA_YEAR,
   HOLIDAY_SCHEDULES_2026,
@@ -16,6 +17,17 @@ import {
   nextHoliday,
   toIsoDate,
 } from "./calendarCore";
+import {
+  calendarEventTimeLabel,
+  calendarEventsByDate,
+  type CalendarEvent,
+  type CalendarEventDraft,
+} from "./calendarEventCore";
+import {
+  deleteCalendarEvent,
+  getAllCalendarEvents,
+  putCalendarEvent,
+} from "./calendarEventStorage";
 import { calendarDays } from "./desktopSystem";
 
 const MONTHS = Array.from({ length: 12 }, (_, index) => `${index + 1}月`);
@@ -28,6 +40,11 @@ const fullDateFormatter = new Intl.DateTimeFormat("zh-CN", {
   day: "numeric",
 });
 const weekdayFormatter = new Intl.DateTimeFormat("zh-CN", { weekday: "long" });
+
+type EventEditorState = {
+  date: string;
+  event: CalendarEvent | null;
+};
 
 const dateStatus = (date: Date, isoDate: string) => {
   const official = holidayDateInfo(isoDate);
@@ -44,6 +61,10 @@ export default function CalendarApp() {
   ));
   const [selectedIso, setSelectedIso] = useState(() => toIsoDate(today));
   const [almanacEnabled, setAlmanacEnabled] = useState(false);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState("");
+  const [eventEditor, setEventEditor] = useState<EventEditorState | null>(null);
 
   const days = useMemo(() => (
     calendarDays(visibleMonth.getFullYear(), visibleMonth.getMonth(), today, 1)
@@ -53,12 +74,30 @@ export default function CalendarApp() {
   const selectedSchedule = holidayScheduleForDate(selectedIso);
   const selectedLunar = lunarDate(selectedDate);
   const selectedStatus = dateStatus(selectedDate, selectedIso);
+  const eventGroups = useMemo(() => calendarEventsByDate(events), [events]);
+  const selectedEvents = eventGroups.get(selectedIso) ?? [];
   const upcoming = selectedDate.getFullYear() === HOLIDAY_DATA_YEAR
     ? nextHoliday(selectedIso)
     : null;
   const upcomingSchedules = selectedDate.getFullYear() === HOLIDAY_DATA_YEAR
     ? HOLIDAY_SCHEDULES_2026.filter((schedule) => schedule.days.at(-1)! >= selectedIso).slice(0, 3)
     : [];
+
+  useEffect(() => {
+    let active = true;
+    void getAllCalendarEvents().then((storedEvents) => {
+      if (!active) return;
+      setEvents(storedEvents);
+      setEventsLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setEventsError("日程读取失败");
+      setEventsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const selectDate = (date: Date) => {
     setSelectedIso(toIsoDate(date));
@@ -104,6 +143,31 @@ export default function CalendarApp() {
       event.preventDefault();
       moveMonth(event.key === "PageUp" ? -1 : 1);
     }
+  };
+
+  const saveEvent = async (draft: CalendarEventDraft) => {
+    const now = Date.now();
+    const current = eventEditor?.event;
+    const saved: CalendarEvent = {
+      ...draft,
+      id: current?.id ?? crypto.randomUUID(),
+      createdAt: current?.createdAt ?? now,
+      updatedAt: now,
+    };
+    await putCalendarEvent(saved);
+    setEventsError("");
+    setEvents((previous) => current
+      ? previous.map((item) => item.id === saved.id ? saved : item)
+      : [...previous, saved]);
+    setEventEditor(null);
+    if (draft.date !== selectedIso) selectDate(fromIsoDate(draft.date));
+  };
+
+  const removeEvent = async (id: string) => {
+    await deleteCalendarEvent(id);
+    setEventsError("");
+    setEvents((previous) => previous.filter((item) => item.id !== id));
+    setEventEditor(null);
   };
 
   return <main className="nova-calendar" aria-label="中国日历">
@@ -152,6 +216,8 @@ export default function CalendarApp() {
             const lunar = lunarDate(date);
             const selected = selectedIso === day.isoDate;
             const subline = official?.name ?? lunar.short;
+            const dayEvents = eventGroups.get(day.isoDate) ?? [];
+            const eventColors = [...new Set(dayEvents.map((event) => event.color))].slice(0, 3);
 
             return <button
               type="button"
@@ -164,7 +230,7 @@ export default function CalendarApp() {
                 selected ? "selected" : "",
                 status.key,
               ].filter(Boolean).join(" ")}
-              aria-label={`${fullDateFormatter.format(date)}，${weekdayFormatter.format(date)}，${official?.name ?? status.label}`}
+              aria-label={`${fullDateFormatter.format(date)}，${weekdayFormatter.format(date)}，${official?.name ?? status.label}${dayEvents.length ? `，${dayEvents.length} 项日程` : ""}`}
               aria-current={day.today ? "date" : undefined}
               aria-pressed={selected}
               onClick={() => selectDate(date)}
@@ -173,6 +239,10 @@ export default function CalendarApp() {
               <span className="calendar-day-number">{day.date}</span>
               <small>{subline}</small>
               {official && <i aria-hidden="true">{official.type === "holiday" ? "休" : "班"}</i>}
+              {!!dayEvents.length && <span className="calendar-event-dots" aria-hidden="true">
+                {eventColors.map((color) => <i key={color} className={color}/>)}
+                <b>{dayEvents.length}</b>
+              </span>}
             </button>;
           })}
         </div>
@@ -189,6 +259,35 @@ export default function CalendarApp() {
             <p><b>{weekdayFormatter.format(selectedDate)}</b><small>{selectedLunar.long}</small></p>
           </div>
           <mark className={selectedStatus.key}>{selectedStatus.label}</mark>
+        </section>
+
+        <section className="calendar-day-agenda" aria-label="当日日程">
+          <header>
+            <div><strong>我的日程</strong><span>{selectedEvents.length ? `${selectedEvents.length} 项` : "暂无"}</span></div>
+            <button
+              type="button"
+              disabled={eventsLoading}
+              onClick={() => setEventEditor({ date: selectedIso, event: null })}
+            >
+              <span aria-hidden="true">＋</span> 新建
+            </button>
+          </header>
+          {eventsLoading ? <p className="calendar-agenda-message">正在读取日程...</p>
+            : eventsError ? <p className="calendar-agenda-message error" role="alert">{eventsError}</p>
+              : selectedEvents.length ? <div className="calendar-agenda-list">
+                {selectedEvents.map((event) => <button
+                  type="button"
+                  key={event.id}
+                  onClick={() => setEventEditor({ date: event.date, event })}
+                  aria-label={`编辑日程：${event.title}`}
+                >
+                  <i className={event.color} aria-hidden="true"/>
+                  <time>{calendarEventTimeLabel(event)}</time>
+                  <span><strong>{event.title}</strong>{event.notes && <small>{event.notes}</small>}</span>
+                  <b aria-hidden="true">›</b>
+                </button>)}
+              </div>
+                : <p className="calendar-agenda-message">当天没有个人日程</p>}
         </section>
 
         {selectedSchedule ? <section className="calendar-schedule-detail">
@@ -230,5 +329,13 @@ export default function CalendarApp() {
         <footer>国务院办公厅 2026 年节假日安排</footer>
       </aside>
     </div>
+    {eventEditor && <CalendarEventEditor
+      key={eventEditor.event?.id ?? `new-${eventEditor.date}`}
+      date={eventEditor.date}
+      event={eventEditor.event}
+      onClose={() => setEventEditor(null)}
+      onSave={saveEvent}
+      onDelete={removeEvent}
+    />}
   </main>;
 }

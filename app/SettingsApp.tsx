@@ -268,7 +268,7 @@ export default function SettingsApp({
               {expandedStorage==="resources"&&<div className="storage-list resource-list" aria-busy={storageLoading}>{storageLoading&&!resourcePackages.length?<p>正在统计应用资源…</p>:resourcePackages.length?resourcePackages.map((resource)=><article key={resource.id}><span className={`storage-kind resource ${resource.id}`} aria-hidden="true"/><div><strong>{resource.label}</strong><small>{resource.entries?`${resource.description} · ${resource.entries} 个文件`:`${resource.description} · 尚未下载`}</small></div><output>{formatBytes(resource.bytes)}</output><button disabled={!resource.entries||clearing} aria-label={`删除${resource.label}`} onClick={()=>setClearTarget({kind:"resource",item:resource})}>清除</button></article>):<p>{resourceUnavailable?"资源缓存状态暂不可用，更新或重载后重试":"按需资源缓存会在安装版中启用"}</p>}</div>}
             </section>
           </div>
-          <div className="settings-backup-panel"><span><strong>本地备份</strong><small>导出或恢复桌面文件、书籍与设置</small></span><div className="backup-actions"><button disabled={backupState!=="idle"} onClick={()=>void exportBackup()}>⇩ 导出</button><button disabled={backupState!=="idle"} onClick={()=>backupInputRef.current?.click()}>⇧ 导入</button><input ref={backupInputRef} type="file" accept="application/json,.json" aria-label="选择 NOVA 备份" onChange={(event)=>{const file=event.target.files?.[0];if(file)void chooseBackup(file);event.target.value=""}}/></div></div>
+          <div className="settings-backup-panel"><span><strong>本地备份</strong><small>导出或恢复桌面文件、书籍、日程与设置</small></span><div className="backup-actions"><button disabled={backupState!=="idle"} onClick={()=>void exportBackup()}>⇩ 导出</button><button disabled={backupState!=="idle"} onClick={()=>backupInputRef.current?.click()}>⇧ 导入</button><input ref={backupInputRef} type="file" accept="application/json,.json" aria-label="选择 NOVA 备份" onChange={(event)=>{const file=event.target.files?.[0];if(file)void chooseBackup(file);event.target.value=""}}/></div></div>
           <div className="settings-reset-panel"><span><strong>重置 NOVA</strong><small>删除所有用户数据、设置和已下载资源</small></span><button disabled={resetting||storageLoading} onClick={()=>setResetOpen(true)}>删除所有数据</button></div>
           {backupMessage&&<p className="settings-data-message" role="status">{backupMessage}</p>}
         </section>}
@@ -286,7 +286,7 @@ export default function SettingsApp({
     {resetOpen&&<div className="settings-restore-layer">
       <section role="dialog" aria-modal="true" aria-label="确认删除所有 NOVA 数据">
         <strong>删除所有数据并重置 NOVA？</strong>
-        <p>桌面文件、离线书籍、存档、阅读记录、偏好设置和按需资源都将从当前设备删除。</p>
+        <p>桌面文件、离线书籍、日历日程、存档、阅读记录、偏好设置和按需资源都将从当前设备删除。</p>
         <dl className="settings-clear-summary"><div><dt>数据与资源项</dt><dd>{resetEntries}</dd></div><div><dt>已识别占用</dt><dd>{formatBytes(dataBytes+resourceBytes)}</dd></div></dl>
         <small>此操作无法撤销。需要保留内容时，请先导出本地备份。</small>
         <footer><button disabled={resetting} onClick={()=>setResetOpen(false)}>取消</button><button className="danger" disabled={resetting} onClick={()=>void confirmResetAll()}>{resetting?"正在重置":"删除并重置"}</button></footer>
@@ -296,7 +296,7 @@ export default function SettingsApp({
       <section role="dialog" aria-modal="true" aria-label="确认恢复本地备份">
         <strong>恢复本地备份？</strong>
         <p>{new Intl.DateTimeFormat("zh-CN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(backupSummary.exportedAt))}</p>
-        <dl><div><dt>桌面项目</dt><dd>{backupSummary.desktopItems}</dd></div><div><dt>阅读书籍</dt><dd>{backupSummary.readerBooks}</dd></div><div><dt>设置与记录</dt><dd>{backupSummary.localSettings}</dd></div></dl>
+        <dl><div><dt>桌面项目</dt><dd>{backupSummary.desktopItems}</dd></div><div><dt>阅读书籍</dt><dd>{backupSummary.readerBooks}</dd></div><div><dt>日历日程</dt><dd>{backupSummary.calendarEvents}</dd></div><div><dt>设置与记录</dt><dd>{backupSummary.localSettings}</dd></div></dl>
         <small>当前本地数据将被此备份替换。</small>
         <footer><button onClick={()=>setPendingBackup(null)}>取消</button><button className="danger" disabled={backupState==="restoring"} onClick={()=>void confirmRestore()}>{backupState==="restoring"?"正在恢复":"确认恢复"}</button></footer>
       </section>
