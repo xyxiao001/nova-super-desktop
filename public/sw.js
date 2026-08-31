@@ -1,6 +1,6 @@
 importScripts("/resource-packages.generated.js");
 
-const VERSION = "nova-pwa-v6";
+const VERSION = "nova-pwa-v7";
 const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RESOURCE_CACHE_PREFIX = `${VERSION}:resource:`;
@@ -151,23 +151,30 @@ self.addEventListener("message", (event) => {
   }
 });
 
-const networkFirstNavigation = async (request) => {
-  try {
+const appShellNavigation = (event) => {
+  const { request } = event;
+  const cachePromise = caches.open(SHELL_CACHE);
+  const network = cachePromise.then(async (cache) => {
     const response = await fetch(request);
     if (response.ok && new URL(request.url).pathname === "/") {
-      const cache = await caches.open(SHELL_CACHE);
       await cache.put("/", response.clone());
     }
     return response;
-  } catch {
-    const cached = await caches.match(request);
+  });
+  event.waitUntil(network.catch(() => undefined));
+
+  return cachePromise.then(async (cache) => {
+    const cached = await cache.match(request) ?? await cache.match("/");
     if (cached) return cached;
-    const shell = await caches.match("/");
-    if (shell) return shell;
-    return new Response("<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>NOVA 离线</title><body><main><h1>NOVA 暂时离线</h1><p>重新联网后刷新即可继续。</p></main></body></html>", {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
-  }
+
+    try {
+      return await network;
+    } catch {
+      return new Response("<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>NOVA 离线</title><body><main><h1>NOVA 暂时离线</h1><p>重新联网后刷新即可继续。</p></main></body></html>", {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+  });
 };
 
 const cacheFirst = async (cacheName, request) => {
@@ -203,6 +210,6 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(networkFirstNavigation(request));
+    event.respondWith(appShellNavigation(event));
   }
 });
