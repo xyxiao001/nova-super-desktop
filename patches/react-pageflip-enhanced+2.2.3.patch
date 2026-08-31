@@ -1,0 +1,36 @@
+diff --git a/node_modules/react-pageflip-enhanced/build/index.es.js b/node_modules/react-pageflip-enhanced/build/index.es.js
+index fe2eb71..846be77 100644
+--- a/node_modules/react-pageflip-enhanced/build/index.es.js
++++ b/node_modules/react-pageflip-enhanced/build/index.es.js
+@@ -3136,11 +3136,11 @@ const HTMLFlipBookForward = React.forwardRef((props, ref) => {
+     useEffect(() => {
+         childRef.current = [];
+         if (props.children) {
+-            const childList = React.Children.map(props.children, (child) => {
++            const childList = React.Children.map(props.children, (child, index) => {
+                 return React.cloneElement(child, {
+                     ref: (dom) => {
+                         if (dom) {
+-                            childRef.current.push(dom);
++                            childRef.current[index] = dom;
+                         }
+                     },
+                 });
+diff --git a/node_modules/react-pageflip-enhanced/build/index.js b/node_modules/react-pageflip-enhanced/build/index.js
+index ac9e627..ea73e46 100644
+--- a/node_modules/react-pageflip-enhanced/build/index.js
++++ b/node_modules/react-pageflip-enhanced/build/index.js
+@@ -3142,11 +3142,11 @@ const HTMLFlipBookForward = React__default["default"].forwardRef((props, ref) =>
+     React.useEffect(() => {
+         childRef.current = [];
+         if (props.children) {
+-            const childList = React__default["default"].Children.map(props.children, (child) => {
++            const childList = React__default["default"].Children.map(props.children, (child, index) => {
+                 return React__default["default"].cloneElement(child, {
+                     ref: (dom) => {
+                         if (dom) {
+-                            childRef.current.push(dom);
++                            childRef.current[index] = dom;
+                         }
+                     },
+                 });

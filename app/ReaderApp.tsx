@@ -44,6 +44,7 @@ import {
   isCompactDesktopViewport,
   movedBeyondLongPressTolerance,
 } from "./desktopIconInteraction";
+import ReaderFlipBook from "./ReaderFlipBook";
 import ReaderWorker from "./reader.worker?worker";
 
 type DownloadMetadata = Record<string, { version: string; downloadedAt: number }>;
@@ -51,6 +52,11 @@ type ReaderWorkerResult = { content: string; chapters: ReaderChapter[] };
 type ReaderWorkerPayload = Partial<ReaderWorkerResult> & { results?: ReaderSearchResult[] };
 type ReaderWorkerResponse = ReaderWorkerPayload & { requestId: number; error?: string };
 type ShelfFilter = "all" | "downloaded" | "local" | "cloud";
+type BatteryState = { level: number; charging: boolean };
+type BatteryManagerLike = BatteryState & {
+  addEventListener: (type: "levelchange" | "chargingchange", listener: () => void) => void;
+  removeEventListener: (type: "levelchange" | "chargingchange", listener: () => void) => void;
+};
 
 const LEGACY_DOWNLOADS_KEY = "nova-reader-downloads";
 const READING_ANCHOR_OFFSET = 72;
@@ -90,6 +96,7 @@ export default function ReaderApp({
   const [pageIndex, setPageIndex] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   const [pageWidth, setPageWidth] = useState(0);
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [scrollProgress, setScrollProgress] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -106,12 +113,14 @@ export default function ReaderApp({
   const [message, setMessage] = useState("");
   const [selectedExcerpt, setSelectedExcerpt] = useState("");
   const [preferences, setPreferences] = useState<ReaderPreferences>(readReaderPreferences);
+  const [clock, setClock] = useState(() => new Date());
+  const [battery, setBattery] = useState<BatteryState | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const pageRef = useRef<HTMLElement>(null);
   const pageViewportRef = useRef<HTMLDivElement>(null);
   const pageFlowRef = useRef<HTMLDivElement>(null);
-  const turnLayerRef = useRef<HTMLDivElement>(null);
   const pendingLastPageRef = useRef(false);
   const pagePointerRef = useRef<{ x: number; y: number } | null>(null);
   const shelfPressRef = useRef<{ id: string; x: number; y: number; timer: number } | null>(null);
@@ -207,6 +216,45 @@ export default function ReaderApp({
   }, [preferences]);
 
   useEffect(() => {
+    if (!activeBook) return;
+    const updateClock = () => setClock(new Date());
+    updateClock();
+    const timer = window.setInterval(updateClock, 30_000);
+    return () => window.clearInterval(timer);
+  }, [activeBook]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!activeBook) return;
+    const getBattery = (navigator as Navigator & { getBattery?: () => Promise<BatteryManagerLike> }).getBattery;
+    if (!getBattery) return;
+    let manager: BatteryManagerLike | null = null;
+    let cancelled = false;
+    const update = () => {
+      if (manager && !cancelled) setBattery({ level: manager.level, charging: manager.charging });
+    };
+    void getBattery.call(navigator).then((value) => {
+      if (cancelled) return;
+      manager = value;
+      update();
+      manager.addEventListener("levelchange", update);
+      manager.addEventListener("chargingchange", update);
+    }).catch(() => setBattery(null));
+    return () => {
+      cancelled = true;
+      manager?.removeEventListener("levelchange", update);
+      manager?.removeEventListener("chargingchange", update);
+    };
+  }, [activeBook]);
+
+  useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
     const closeSidebar = () => {
       if (media.matches) setSidebarOpen(false);
@@ -217,14 +265,20 @@ export default function ReaderApp({
   }, []);
 
   const chapter = chapters[chapterIndex];
+  const followingChapter = chapters[chapterIndex + 1];
   const chapterContent = useMemo(() => activeBook && chapter ? activeBook.content.slice(chapter.start, chapter.end) : "", [activeBook, chapter]);
   const paragraphs = useMemo(() => chapter ? chapterParagraphs(activeBook?.content ?? "", chapter) : [], [activeBook, chapter]);
+  const nextFlipChapter = useMemo(() => followingChapter ? {
+    title: followingChapter.title,
+    paragraphs: chapterParagraphs(activeBook?.content ?? "", followingChapter),
+  } : null, [activeBook, followingChapter]);
   const paragraphSegments = useMemo(() => {
     const segments = [];
     for (let index = 0; index < paragraphs.length; index += 24) segments.push(paragraphs.slice(index, index + 24));
     return segments;
   }, [paragraphs]);
   const safePageIndex = Math.min(pageIndex, pageCount - 1);
+  const pageFlipEnabled = preferences.readingMode === "page" && preferences.animation === "page" && pageWidth > 0 && !reducedMotion;
   const chapterProgress = preferences.readingMode === "scroll" ? scrollProgress : (safePageIndex + 1) / pageCount;
   const completedCharacters = useMemo(() => chapters.slice(0, chapterIndex).reduce((total, item) => total + item.characterCount, 0), [chapterIndex, chapters]);
   const totalCharacters = useMemo(() => chapters.reduce((total, item) => total + item.characterCount, 0), [chapters]);
@@ -236,6 +290,12 @@ export default function ReaderApp({
     if (!viewport) return;
     const measure = () => {
       if (viewport.clientWidth > 0) setPageWidth(viewport.clientWidth);
+      const page = pageRef.current;
+      if (page?.clientWidth && page.clientHeight) {
+        setPageSize((current) => current.width === page.clientWidth && current.height === page.clientHeight
+          ? current
+          : { width: page.clientWidth, height: page.clientHeight });
+      }
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -267,12 +327,7 @@ export default function ReaderApp({
   }, [pageWidth, preferences.readingMode, safePageIndex, turn.token]);
 
   useEffect(() => {
-    if (
-      preferences.readingMode !== "page"
-      || preferences.animation !== "slide"
-      || !turn.token
-      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) return;
+    if (preferences.readingMode !== "page" || preferences.animation !== "slide" || !turn.token || reducedMotion) return;
     const page = pageRef.current;
     if (!page) return;
     const isForward = turn.direction === "forward";
@@ -283,7 +338,7 @@ export default function ReaderApp({
       duration: 270,
       easing: "ease",
     });
-  }, [preferences.animation, preferences.readingMode, turn]);
+  }, [preferences.animation, preferences.readingMode, reducedMotion, turn]);
 
   useEffect(() => {
     if (!activeBook || !chapter) return;
@@ -578,32 +633,8 @@ export default function ReaderApp({
   };
 
   const animate = useCallback((direction: "forward" | "back") => {
-    setTurn((current) => ({ direction, token: current.token + 1 }));
-    if (
-      preferences.readingMode !== "page"
-      || preferences.animation !== "page"
-      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) return;
-    const page = pageRef.current;
-    const layer = turnLayerRef.current;
-    const stage = stageRef.current;
-    if (!page || !layer || !stage) return;
-    layer.replaceChildren();
-    const pageRect = page.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
-    const snapshot = page.cloneNode(true) as HTMLElement;
-    snapshot.classList.add("reader-page-turning", direction);
-    snapshot.setAttribute("aria-hidden", "true");
-    snapshot.style.left = `${pageRect.left - stageRect.left}px`;
-    snapshot.style.top = `${pageRect.top - stageRect.top}px`;
-    snapshot.style.width = `${pageRect.width}px`;
-    snapshot.style.height = `${pageRect.height}px`;
-    layer.appendChild(snapshot);
-    const sourceViewport = page.querySelector<HTMLElement>(".reader-page-viewport");
-    const snapshotViewport = snapshot.querySelector<HTMLElement>(".reader-page-viewport");
-    if (sourceViewport && snapshotViewport) snapshotViewport.scrollLeft = sourceViewport.scrollLeft;
-    snapshot.addEventListener("animationend", () => snapshot.remove(), { once: true });
-  }, [preferences.animation, preferences.readingMode]);
+    if (preferences.animation === "slide") setTurn((current) => ({ direction, token: current.token + 1 }));
+  }, [preferences.animation]);
   const resetScroll = useCallback(() => {
     pendingLocationRef.current = null;
     semanticLocationRef.current = { paragraphIndex: 0, characterOffset: 0 };
@@ -786,6 +817,11 @@ export default function ReaderApp({
     }
     if (preferences.readingMode !== "page") return;
     if (Math.abs(horizontal) < 44 || Math.abs(horizontal) <= Math.abs(vertical)) return;
+    if (pageFlipEnabled) {
+      if (horizontal < 0 && safePageIndex === pageCount - 1) nextPage();
+      if (horizontal > 0 && safePageIndex === 0) previousPage();
+      return;
+    }
     if (horizontal < 0) nextPage();
     else previousPage();
   };
@@ -957,15 +993,18 @@ export default function ReaderApp({
   </div>;
 
   return <div className={`reader-reading theme-${preferences.theme} mode-${preferences.readingMode} ${immersive ? "immersive" : ""} ${chromeHidden ? "chrome-hidden" : ""}`} onPointerDown={revealChrome} onPointerMove={revealChrome}>
+    <div className="reader-device-status" aria-label={`当前时间 ${clock.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false })}${battery ? `，电量 ${Math.round(battery.level * 100)}%` : ""}`}>
+      <time>{clock.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false })}</time>
+      {battery && <span className="reader-battery"><i style={{ "--battery-level": `${Math.round(battery.level * 100)}%` } as CSSProperties}/><b>{Math.round(battery.level * 100)}</b>{battery.charging && <em aria-label="正在充电">⚡</em>}</span>}
+    </div>
     <header className="reader-toolbar"><div className="reader-toolbar-navigation"><button aria-label="返回书架" title="返回书架" onClick={goLibrary}><span aria-hidden="true">←</span><span className="reader-toolbar-label">书架</span></button><button aria-label={sidebarOpen ? "关闭目录" : "打开目录"} aria-expanded={sidebarOpen} title="目录与书签" onClick={toggleSidebar}><span aria-hidden="true">☰</span><span className="reader-toolbar-label">目录</span></button></div><div className="reader-book-heading"><strong>{activeBook.title}</strong><small>{chapter?.title}</small></div><div className="reader-toolbar-actions"><button aria-label="摘录到记事本" title="摘录到记事本" disabled={!selectedExcerpt} onClick={createExcerpt}>✎</button><button aria-label="搜索书内内容" aria-expanded={searchOpen} title="搜索" onClick={toggleSearch}>⌕</button><button aria-label="添加书签" title="添加书签" onClick={addBookmark}>☆</button><button aria-label={immersive ? "退出沉浸阅读" : "进入沉浸阅读"} title={immersive ? "退出沉浸阅读" : "沉浸阅读"} onClick={toggleImmersive}>⛶</button><span className="reader-toolbar-progress">{progress}%</span><button aria-label="阅读设置" aria-expanded={settingsOpen} title="阅读设置" onClick={toggleSettings}>Aa</button></div></header>
     <div className="reader-body">
       {sidebarOpen && <button className="reader-sidebar-scrim" aria-label="关闭目录" onClick={() => setSidebarOpen(false)}/>}
       {sidebarOpen && <aside className="reader-chapters"><header><div><button className={sidebarTab === "chapters" ? "active" : ""} onClick={() => setSidebarTab("chapters")}>目录</button><button className={sidebarTab === "bookmarks" ? "active" : ""} onClick={() => setSidebarTab("bookmarks")}>书签</button></div><span>{sidebarTab === "chapters" ? `${chapters.length} 章` : `${bookmarks.length} 个`}</span></header>{sidebarTab === "chapters" ? <div>{chapters.map((item, index) => <button key={`${item.title}-${index}`} className={index === chapterIndex ? "active" : ""} onClick={() => selectChapter(index)}><span>{item.title}</span>{index === chapterIndex && <small>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1}/${pageCount}`}</small>}</button>)}</div> : <div className="reader-bookmarks">{bookmarks.map((bookmark) => <article key={bookmark.id}><button onClick={() => jumpToLocation(bookmark)}><strong>{bookmark.chapterTitle}</strong><span>{bookmark.excerpt}</span></button><button aria-label="删除书签" title="删除书签" onClick={() => removeBookmark(bookmark.id)}>×</button></article>)}{!bookmarks.length && <p>还没有书签</p>}</div>}</aside>}
-      <main key={`${activeBook.id}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture} onPointerCancel={() => { pagePointerRef.current = null; }}>
-        <div className="reader-turn-layer" ref={turnLayerRef} aria-hidden="true"/>
+      <main key={`${activeBook.id}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode} ${pageFlipEnabled ? "reader-stage-flip" : ""}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture} onPointerCancel={() => { pagePointerRef.current = null; }}>
         <article
           ref={pageRef}
-          className="reader-page"
+          className={`reader-page ${pageFlipEnabled ? "reader-page-measure" : ""}`}
           style={{
             "--reader-font-size": `${preferences.fontSize}px`,
             lineHeight: preferences.lineHeight,
@@ -977,7 +1016,26 @@ export default function ReaderApp({
           {preferences.readingMode === "scroll" && <nav className="reader-chapter-navigation" aria-label="章节切换"><button disabled={chapterIndex === 0} onClick={previousChapter}>← 上一章</button><span>第 {chapterIndex + 1} / {chapters.length} 章</span><button disabled={chapterIndex === chapters.length - 1} onClick={nextChapter}>下一章 →</button></nav>}
           <footer><span>{activeBook.author}</span><span>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1} / ${pageCount}`}</span></footer>
         </article>
-        {preferences.readingMode === "page" && <><button className="reader-turn-zone previous" aria-label="上一页" onClick={previousPage}>‹</button><button className="reader-turn-zone next" aria-label="下一页" onClick={nextPage}>›</button></>}
+        {pageFlipEnabled && <ReaderFlipBook
+          key={`${chapter?.id ?? "chapter"}:${pageCount}`}
+          title={activeBook.title}
+          author={activeBook.author}
+          chapterTitle={chapter?.title ?? ""}
+          paragraphs={paragraphs}
+          pageIndex={safePageIndex}
+          pageCount={pageCount}
+          pageWidth={pageSize.width}
+          pageHeight={pageSize.height}
+          flowPageWidth={pageWidth}
+          pageGap={PAGE_GAP}
+          fontSize={preferences.fontSize}
+          lineHeight={preferences.lineHeight}
+          nextChapter={nextFlipChapter}
+          onPageChange={setPageIndex}
+          onBoundaryPrevious={previousPage}
+          onBoundaryNext={nextPage}
+        />}
+        {preferences.readingMode === "page" && !pageFlipEnabled && <><button className="reader-turn-zone previous" aria-label="上一页" onClick={previousPage}>‹</button><button className="reader-turn-zone next" aria-label="下一页" onClick={nextPage}>›</button></>}
       </main>
       {(searchOpen || settingsOpen) && <button className="reader-panel-scrim" aria-label="关闭阅读面板" onClick={() => { setSearchOpen(false); setSettingsOpen(false); }}/>}
       {searchOpen && <aside className="reader-search-panel"><header><label><span aria-hidden="true">⌕</span><input value={searchQuery} onChange={(event) => { const value = event.target.value; setSearchQuery(value); if (!value.trim()) { setSearchResults([]); setSearching(false); } }} aria-label="搜索书内内容" placeholder="搜索当前书籍"/></label><button aria-label="关闭搜索" onClick={() => setSearchOpen(false)}>×</button></header><div>{searching ? <p>正在搜索…</p> : searchResults.map((result) => <button key={result.id} onClick={() => jumpToLocation(result)}><strong>{result.chapterTitle}</strong><span>{result.excerpt}</span></button>)}{!searching && searchQuery && !searchResults.length && <p>没有找到相关内容</p>}</div></aside>}

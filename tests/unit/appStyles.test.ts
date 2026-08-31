@@ -17,8 +17,9 @@ describe("application style loading", () => {
   });
 
   it("loads each style group from its lazy application modules", async () => {
-    const [reader, notes, games] = await Promise.all([
+    const [reader, flipBook, notes, games] = await Promise.all([
       readWorkspaceFile("app/ReaderApp.tsx"),
+      readWorkspaceFile("app/ReaderFlipBook.tsx"),
       readWorkspaceFile("app/NotepadApp.tsx"),
       readWorkspaceFile("app/GameHall.tsx"),
     ]);
@@ -28,7 +29,22 @@ describe("application style loading", () => {
     expect(reader).toContain("setImmersive(compact)");
     expect(reader).toContain("toggleMobileChrome()");
     expect(reader).toContain("DESKTOP_ICON_LONG_PRESS_MS");
-    expect(reader).toContain('className="reader-turn-layer"');
+    expect(reader).toContain("<ReaderFlipBook");
+    expect(reader).toContain('key={`${chapter?.id ?? "chapter"}:${pageCount}`}');
+    expect(reader).not.toContain('key={`${chapter?.id ?? "chapter"}:${pageCount}:${safePageIndex}`}');
+    expect(reader).toContain("nextChapter={nextFlipChapter}");
+    expect(reader).toContain('className="reader-device-status"');
+    expect(flipBook).toContain('from "react-pageflip-enhanced"');
+    expect(flipBook).toContain("Math.min(3, props.pageCount)");
+    expect(flipBook).toContain('key={`${windowStart}:${hasNextChapterPreview}`}');
+    expect(flipBook).toContain("const flipPages = useMemo(");
+    expect(flipBook).toContain("singlePage={false}");
+    expect(flipBook).toContain("<FlipPage key={index}");
+    expect(flipBook).toContain('engineRef.current?.flipNext("bottom")');
+    expect(flipBook).toContain('engineRef.current?.flipPrev("bottom")');
+    expect(flipBook).toContain('event.data !== "read"');
+    expect(flipBook).toContain('target.type === "nextChapter"');
+    expect(flipBook).toContain("translate3d(${-targetPage * (flowPageWidth + pageGap)}px");
     expect(notes).toContain('import "./productivity-apps.css"');
     expect(games).toContain('import "./games-tools.css"');
   });
@@ -72,7 +88,9 @@ describe("application style loading", () => {
     expect(reader).toContain(".reader-shelf{grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(reader).toContain(".reader-reading.immersive.chrome-hidden>.reader-mobile-toolbar");
     expect(reader).toContain(".reader-library.editing .reader-book-delete{display:block}");
-    expect(reader).toContain("@keyframes readerPageForward");
+    expect(reader).toContain(".reader-flip-book-shell");
+    expect(reader).toContain(".reader-turn-zone:hover,.reader-turn-zone:active{background:transparent;opacity:0}");
+    expect(reader).not.toContain("@keyframes readerPageForward");
     expect(reader).not.toContain(".reader-window{inset:3px 2px 51px");
     expect(productivity).toContain(".notepad-app.mobile-editor-open .note-workspace");
     expect(productivity).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
