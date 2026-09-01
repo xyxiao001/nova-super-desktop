@@ -1,4 +1,6 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const assetUrl = (name: string) => new URL(
@@ -21,5 +23,14 @@ describe("YouTD 2 Web export", () => {
     expect(loader).toContain("`${loadPath}.audio.worklet.js`");
     expect(shell).toContain('postNovaMessage("progress", { loaded: current, total: total })');
     expect(shell).toContain('postNovaMessage("initializing")');
+  });
+
+  it("starts the embedded Godot project in windowed mode", () => {
+    const script = fileURLToPath(new URL(
+      "../../scripts/patch-youtd2-window-mode.mjs",
+      import.meta.url,
+    ));
+    expect(execFileSync(process.execPath, [script, "--check"], { encoding: "utf8" }))
+      .toContain("YouTD 2 window mode is WINDOWED");
   });
 });

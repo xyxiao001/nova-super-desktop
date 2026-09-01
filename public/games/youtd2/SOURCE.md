@@ -11,6 +11,8 @@
 
 当前目录保存官方 Godot Web 导出的 HTML、JavaScript、WebAssembly、PCK
 游戏包、图标和加载画面。`index.pck` 的 SHA-256 为
+`ac63cd61f0ecfb067e4c4b9e5c815cbd6917f3dd2b80cb7771e191cae4d0679c`。
+上游原始 `index.pck` 的 SHA-256 为
 `d03f0e4fc3dece0beb28490c24264bc595b8818be09f62348c789a24bbe8284b`。
 线程动态库 `index.side.wasm` 的 SHA-256 为
 `5bb72dbc5a74768f131b25249b1bf5665df08fdbb4511d0cb273b92cdac20cdc`。
@@ -28,7 +30,9 @@
 
 1. 移除了 itch.io 注入的 `htmlgame.js`。
 2. 移除了 Sentry SDK、错误上报和性能追踪。
-3. 游戏运行文件保持官方 Web 构建原样，使用相对路径从本目录加载。
+3. 游戏运行文件使用相对路径从本目录加载。
 4. `index.html` 提供 NOVA 窗口握手、激活和失焦桥接。
 5. 游戏作为独立懒加载窗口接入，资源归入 `youtd2` 按需缓存包。
 6. Godot `/userfs` IndexedDB 存档由 NOVA 游戏数据备份、恢复和清理流程管理。
+7. 通过 `scripts/patch-youtd2-window-mode.mjs` 将 PCK 内的默认窗口模式
+   从 `FULLSCREEN (3)` 改为 `WINDOWED (0)`，保留游戏内手动全屏能力。

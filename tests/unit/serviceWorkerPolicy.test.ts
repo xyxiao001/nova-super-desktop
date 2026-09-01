@@ -13,7 +13,7 @@ const resourcePackages = readFileSync(
 
 describe("service worker resource policy", () => {
   it("keeps the install shell minimal and avoids recursive chunk discovery", () => {
-    expect(source).toContain('const VERSION = "nova-pwa-v20"');
+    expect(source).toContain('const VERSION = "nova-pwa-v21"');
     expect(source).not.toContain("BUILD_ASSET_PATTERN");
     expect(source).not.toContain("while (pending.length)");
   });
