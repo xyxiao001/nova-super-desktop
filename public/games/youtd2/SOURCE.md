@@ -12,6 +12,10 @@
 当前目录保存官方 Godot Web 导出的 HTML、JavaScript、WebAssembly、PCK
 游戏包、图标和加载画面。`index.pck` 的 SHA-256 为
 `d03f0e4fc3dece0beb28490c24264bc595b8818be09f62348c789a24bbe8284b`。
+线程动态库 `index.side.wasm` 的 SHA-256 为
+`5bb72dbc5a74768f131b25249b1bf5665df08fdbb4511d0cb273b92cdac20cdc`。
+音频工作线程 `index.audio.worklet.js` 的 SHA-256 为
+`5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3`。
 
 ## 许可证
 

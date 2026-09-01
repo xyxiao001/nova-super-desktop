@@ -1,1 +1,2 @@
 public/games/youtd2/index.pck filter=lfs diff=lfs merge=lfs -text
+public/games/youtd2/index.side.wasm filter=lfs diff=lfs merge=lfs -text
