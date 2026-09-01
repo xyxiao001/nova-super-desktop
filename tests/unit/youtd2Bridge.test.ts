@@ -4,11 +4,13 @@ import {
   createYouTd2Command,
   parseYouTd2FrameMessage,
   YOUTD2_ENGINE,
+  YOUTD2_FRAME_SRC,
   YOUTD2_FRAME_SOURCE,
 } from "../../src/apps/youtd2/youtd2Bridge";
 
 describe("YouTD 2 bridge", () => {
   it("pins the selected official game source", () => {
+    expect(YOUTD2_FRAME_SRC).toBe("/games/youtd2/index.html?v=3");
     expect(YOUTD2_ENGINE).toMatchObject({
       name: "YouTD 2",
       version: "Web",
@@ -37,6 +39,22 @@ describe("YouTD 2 bridge", () => {
       type: "error",
       message: "resource failed",
     })).toMatchObject({ type: "error", message: "resource failed" });
+    expect(parseYouTd2FrameMessage({
+      source: YOUTD2_FRAME_SOURCE,
+      type: "progress",
+      loaded: 64,
+      total: 128,
+    })).toMatchObject({ type: "progress", loaded: 64, total: 128 });
+    expect(parseYouTd2FrameMessage({
+      source: YOUTD2_FRAME_SOURCE,
+      type: "initializing",
+    })).toMatchObject({ type: "initializing" });
+    expect(parseYouTd2FrameMessage({
+      source: YOUTD2_FRAME_SOURCE,
+      type: "progress",
+      loaded: -1,
+      total: 0,
+    })).toBeNull();
     expect(parseYouTd2FrameMessage({
       source: YOUTD2_FRAME_SOURCE,
       type: "unknown",

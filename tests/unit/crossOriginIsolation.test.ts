@@ -34,6 +34,8 @@ describe("cross-origin isolation", () => {
       expect(source).toContain('"same-origin"');
       expect(source).toContain('"require-corp"');
     }
+    expect(viteConfig).toContain('delete request.headers["if-none-match"]');
+    expect(viteConfig).toContain('response.setHeader("Cache-Control", "no-store")');
   });
 
   it("delegates cross-origin isolation to the YouTD 2 frame", () => {

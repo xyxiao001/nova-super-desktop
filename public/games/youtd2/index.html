@@ -274,16 +274,19 @@
 			engine.startGame({
 				'onProgress': function (current, total) {
 					if (total > 0) {
+						postNovaMessage("progress", { loaded: current, total: total });
 						statusProgressInner.style.width = `${(current / total) * 100}%`;
 						setStatusMode('progress');
 						if (current === total) {
 							// wait for progress bar animation
 							setTimeout(() => {
 								setStatusMode('indeterminate');
+								postNovaMessage("initializing");
 							}, 500);
 						}
 					} else {
 						setStatusMode('indeterminate');
+						postNovaMessage("initializing");
 					}
 				},
 			}).then(() => {

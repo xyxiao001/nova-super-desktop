@@ -3,6 +3,10 @@
 import "./youtd2.css";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ResourceLoadProgress,
+  resourceLoadPercent,
+} from "../../platform/resources/ResourceLoadProgress";
 import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import { touchGame } from "../games/shared/gameStorage";
 import {
@@ -13,6 +17,8 @@ import {
 } from "./youtd2Bridge";
 
 type FrameState = "loading" | "ready" | "error";
+type LoadPhase = "downloading" | "initializing";
+type LoadProgress = { loaded: number; total: number };
 
 export default function YouTd2Game() {
   const active = useWindowRuntime().isAppActive("youtd2");
@@ -20,6 +26,9 @@ export default function YouTd2Game() {
   const [frameState, setFrameState] = useState<FrameState>("loading");
   const [frameVersion, setFrameVersion] = useState(0);
   const [frameError, setFrameError] = useState("");
+  const [loadPhase, setLoadPhase] = useState<LoadPhase>("downloading");
+  const [loadProgress, setLoadProgress] = useState<LoadProgress | null>(null);
+  const loadPercent = resourceLoadPercent(loadProgress?.loaded, loadProgress?.total);
 
   const postCommand = useCallback((type: "activate" | "deactivate" | "handshake") => {
     frameRef.current?.contentWindow?.postMessage(createYouTd2Command(type), "*");
@@ -38,9 +47,14 @@ export default function YouTd2Game() {
         setFrameState("ready");
         setFrameError("");
         postCommand(active ? "activate" : "deactivate");
-      } else {
+      } else if (message.type === "error") {
         setFrameState("error");
         setFrameError(message.message);
+      } else if (message.type === "progress") {
+        setLoadPhase("downloading");
+        setLoadProgress({ loaded: message.loaded, total: message.total });
+      } else {
+        setLoadPhase("initializing");
       }
     };
     window.addEventListener("message", receiveMessage);
@@ -63,6 +77,8 @@ export default function YouTd2Game() {
   const reloadFrame = () => {
     setFrameState("loading");
     setFrameError("");
+    setLoadPhase("downloading");
+    setLoadProgress(null);
     setFrameVersion((current) => current + 1);
   };
 
@@ -78,7 +94,15 @@ export default function YouTd2Game() {
         </div>
         <div className={`youtd2-connection ${frameState}`}>
           <i aria-hidden="true"/>
-          <span>{frameState === "ready" ? "游戏就绪" : frameState === "error" ? "载入失败" : "正在下载资源"}</span>
+          <span>
+            {frameState === "ready"
+              ? "游戏就绪"
+              : frameState === "error"
+                ? "载入失败"
+                : loadPhase === "initializing"
+                  ? "正在初始化"
+                  : `正在下载${loadPercent === null ? "" : ` ${loadPercent}%`}`}
+          </span>
         </div>
         <button type="button" aria-label="重新载入 YouTD 2" title="重新载入" onClick={reloadFrame}>↻</button>
       </header>
@@ -104,8 +128,14 @@ export default function YouTd2Game() {
         {frameState === "loading" && (
           <div className="youtd2-frame-loading" role="status">
             <span aria-hidden="true"><i/><i/><i/></span>
-            <strong>正在部署防线</strong>
-            <small>首次载入需要下载完整游戏资源</small>
+            <ResourceLoadProgress
+              label={loadPhase === "initializing" ? "正在初始化引擎" : "正在下载游戏资源"}
+              detail={loadPhase === "initializing" ? "资源就绪，正在启动游戏" : "正在接收核心游戏包"}
+              loadedBytes={loadProgress?.loaded}
+              totalBytes={loadProgress?.total}
+              indeterminate={loadPhase === "initializing" || !loadProgress}
+              indeterminateLabel={loadPhase === "initializing" ? "处理中" : "连接中"}
+            />
           </div>
         )}
         {frameState === "error" && (

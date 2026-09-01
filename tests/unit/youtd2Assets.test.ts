@@ -16,7 +16,10 @@ describe("YouTD 2 Web export", () => {
 
   it("keeps the threaded runtime companions discoverable", () => {
     const loader = readFileSync(assetUrl("index.js"), "utf8");
+    const shell = readFileSync(assetUrl("index.html"), "utf8");
     expect(loader).toContain("`${loadPath}.side.wasm`");
     expect(loader).toContain("`${loadPath}.audio.worklet.js`");
+    expect(shell).toContain('postNovaMessage("progress", { loaded: current, total: total })');
+    expect(shell).toContain('postNovaMessage("initializing")');
   });
 });

@@ -1,6 +1,7 @@
 import { sites } from "@openai/sites-vite-plugin";
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { defineConfig, type Plugin } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
@@ -13,6 +14,32 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const crossOriginIsolationHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "require-corp",
+};
+const crossOriginIsolation = (): Plugin => {
+  const applyHeaders = (
+    request: IncomingMessage,
+    response: ServerResponse,
+    next: () => void,
+  ) => {
+    for (const [name, value] of Object.entries(crossOriginIsolationHeaders)) {
+      response.setHeader(name, value);
+    }
+    if (request.url?.split("?")[0] === "/games/youtd2/index.html") {
+      delete request.headers["if-none-match"];
+      delete request.headers["if-modified-since"];
+      response.setHeader("Cache-Control", "no-store");
+    }
+    next();
+  };
+  return {
+    name: "nova-cross-origin-isolation",
+    configureServer(server) {
+      server.middlewares.use(applyHeaders);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(applyHeaders);
+    },
+  };
 };
 
 const localBindingConfig = {
@@ -56,6 +83,7 @@ export default defineConfig(async () => {
     },
     preview: { headers: crossOriginIsolationHeaders },
     plugins: [
+      crossOriginIsolation(),
       vinext(),
       sites(),
       cloudflare({
