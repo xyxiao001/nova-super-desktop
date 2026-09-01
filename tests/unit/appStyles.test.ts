@@ -70,7 +70,7 @@ describe("application style loading", () => {
     const manifest = JSON.parse(manifestSource) as { display: string; display_override: string[] };
 
     expect(globals).toContain("height:100dvh");
-    expect(globals).toContain(".super-desktop{position:fixed;inset:0;width:auto;height:auto}");
+    expect(globals).toContain(".super-desktop{position:fixed;top:0;left:0;width:100vw;height:100vh;height:100lvh}");
     expect(globals).toContain('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),textarea,select{font-size:16px!important}');
     expect(globals).toContain("background:#0b4d7c");
     expect(desktop).toContain("env(safe-area-inset-bottom)");
