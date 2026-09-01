@@ -1,0 +1,33 @@
+.drawing-app { height:100%; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr) 28px; overflow:hidden; background:#e3e7ea; color:#202428; }
+.drawing-toolbar { min-height:56px; padding:9px 12px; display:flex; align-items:center; gap:14px; overflow-x:auto; border-bottom:1px solid #cbd1d5; background:#f7f8f9; }
+.drawing-tools { flex:none; display:flex; overflow:hidden; border:1px solid #bcc4ca; border-radius:5px; background:#e7ebee; }
+.drawing-tools button { min-width:68px; height:34px; padding:0 10px; border:0; border-right:1px solid #c9d0d5; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; color:#4b565e; font-size:17px; }
+.drawing-tools button:last-child { border-right:0; }.drawing-tools button span { font-size:11px; }.drawing-tools button.active { background:#fff; color:#1769aa; box-shadow:inset 0 -2px #1687d7; }
+.drawing-colors { flex:none; display:flex; align-items:center; gap:6px; }
+.drawing-colors button { width:24px; height:24px; padding:0; border:2px solid #fff; border-radius:50%; background:var(--swatch); box-shadow:0 0 0 1px #aab2b8; }
+.drawing-colors button.active { box-shadow:0 0 0 2px #1687d7; }.drawing-colors input { width:26px; height:26px; padding:1px; border:1px solid #abb4ba; border-radius:4px; background:#fff; }
+.drawing-size { min-width:150px; display:flex; align-items:center; gap:7px; color:#59636b; font-size:10px; }.drawing-size input { width:105px; accent-color:#1687d7; }.drawing-size output { min-width:20px; color:#252b30; font:10px/1 ui-monospace,monospace; }
+.drawing-actions { margin-left:auto; flex:none; display:flex; align-items:center; gap:5px; }.drawing-actions button { min-width:32px; height:32px; padding:0 9px; border:1px solid #bbc3c9; border-radius:4px; background:#fff; color:#38434b; font-size:16px; }.drawing-actions button:disabled { opacity:.38; }.drawing-actions .drawing-save { display:flex; align-items:center; gap:6px; border-color:#116fb5; background:#147fc9; color:#fff; }.drawing-actions .drawing-save span { font-size:11px; }
+.drawing-stage { min-height:0; padding:14px; overflow:hidden; background:#d9dee2; }.drawing-stage canvas { width:100%; height:100%; display:block; border:1px solid #b8c0c6; border-radius:3px; background:#fff; box-shadow:0 5px 18px #26343d24; cursor:crosshair; touch-action:none; }
+.drawing-app > footer { padding:0 13px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #c6cdd2; background:#eef1f3; color:#68737b; font-size:9px; }
+
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .drawing-toolbar { gap:9px; }.drawing-size { min-width:135px; }.drawing-size input { width:90px; }
+  .drawing-app { grid-template-rows:98px minmax(0,1fr) 28px; }
+  .drawing-toolbar { min-height:98px; padding:6px 8px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-rows:42px 38px; gap:6px 7px; overflow:hidden; }
+  .drawing-tools { grid-column:1; grid-row:1; }
+  .drawing-tools button { min-width:44px; height:42px; padding:0; }
+  .drawing-tools button span { display:none; }
+  .drawing-colors { min-width:0; grid-column:1 / 3; grid-row:2; gap:4px; overflow-x:auto; }
+  .drawing-colors button { width:26px; height:26px; flex:none; }
+  .drawing-colors input { width:30px; height:30px; flex:none; }
+  .drawing-size { min-width:96px; grid-column:3; grid-row:2; gap:4px; }
+  .drawing-size span { display:none; }
+  .drawing-size input { width:66px; }
+  .drawing-actions { grid-column:2 / 4; grid-row:1; justify-self:end; }
+  .drawing-actions button { min-width:42px; height:42px; padding:0; touch-action:manipulation; }
+  .drawing-actions .drawing-save { width:42px; justify-content:center; }
+  .drawing-actions .drawing-save span { display:none; }
+  .drawing-stage { padding:6px; }
+  .drawing-app > footer { padding-bottom:env(safe-area-inset-bottom); }
+}

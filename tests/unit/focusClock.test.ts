@@ -6,7 +6,7 @@ import {
   formatClockDuration,
   timerProgress,
   timerRemaining,
-} from "../../app/focusClock";
+} from "../../src/apps/focus/focusClock";
 
 describe("focus clock", () => {
   it("formats short and long durations", () => {

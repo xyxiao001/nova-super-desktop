@@ -3,13 +3,13 @@ import "fake-indexeddb/auto";
 import { deleteDB } from "idb";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { StoredBook } from "../../app/readerCore";
+import type { StoredBook } from "../../src/apps/reader/readerCore";
 import {
   getAllStoredBooks,
   getStoredBook,
   getStoredBookSummaries,
   replaceStoredBooks,
-} from "../../app/readerStorage";
+} from "../../src/apps/reader/readerStorage";
 
 const book: StoredBook = {
   id: "local:book",

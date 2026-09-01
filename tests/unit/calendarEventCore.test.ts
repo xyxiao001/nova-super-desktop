@@ -8,7 +8,7 @@ import {
   sortCalendarEvents,
   validateCalendarEventDraft,
   type CalendarEvent,
-} from "../../app/calendarEventCore";
+} from "../../src/apps/calendar/calendarEventCore";
 
 const event = (overrides: Partial<CalendarEvent> = {}): CalendarEvent => ({
   id: "event-1",

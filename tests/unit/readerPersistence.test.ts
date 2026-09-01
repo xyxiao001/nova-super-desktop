@@ -5,7 +5,7 @@ import {
   READER_DATA_VERSION,
   type ReaderChapter,
   type ReaderLocation,
-} from "../../app/readerCore";
+} from "../../src/apps/reader/readerCore";
 import {
   readReaderActivity,
   readReaderBookmarks,
@@ -16,7 +16,7 @@ import {
   saveReaderBookmarks,
   saveReaderLocation,
   saveReaderPreferences,
-} from "../../app/readerPersistence";
+} from "../../src/apps/reader/readerPersistence";
 
 class MemoryStorage implements Storage {
   private data = new Map<string, string>();

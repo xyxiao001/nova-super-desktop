@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { START_APP_GROUPS, type StartAppGroup } from "./appRegistry";
+import { START_APP_GROUPS, type StartAppGroup } from "../src/platform/apps/appRegistry";
 
 export type StartMenuAppEntry = {
   key: string;

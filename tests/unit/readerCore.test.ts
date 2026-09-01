@@ -8,7 +8,7 @@ import {
   normalizeReaderText,
   readerExcerpt,
   type ReaderChapter,
-} from "../../app/readerCore";
+} from "../../src/apps/reader/readerCore";
 
 describe("readerCore", () => {
   it("normalizes BOM and Windows line endings", () => {

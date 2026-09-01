@@ -168,8 +168,13 @@
 .desktop-menu .menu-summary { margin: 3px 8px 6px; color: #666; font-size: 11px; }
 
 .windows-desktop .desktop-window {
-  min-width: 320px;
-  min-height: 260px;
+  inset: var(--window-inset, auto);
+  width: var(--window-width);
+  height: var(--window-height);
+  left: var(--window-left);
+  top: var(--window-top);
+  min-width: var(--window-min-width, 320px);
+  min-height: var(--window-min-height, 260px);
   max-width: calc(100vw - 8px);
   max-height: calc(100vh - 57px);
   border: 1px solid #ffffff55;
@@ -180,26 +185,14 @@
   animation: none;
 }
 
+.window-size-compact { --window-width:420px; --window-height:600px; --window-left:32vw; --window-top:52px; }
+.window-size-standard { --window-width:min(760px,86vw); --window-height:min(540px,78vh); --window-left:20vw; --window-top:72px; }
+.window-size-wide { --window-width:min(920px,90vw); --window-height:min(650px,84vh); --window-left:12vw; --window-top:48px; }
+.window-size-canvas { --window-width:min(980px,92vw); --window-height:min(700px,88vh); --window-left:10vw; --window-top:40px; }
+
 .window-resize-handle { position:absolute; z-index:80; right:0; bottom:0; width:20px; height:20px; padding:0; border:0; background:linear-gradient(135deg,transparent 45%,#6b6b6b 46% 53%,transparent 54% 66%,#6b6b6b 67% 74%,transparent 75%); opacity:.58; cursor:nwse-resize; touch-action:none; }
 .windows-desktop .desktop-window.focused { z-index: 26; border-color: #9fd7ff; box-shadow: 0 26px 80px #0009, 0 0 0 1px #1686d755; }
 .windows-desktop .desktop-window.maximized { inset:0!important; width:auto!important; height:auto!important; max-width:none; max-height:none; border-radius:0; }
-.photo-window { inset: 24px 20px 70px 36px; }
-.notes-window { inset:auto; width:min(880px,86vw); height:min(620px,82vh); left:12vw; top:54px; }
-.viewer-window { inset: auto; width: min(980px, 88vw); height: min(650px, 84vh); left: 8vw; top: 42px; }
-.explorer-window { inset:auto; width:min(1020px,90vw); height:min(680px,84vh); left:9vw; top:48px; }
-.folder-window { inset: auto; width: min(760px, 82vw); height: min(520px, 74vh); left: 20vw; top: 82px; }
-.recycle-window { inset: auto; width: min(760px, 82vw); height: min(520px, 74vh); left: 22vw; top: 76px; }
-.games-window { inset:auto; width:min(900px,90vw); height:min(650px,82vh); left:15vw; top:58px; }
-.settings-window { inset:auto; width:min(660px,86vw); height:min(510px,76vh); min-width:min(560px,calc(100vw - 8px)); min-height:min(430px,calc(100vh - 57px)); left:22vw; top:82px; }
-.windows-desktop .mines-window { inset: auto; width: min(860px,90vw); height: min(700px,84vh); min-width: min(520px,calc(100vw - 8px)); min-height: min(680px,calc(100vh - 57px)); left: 12vw; top: 52px; }
-.windows-desktop .chess-window { inset: auto; width: min(860px,90vw); height: min(720px,86vh); min-width: min(600px,calc(100vw - 8px)); min-height: 560px; left: 14vw; top: 42px; }
-.windows-desktop .gomoku-window { inset:auto; width:min(840px,90vw); height:min(720px,86vh); min-width:min(580px,calc(100vw - 8px)); min-height:560px; left:13vw; top:44px; }
-.windows-desktop .tower-window { inset:auto; width:min(980px,92vw); height:min(720px,88vh); min-width:min(680px,calc(100vw - 8px)); min-height:560px; left:10vw; top:40px; }
-.windows-desktop .calculator-window { inset:auto; width:380px; height:600px; min-width:min(350px,calc(100vw - 8px)); min-height:min(540px,calc(100vh - 57px)); left:36vw; top:52px; }
-.drawing-window { inset: auto; width: min(960px,90vw); height: min(700px,84vh); left: 10vw; top: 48px; }
-.focus-window { inset:auto; width:min(820px,88vw); height:min(600px,80vh); min-width:min(620px,calc(100vw - 8px)); min-height:520px; left:17vw; top:66px; }
-.calendar-window { inset:auto; width:min(920px,90vw); height:min(650px,84vh); min-width:min(700px,calc(100vw - 8px)); min-height:min(520px,calc(100vh - 57px)); left:14vw; top:48px; }
-
 .windows-desktop .window-chrome {
   height: 38px;
   padding: 0 0 0 11px;
@@ -259,8 +252,6 @@
 .app-loading,.app-load-error { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px; background:#eef1f2; color:#35434a; }.app-loading i { width:26px; height:26px; border:2px solid #b8c2c6; border-top-color:#1674bd; border-radius:50%; animation:app-loading-spin .72s linear infinite; }.app-loading strong,.app-load-error strong { font-size:11px; font-weight:600; }.app-load-error > span { width:34px; height:34px; display:grid; place-items:center; border:1px solid #c46b60; border-radius:50%; color:#a63e35; font:700 18px/1 ui-monospace,monospace; }.app-load-error button { height:31px; padding:0 12px; border:1px solid #9ca9ae; border-radius:4px; background:#fff; color:#26363d; font-size:9px; }.theme-dark .app-loading,.theme-dark .app-load-error { background:#202528; color:#e7eaea; }.theme-dark .app-load-error button { border-color:#566166; background:#30373a; color:#f0f2f2; }
 @keyframes app-loading-spin { to { transform:rotate(360deg); } }
 @media (prefers-reduced-motion:reduce) { .app-loading i { animation:none; border-color:#1674bd; } }
-.windows-desktop .desktop-window .editor-shell { height: 100%; min-height: 0; }
-.windows-desktop .desktop-window .workspace { height: calc(100% - 72px); }
 
 
 .start-menu-scrim { position:absolute; z-index:99; inset:0; padding:0; border:0; background:transparent; }
@@ -531,8 +522,8 @@
 @keyframes bootFade { 0%,82%{opacity:1}100%{opacity:0} }
 
 @media (max-width: 900px) {
-  .photo-window { inset: 8px 6px 56px; }
-  .notes-window, .viewer-window, .reader-window, .calendar-window, .games-window, .settings-window, .explorer-window, .folder-window, .recycle-window, .mines-window, .chess-window, .gomoku-window, .tower-window, .calculator-window, .drawing-window, .focus-window { left: 5vw; width: 90vw; }
+  .windows-desktop .desktop-window { left:var(--window-tablet-left,5vw); width:var(--window-tablet-width,90vw); }
+  .windows-desktop .desktop-window.window-tablet-inset { inset:var(--window-tablet-inset); left:var(--window-tablet-left,auto); top:var(--window-tablet-top,auto); width:var(--window-tablet-width,auto); }
   .desktop-files { left: 4px; }
   .taskbar-tray span { display: none; }
 }
@@ -551,7 +542,6 @@
   .windows-desktop .snap-control { display:none; }
   .windows-desktop .window-content { height:calc(100% - 48px - env(safe-area-inset-top)); }
   .window-resize-handle { display:none; }
-  .windows-desktop .desktop-window .workspace { height:calc(100% - 62px); grid-template-columns:1fr; }
   .desktop-files { top:calc(12px + env(safe-area-inset-top)); left:0; right:0; bottom:0; padding:9px 12px 18px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:112px; align-content:start; gap:8px 4px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
   .desktop-files::-webkit-scrollbar { display:none; }
   .desktop-item.positioned, .desktop-shortcut.positioned { position:static!important; left:auto!important; top:auto!important; }
@@ -603,3 +593,5 @@
   .settings-section.search-focus,
   .magic-tower-frame-loading i { animation: none; }
 }
+.desktop-item.cut { opacity:.48; }
+.desktop-item.drop-target { border-radius:5px; background:#b8e0f08c; outline:2px solid #79c8e6; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { RESOURCE_PACKAGE_MANIFESTS } from "./appManifest";
+import { RESOURCE_PACKAGE_MANIFESTS } from "../src/platform/apps/appManifest";
 
 export type NovaResourcePackage = {
   id: string;

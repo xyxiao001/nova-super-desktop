@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createCalendarAlmanac } from "../../app/calendarAlmanac";
+import { createCalendarAlmanac } from "../../src/apps/calendar/calendarAlmanac";
 
 describe("calendar almanac", () => {
   it("derives the traditional almanac for a solar date", () => {

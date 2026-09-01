@@ -1,8 +1,10 @@
 import {
-  STORAGE_PROVIDER_BY_ID,
-  STORAGE_PROVIDERS,
+  getStorageProviderById,
+  getStorageProviders,
+} from "../src/platform/storage/providers/registry";
+import {
   type StorageProviderId,
-} from "./storageProviders";
+} from "../src/platform/storage/providers/types";
 
 export type NovaStorageCategoryId = StorageProviderId;
 
@@ -16,7 +18,8 @@ export type NovaStorageCategory = {
 };
 
 export async function inspectNovaStorage(): Promise<NovaStorageCategory[]> {
-  const categories = await Promise.all(STORAGE_PROVIDERS.map(async (provider) => {
+  const providers = await getStorageProviders();
+  const categories = await Promise.all(providers.map(async (provider) => {
     const stats = await provider.inspect();
     return {
       id: provider.id,
@@ -42,9 +45,10 @@ export async function inspectNovaStorage(): Promise<NovaStorageCategory[]> {
 }
 
 export async function clearNovaStorageCategory(id: NovaStorageCategoryId) {
-  await STORAGE_PROVIDER_BY_ID[id].clear();
+  await (await getStorageProviderById(id)).clear();
 }
 
 export async function clearAllNovaStorage() {
-  await Promise.all(STORAGE_PROVIDERS.map((provider) => provider.clear()));
+  const providers = await getStorageProviders();
+  await Promise.all(providers.map((provider) => provider.clear()));
 }

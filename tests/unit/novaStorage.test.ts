@@ -14,12 +14,12 @@ vi.mock("../../app/desktopStorage", () => ({
   deleteDesktopItems: storageMocks.deleteDesktopItems,
 }));
 
-vi.mock("../../app/readerStorage", () => ({
+vi.mock("../../src/apps/reader/readerStorage", () => ({
   getAllStoredBooks: storageMocks.getAllStoredBooks,
   replaceStoredBooks: storageMocks.replaceStoredBooks,
 }));
 
-vi.mock("../../app/calendarEventStorage", () => ({
+vi.mock("../../src/apps/calendar/calendarEventStorage", () => ({
   getAllCalendarEvents: storageMocks.getAllCalendarEvents,
   replaceCalendarEvents: storageMocks.replaceCalendarEvents,
 }));

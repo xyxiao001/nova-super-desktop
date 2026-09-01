@@ -14,12 +14,12 @@ vi.mock("../../app/desktopStorage", () => ({
   replaceDesktopItems: storageMocks.replaceDesktopItems,
 }));
 
-vi.mock("../../app/readerStorage", () => ({
+vi.mock("../../src/apps/reader/readerStorage", () => ({
   getAllStoredBooks: storageMocks.getAllStoredBooks,
   replaceStoredBooks: storageMocks.replaceStoredBooks,
 }));
 
-vi.mock("../../app/calendarEventStorage", () => ({
+vi.mock("../../src/apps/calendar/calendarEventStorage", () => ({
   getAllCalendarEvents: storageMocks.getAllCalendarEvents,
   replaceCalendarEvents: storageMocks.replaceCalendarEvents,
 }));
@@ -66,8 +66,8 @@ afterEach(() => {
 });
 
 describe("novaBackup", () => {
-  it("normalizes and summarizes a version 1 NOVA backup", () => {
-    const parsed = parseNovaBackup(JSON.stringify(backup));
+  it("normalizes and summarizes a version 1 NOVA backup", async () => {
+    const parsed = await parseNovaBackup(JSON.stringify(backup));
 
     expect(parsed.version).toBe(3);
     expect(summarizeNovaBackup(parsed)).toEqual({
@@ -79,22 +79,22 @@ describe("novaBackup", () => {
     });
   });
 
-  it("[defect-probing] rejects an invalid export date before the restore preview renders", () => {
-    expect(() => parseNovaBackup(JSON.stringify({
+  it("[defect-probing] rejects an invalid export date before the restore preview renders", async () => {
+    await expect(parseNovaBackup(JSON.stringify({
       ...backup,
       exportedAt: "not-a-date",
-    }))).toThrow("备份文件格式无效");
+    }))).rejects.toThrow("备份文件格式无效");
   });
 
-  it("rejects legacy and non-NOVA localStorage keys", () => {
-    expect(() => parseNovaBackup(JSON.stringify({
+  it("rejects legacy and non-NOVA localStorage keys", async () => {
+    await expect(parseNovaBackup(JSON.stringify({
       ...backup,
       localStorage: { "nova-desktop-items": "[]" },
-    }))).toThrow("备份文件格式无效");
-    expect(() => parseNovaBackup(JSON.stringify({
+    }))).rejects.toThrow("备份文件格式无效");
+    await expect(parseNovaBackup(JSON.stringify({
       ...backup,
       localStorage: { token: "secret" },
-    }))).toThrow("备份文件格式无效");
+    }))).rejects.toThrow("备份文件格式无效");
   });
 
   it("creates a version 3 backup from every storage provider", async () => {
@@ -127,7 +127,7 @@ describe("novaBackup", () => {
     localStorage.setItem("nova-stale", "remove");
     localStorage.setItem("unrelated", "keep");
 
-    await restoreNovaBackup(parseNovaBackup(JSON.stringify(backup)));
+    await restoreNovaBackup(await parseNovaBackup(JSON.stringify(backup)));
 
     expect(storageMocks.replaceDesktopItems).toHaveBeenCalledWith([]);
     expect(storageMocks.replaceStoredBooks).toHaveBeenCalledWith([]);
@@ -137,8 +137,8 @@ describe("novaBackup", () => {
     expect(localStorage.getItem("unrelated")).toBe("keep");
   });
 
-  it("adds an empty calendar provider when importing a version 2 backup", () => {
-    const parsed = parseNovaBackup(JSON.stringify({
+  it("adds an empty calendar provider when importing a version 2 backup", async () => {
+    const parsed = await parseNovaBackup(JSON.stringify({
       version: 2,
       exportedAt: backup.exportedAt,
       providers: {

@@ -6,7 +6,7 @@ import {
   fitWindowGeometry,
   snappedWindowGeometry,
   windowShortcutAction,
-} from "../../app/windowGeometry";
+} from "../../src/platform/windows/windowGeometry";
 
 describe("canMeasureWindowGeometry", () => {
   it("ignores hidden window dimensions while minimized", () => {

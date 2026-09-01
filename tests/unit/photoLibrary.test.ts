@@ -5,7 +5,7 @@ import {
   createPhotoLibrary,
   FEATURED_PHOTOS,
   photoZoomFromPinch,
-} from "../../app/photoLibrary";
+} from "../../src/apps/viewer/photoLibrary";
 
 const desktopPhoto = (id: string, createdAt: number): DesktopItem => ({
   id,

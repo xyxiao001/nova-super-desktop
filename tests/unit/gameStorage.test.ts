@@ -6,7 +6,7 @@ import {
   subscribeGameRecords,
   subscribeGameReset,
   type GameId,
-} from "../../app/gameStorage";
+} from "../../src/apps/games/shared/gameStorage";
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();

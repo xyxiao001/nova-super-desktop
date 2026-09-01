@@ -1,0 +1,17 @@
+.minesweeper { position:relative; height:100%; padding:14px 18px 16px; overflow:auto; display:flex; flex-direction:column; align-items:center; gap:11px; background:linear-gradient(#e6ebee,#c8d0d5); color:#222; }
+.mine-difficulties { width:min(780px,100%); height:42px; padding:3px; display:grid; grid-template-columns:repeat(3,1fr); gap:3px; border:1px solid #aab3b9; border-radius:6px; background:#bac3c9; }.mine-difficulties button { min-width:0; border:0; border-radius:4px; display:flex; align-items:center; justify-content:center; gap:8px; background:transparent; color:#48535a; font-size:11px; }.mine-difficulties button.active { background:#f6f8f9; color:#20272c; box-shadow:0 1px 3px #0002; }.mine-difficulties small { color:#77828a; font-size:8px; }
+.mine-score { width:min(780px,100%); height:54px; padding:0 14px; border:3px inset #eef2f4; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; background:#b8c0c6; }.mine-score > span { display:flex; align-items:center; gap:8px; }.mine-score > span:last-child { justify-content:flex-end; }.mine-score small { color:#56626a; font:9px/1 "Segoe UI","PingFang SC",sans-serif; }.mine-score strong { min-width:48px; color:#e53227; font:800 20px/1 ui-monospace,monospace; letter-spacing:0; }.mine-score button { width:36px; height:36px; padding:0; border:3px outset #eef2f4; background:#cbd2d6; font-size:18px; }
+.mine-board { width:min(calc(var(--mine-columns) * 30px),100%); margin:auto 0; flex:none; aspect-ratio:var(--mine-columns) / var(--mine-rows); display:grid; grid-template-columns:repeat(var(--mine-columns),minmax(0,1fr)); grid-template-rows:repeat(var(--mine-rows),minmax(0,1fr)); overflow:hidden; border:3px inset #eef2f4; background:#aeb7bd; }.mine-board button { width:100%; height:100%; min-width:0; min-height:0; padding:0; overflow:hidden; border:2px outset #edf1f3; background:#c5ccd1; color:#222; font:800 12px/1 ui-monospace,monospace; }.mine-board button:hover:not(.revealed) { background:#d5dce0; }.mine-board button.revealed { border:1px solid #9ba4aa; background:#e0e5e8; }.mine-board button.mine { color:#17191b; background:#ef8f83; }.mine-board button.n1 { color:#1261c9; }.mine-board button.n2 { color:#168337; }.mine-board button.n3 { color:#d32f2f; }.mine-board button.n4 { color:#6327a8; }.mine-board button.n5 { color:#8b2d2d; }.mine-board button.n6 { color:#15818a; }
+.minesweeper > footer { width:min(780px,100%); display:flex; justify-content:space-between; color:#59646b; font-size:10px; }
+
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .minesweeper { padding:10px 8px calc(12px + env(safe-area-inset-bottom)); gap:9px; overflow:hidden; }
+  .mine-difficulties { height:46px; }
+  .mine-difficulties button { min-height:40px; flex-direction:column; gap:2px; font-size:12px; touch-action:manipulation; }
+  .mine-score { height:58px; padding-inline:10px; }
+  .mine-score button { width:42px; height:42px; }
+  .mine-score strong { min-width:42px; font-size:18px; }
+  .mine-board { margin:auto 0; max-height:calc(100% - 130px); touch-action:manipulation; }
+  .mine-board button { border-width:1px; font-size:clamp(7px,3vw,12px); touch-action:manipulation; -webkit-touch-callout:none; }
+  .minesweeper > footer { min-height:20px; font-size:9px; }
+}

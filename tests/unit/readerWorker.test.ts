@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createChapterIndex } from "../../app/readerCore";
+import { createChapterIndex } from "../../src/apps/reader/readerCore";
 
 type WorkerScope = {
   onmessage?: (event: MessageEvent) => void;
@@ -13,7 +13,7 @@ async function createWorkerScope() {
   };
   vi.stubGlobal("self", scope);
   vi.resetModules();
-  await import("../../app/reader.worker");
+  await import("../../src/apps/reader/reader.worker");
   return scope;
 }
 

@@ -1,0 +1,8 @@
+.game-result-layer { position:absolute; z-index:45; inset:0; display:grid; place-items:center; padding:20px; background:#10161ca8; backdrop-filter:blur(5px); }.game-result-layer > div { width:min(350px,90%); padding:25px; display:flex; flex-direction:column; align-items:center; border:1px solid #ffffff30; border-radius:8px; background:#f6f8f9; color:#20282e; box-shadow:0 24px 70px #0009; text-align:center; }.game-result-mark { width:58px; height:58px; margin-bottom:14px; display:grid; place-items:center; border-radius:50%; background:#e0e7eb; color:#46545d; font:700 31px/1 ui-monospace,monospace; }.game-result-layer.win .game-result-mark { background:#dcefdc; color:#27733c; }.game-result-layer.loss .game-result-mark { background:#f4dddd; color:#a83333; }.game-result-layer > div > strong { font-size:20px; }.game-result-layer p { margin:8px 0 22px; color:#6c777e; font-size:11px; }.game-result-layer footer { display:flex; gap:8px; }.game-result-layer button { min-width:104px; height:34px; border:1px solid #b9c3c9; border-radius:4px; background:#fff; color:#263139; }.game-result-layer button:last-child { border-color:#177ac1; background:#177ac1; color:#fff; }
+
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .game-result-layer { align-items:end; padding:0; }
+  .game-result-layer > div { width:100%; padding:24px 18px calc(20px + env(safe-area-inset-bottom)); border-width:1px 0 0; border-radius:12px 12px 0 0; }
+  .game-result-layer footer { width:100%; }
+  .game-result-layer button { min-width:0; height:44px; flex:1; font-size:13px; }
+}

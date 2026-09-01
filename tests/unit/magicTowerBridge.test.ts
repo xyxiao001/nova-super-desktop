@@ -5,7 +5,7 @@ import {
   MAGIC_TOWER_ENGINE,
   MAGIC_TOWER_FRAME_SOURCE,
   parseMagicTowerFrameMessage,
-} from "../../app/magicTowerBridge";
+} from "../../src/apps/tower/magicTowerBridge";
 
 describe("magic tower bridge", () => {
   it("pins the selected complete game source", () => {

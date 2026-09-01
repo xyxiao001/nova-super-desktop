@@ -3,13 +3,13 @@ import "fake-indexeddb/auto";
 import { deleteDB } from "idb";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { CalendarEvent } from "../../app/calendarEventCore";
+import type { CalendarEvent } from "../../src/apps/calendar/calendarEventCore";
 import {
   deleteCalendarEvent,
   getAllCalendarEvents,
   putCalendarEvent,
   replaceCalendarEvents,
-} from "../../app/calendarEventStorage";
+} from "../../src/apps/calendar/calendarEventStorage";
 
 const DATABASE_NAME = "nova-calendar";
 

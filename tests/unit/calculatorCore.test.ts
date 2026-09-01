@@ -6,7 +6,7 @@ import {
   pressCalculatorKey,
   restoreCalculatorHistory,
   type CalculatorKey,
-} from "../../app/calculatorCore";
+} from "../../src/apps/calculator/calculatorCore";
 
 const press = (keys: CalculatorKey[]) => (
   keys.reduce(pressCalculatorKey, createCalculatorState())

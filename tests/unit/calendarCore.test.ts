@@ -9,7 +9,7 @@ import {
   lunarDate,
   nextHoliday,
   toIsoDate,
-} from "../../app/calendarCore";
+} from "../../src/apps/calendar/calendarCore";
 
 describe("2026 calendar data", () => {
   it("contains every official holiday and adjusted workday", () => {

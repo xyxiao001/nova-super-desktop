@@ -1,11 +1,15 @@
 import {
-  STORAGE_PROVIDER_BY_ID,
-  STORAGE_PROVIDERS,
   localStorageCategory,
-  type GameStorageProviderData,
-  type LocalStorageProviderData,
-  type StorageProviderId,
-} from "./storageProviders";
+} from "../src/platform/storage/providers/localSettings";
+import type { GameStorageProviderData } from "../src/apps/games/storageProvider";
+import {
+  getStorageProviders,
+} from "../src/platform/storage/providers/registry";
+import type {
+  LocalStorageProviderData,
+  StorageProvider,
+  StorageProviderId,
+} from "../src/platform/storage/providers/types";
 
 const BACKUP_VERSION = 3;
 const PREVIOUS_BACKUP_VERSION = 2;
@@ -58,19 +62,27 @@ const hasValidExportDate = (value: Record<string, unknown>) => (
   && Number.isFinite(Date.parse(value.exportedAt))
 );
 
-const isCurrentBackup = (value: unknown): value is NovaBackup => {
+const isCurrentBackup = (
+  value: unknown,
+  providerDefinitions: readonly StorageProvider[],
+): value is NovaBackup => {
   if (!isObject(value) || value.version !== BACKUP_VERSION || !hasValidExportDate(value)) return false;
-  const providers = value.providers;
-  if (!isObject(providers)) return false;
-  const providerIds = STORAGE_PROVIDERS.map((provider) => provider.id);
+  const providerData = value.providers;
+  if (!isObject(providerData)) return false;
+  const providerIds = providerDefinitions.map((provider) => provider.id);
   if (
-    Object.keys(providers).length !== providerIds.length
-    || !providerIds.every((id) => id in providers)
+    Object.keys(providerData).length !== providerIds.length
+    || !providerIds.every((id) => id in providerData)
   ) return false;
-  return STORAGE_PROVIDERS.every((provider) => provider.validateData(providers[provider.id]));
+  return providerDefinitions.every((provider) =>
+    provider.validateData(providerData[provider.id])
+  );
 };
 
-const isVersionTwoBackup = (value: unknown): value is NovaBackupV2 => {
+const isVersionTwoBackup = (
+  value: unknown,
+  providerById: Record<StorageProviderId, StorageProvider>,
+): value is NovaBackupV2 => {
   if (!isObject(value) || value.version !== PREVIOUS_BACKUP_VERSION || !hasValidExportDate(value)) return false;
   const providers = value.providers;
   if (!isObject(providers)) return false;
@@ -78,13 +90,16 @@ const isVersionTwoBackup = (value: unknown): value is NovaBackupV2 => {
     Object.keys(providers).length !== VERSION_TWO_PROVIDER_IDS.length
     || !VERSION_TWO_PROVIDER_IDS.every((id) => id in providers)
   ) return false;
-  return VERSION_TWO_PROVIDER_IDS.every((id) => STORAGE_PROVIDER_BY_ID[id].validateData(providers[id]));
+  return VERSION_TWO_PROVIDER_IDS.every((id) => providerById[id].validateData(providers[id]));
 };
 
-const isVersionOneBackup = (value: unknown): value is NovaBackupV1 => {
+const isVersionOneBackup = (
+  value: unknown,
+  providerById: Record<StorageProviderId, StorageProvider>,
+): value is NovaBackupV1 => {
   if (!isObject(value) || value.version !== LEGACY_BACKUP_VERSION || !hasValidExportDate(value)) return false;
-  if (!STORAGE_PROVIDER_BY_ID.desktop.validateData(value.desktopItems)) return false;
-  if (!STORAGE_PROVIDER_BY_ID.reader.validateData(value.readerBooks)) return false;
+  if (!providerById.desktop.validateData(value.desktopItems)) return false;
+  if (!providerById.reader.validateData(value.readerBooks)) return false;
   if (!isObject(value.localStorage)) return false;
   return Object.entries(value.localStorage).every(([key, entry]) => (
     key.startsWith("nova-")
@@ -128,7 +143,8 @@ const normalizeVersionTwoBackup = (backup: NovaBackupV2): NovaBackup => ({
 });
 
 export async function createNovaBackup(): Promise<NovaBackup> {
-  const entries = await Promise.all(STORAGE_PROVIDERS.map(async (provider) => (
+  const providers = await getStorageProviders();
+  const entries = await Promise.all(providers.map(async (provider) => (
     [provider.id, await provider.exportData()] as const
   )));
   return {
@@ -138,11 +154,15 @@ export async function createNovaBackup(): Promise<NovaBackup> {
   };
 }
 
-export function parseNovaBackup(text: string): NovaBackup {
+export async function parseNovaBackup(text: string): Promise<NovaBackup> {
+  const storageProviders = await getStorageProviders();
+  const providerById = Object.fromEntries(
+    storageProviders.map((provider) => [provider.id, provider]),
+  ) as Record<StorageProviderId, StorageProvider>;
   const value: unknown = JSON.parse(text);
-  if (isCurrentBackup(value)) return value;
-  if (isVersionTwoBackup(value)) return normalizeVersionTwoBackup(value);
-  if (isVersionOneBackup(value)) return normalizeVersionOneBackup(value);
+  if (isCurrentBackup(value, storageProviders)) return value;
+  if (isVersionTwoBackup(value, providerById)) return normalizeVersionTwoBackup(value);
+  if (isVersionOneBackup(value, providerById)) return normalizeVersionOneBackup(value);
   throw new Error("备份文件格式无效");
 }
 
@@ -164,14 +184,15 @@ export function summarizeNovaBackup(backup: NovaBackup): NovaBackupSummary {
     desktopItems: Array.isArray(desktop) ? desktop.length : 0,
     readerBooks: Array.isArray(reader) ? reader.length : 0,
     calendarEvents: Array.isArray(calendar) ? calendar.length : 0,
-    localSettings: STORAGE_PROVIDERS
-      .filter((provider) => !["desktop", "reader", "calendar"].includes(provider.id))
-      .reduce((total, provider) => total + localEntryCount(backup.providers[provider.id]), magicTower),
+    localSettings: Object.entries(backup.providers)
+      .filter(([id]) => !["desktop", "reader", "calendar"].includes(id))
+      .reduce((total, [, data]) => total + localEntryCount(data), magicTower),
   };
 }
 
 export async function restoreNovaBackup(backup: NovaBackup) {
-  await Promise.all(STORAGE_PROVIDERS.map((provider) => (
+  const providers = await getStorageProviders();
+  await Promise.all(providers.map((provider) => (
     provider.restoreData(backup.providers[provider.id])
   )));
 }

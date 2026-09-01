@@ -178,15 +178,38 @@ npm run build:vercel
 
 ```text
 app/
-├── page.tsx                 # 桌面外壳、窗口管理、任务栏与全局交互
+├── page.tsx                 # vinext / App Router 路由适配层
 ├── desktopStorage.ts       # 桌面文件 IndexedDB 与增量写入队列
-├── FileExplorer.tsx        # 文件资源管理器
-├── ReaderApp.tsx           # 阅读器
-├── PhotoEditorApp.tsx      # 照片实验室
-├── GameHall.tsx            # 游戏入口与战绩
-├── *Game.tsx               # 各类本机游戏
-├── SettingsApp.tsx         # 个性化、本地数据与备份
 └── PwaManager.tsx          # Service Worker 注册与更新提示
+
+src/
+├── main.tsx                 # Vercel SPA 入口
+├── apps/
+│   ├── <app-id>/
+│   │   ├── entry.tsx        # 应用默认入口
+│   │   ├── <app-id>.css     # 应用私有样式
+│   │   └── ...              # 可选领域逻辑、存储与 Worker
+│   └── games/shared/        # 游戏共享逻辑与样式
+├── platform/
+│   ├── apps/
+│   │   ├── appManifest.ts   # 应用、窗口、资源与存储声明
+│   │   ├── appRegistry.ts   # 注册表和懒组件派生
+│   │   └── AppHost.tsx      # Manifest 驱动的通用应用窗口宿主
+│   ├── launch/
+│   │   └── LaunchRuntime.tsx # 跨应用启动意图
+│   ├── settings/
+│   │   └── SettingsRuntime.tsx # 系统设置快照与命令
+│   ├── storage/providers/   # 平台与应用 Storage Provider 注册
+│   ├── windows/             # 窗口 Runtime、状态与几何
+│   └── workspace/
+│       └── WorkspaceRuntime.tsx # 桌面文件快照与命令
+└── shell/
+    ├── DesktopRoot.tsx      # 桌面状态与跨领域业务协调
+    ├── WindowFrame.tsx      # 窗口几何、拖动、缩放与窗口栏
+    ├── DesktopIcons.tsx     # 桌面快捷方式与文件图标交互
+    ├── DesktopTaskbar.tsx   # 任务栏、窗口预览与菜单
+    ├── DesktopSystemPanel.tsx # 日历与文件通知面板
+    └── DesktopOverlays.tsx  # 重命名、冲突、拖入、Toast 与启动层
 
 public/
 ├── manifest.webmanifest
@@ -197,6 +220,11 @@ public/
 tests/unit/                    # 文件、阅读、窗口、游戏与存储逻辑单测
 docs/images/                   # README 截图
 ```
+
+新增普通应用只需创建 `src/apps/<app-id>/entry.tsx`、在
+`src/platform/apps/appManifest.ts` 添加声明并补充应用测试。CSS、窗口配置、
+资源包和 Storage Provider 均通过应用目录或 Manifest 可选接入，无需修改桌面外壳、
+任务栏或 Lazy 注册代码。
 
 ## 部署
 

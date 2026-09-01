@@ -1,0 +1,58 @@
+"use client";
+
+import "./games.css";
+
+import { useEffect, useState } from "react";
+import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
+import { readGameRecords, requestNewGame, subscribeGameRecords, type GameId, type GameRecords } from "./shared/gameStorage";
+
+export const GAME_CATALOG = [
+  {id:"mines",label:"扫雷",category:"逻辑",meta:"经典 · 三档难度"},
+  {id:"chess",label:"国际象棋",category:"策略",meta:"Stockfish 18"},
+  {id:"gomoku",label:"五子棋",category:"棋类",meta:"Alpha-Beta AI"},
+  {id:"tower",label:"魔塔",category:"角色扮演",meta:"77 层 · 完整剧情"},
+] as const;
+
+export type GameAppId = GameId;
+
+function GameArtwork({id}:{id:GameAppId}){
+  if(id==="mines")return <span className="game-artwork mines-artwork" aria-hidden="true"><i/><i/><i/></span>;
+  if(id==="chess")return <span className="game-artwork chess-artwork" aria-hidden="true">♞</span>;
+  if(id==="gomoku")return <span className="game-artwork gomoku-artwork" aria-hidden="true"><i/><i/><i/></span>;
+  return <span className="game-artwork tower-artwork" aria-hidden="true"><i/><i/><i/><b/></span>;
+}
+
+export default function GameHall(){
+  const {windows,openApp}=useWindowRuntime();
+  const running=Object.fromEntries(GAME_CATALOG.map((game)=>[game.id,windows[game.id].open])) as Record<GameAppId,boolean>;
+  const runningCount=GAME_CATALOG.filter((game)=>running[game.id]).length;
+  const [records,setRecords]=useState<GameRecords>(readGameRecords);
+  useEffect(()=>subscribeGameRecords(()=>setRecords(readGameRecords())),[]);
+  const recent=GAME_CATALOG.map((game)=>({...game,time:records[game.id].lastPlayed})).filter((game)=>game.time).sort((a,b)=>b.time!-a.time!)[0];
+  const recentText=recent?`最近游玩 · ${recent.label}`:"尚无本地对局";
+  const newGame=(id:GameAppId)=>{requestNewGame(id);openApp(id)};
+
+  return <main className="game-hall">
+    <header className="game-hall-header">
+      <div className="game-hall-brand">
+        <span className="game-hall-logo" aria-hidden="true"><i/><i/><i/><i/></span>
+        <div><strong>游戏大厅</strong><small>NOVA LOCAL ARCADE</small></div>
+      </div>
+      <div className="game-hall-status">{runningCount?<><b>{runningCount}</b><span>正在运行</span></>:<span>{recentText}</span>}</div>
+    </header>
+    <section className="game-library" aria-label="本机游戏">
+      {GAME_CATALOG.map((game)=>{const record=records[game.id];return <article key={game.id} className={`game-tile ${game.id}-tile`}>
+        <div className="game-tile-visual">
+          <GameArtwork id={game.id}/>
+          <span>{game.category}</span>
+        </div>
+        <div className="game-tile-info">
+          <header><strong>{game.label}</strong>{running[game.id]&&<span>运行中</span>}</header>
+          <div className="game-tile-record"><span>{record.played} 局</span><span>{record.wins} 胜</span><span>{record.losses} 负</span><span>{record.draws} 和</span></div>
+          <footer><small>{game.meta}</small><div>{record.hasProgress&&<button className="new-game-button" aria-label={`新开${game.label}`} title="新游戏" onClick={()=>newGame(game.id)}>↻</button>}<button className="launch-game-button" onClick={()=>openApp(game.id)}>{record.hasProgress?"继续":"开始"}<i aria-hidden="true">→</i></button></div></footer>
+        </div>
+      </article>})}
+    </section>
+    <footer className="game-hall-footer"><span>{GAME_CATALOG.length} 款本机游戏</span><span>离线运行</span></footer>
+  </main>
+}

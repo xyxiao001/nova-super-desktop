@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { REGISTERED_APPS } from "../../app/appRegistry";
+import { REGISTERED_APPS } from "../../src/platform/apps/appRegistry";
 import {
   createInitialWindowManagerState,
   windowReducer,
-} from "../../app/windowState";
+} from "../../src/platform/windows/windowState";
 
 describe("window state reducer", () => {
   it("starts with every application closed and the desktop focused", () => {

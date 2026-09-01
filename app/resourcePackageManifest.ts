@@ -1,4 +1,4 @@
-import { RESOURCE_PACKAGE_MANIFESTS } from "./appManifest.ts";
+import { RESOURCE_PACKAGE_MANIFESTS } from "../src/platform/apps/appManifest.ts";
 
 export type ServiceWorkerResourcePackage = {
   id: string;

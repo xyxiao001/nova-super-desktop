@@ -16,14 +16,14 @@ describe("application style loading", () => {
     expect(layout).not.toContain("games-tools.css");
   });
 
-  it("loads each style group from its lazy application modules", async () => {
+  it("loads each application stylesheet from its lazy entry module", async () => {
     const [reader, flipBook, notes, games, calendar, almanac] = await Promise.all([
-      readWorkspaceFile("app/ReaderApp.tsx"),
-      readWorkspaceFile("app/ReaderFlipBook.tsx"),
-      readWorkspaceFile("app/NotepadApp.tsx"),
-      readWorkspaceFile("app/GameHall.tsx"),
-      readWorkspaceFile("app/CalendarApp.tsx"),
-      readWorkspaceFile("app/calendarAlmanac.ts"),
+      readWorkspaceFile("src/apps/reader/entry.tsx"),
+      readWorkspaceFile("src/apps/reader/ReaderFlipBook.tsx"),
+      readWorkspaceFile("src/apps/notes/entry.tsx"),
+      readWorkspaceFile("src/apps/games/entry.tsx"),
+      readWorkspaceFile("src/apps/calendar/entry.tsx"),
+      readWorkspaceFile("src/apps/calendar/calendarAlmanac.ts"),
     ]);
 
     expect(reader).toContain('import "./reader.css"');
@@ -47,8 +47,8 @@ describe("application style loading", () => {
     expect(flipBook).toContain('event.data !== "read"');
     expect(flipBook).toContain('target.type === "nextChapter"');
     expect(flipBook).toContain("translate3d(${-targetPage * (flowPageWidth + pageGap)}px");
-    expect(notes).toContain('import "./productivity-apps.css"');
-    expect(games).toContain('import "./games-tools.css"');
+    expect(notes).toContain('import "./notes.css"');
+    expect(games).toContain('import "./games.css"');
     expect(calendar).toContain('import "./calendar.css"');
     expect(calendar).toContain('lazy(() => import("./CalendarAlmanacPanel"))');
     expect(calendar).toContain('type="checkbox"');
@@ -56,12 +56,16 @@ describe("application style loading", () => {
   });
 
   it("keeps the mobile desktop and reader inside the dynamic viewport", async () => {
-    const [globals, desktop, reader, productivity, games, page, layout, index, manifestSource] = await Promise.all([
+    const [globals, desktop, reader, notes, viewer, explorer, focus, settings, desktopRoot, page, layout, index, manifestSource] = await Promise.all([
       readWorkspaceFile("app/globals.css"),
       readWorkspaceFile("app/desktop.css"),
-      readWorkspaceFile("app/reader.css"),
-      readWorkspaceFile("app/productivity-apps.css"),
-      readWorkspaceFile("app/games-tools.css"),
+      readWorkspaceFile("src/apps/reader/reader.css"),
+      readWorkspaceFile("src/apps/notes/notes.css"),
+      readWorkspaceFile("src/apps/viewer/viewer.css"),
+      readWorkspaceFile("src/apps/explorer/explorer.css"),
+      readWorkspaceFile("src/apps/focus/focus.css"),
+      readWorkspaceFile("src/apps/settings/settings.css"),
+      readWorkspaceFile("src/shell/DesktopRoot.tsx"),
       readWorkspaceFile("app/page.tsx"),
       readWorkspaceFile("app/layout.tsx"),
       readWorkspaceFile("index.html"),
@@ -84,10 +88,12 @@ describe("application style loading", () => {
     expect(desktop).toContain(".windows-desktop.wallpaper-graphite");
     expect(desktop).toContain(".windows-taskbar,.taskbar-reveal-zone { display:none!important; }");
     expect(desktop).toContain("@keyframes mobileSearchDrop");
-    expect(productivity).toContain(".photo-stage { position:relative; min-width:0; min-height:0; overflow:hidden; background:#0c0e0f; touch-action:none; }");
-    expect(page).toContain('mobileWindowOpen?"mobile-window-open":""');
-    expect(page).toContain("wallpaper-${settings.wallpaper}");
-    expect(page).toContain('startMode==="search"?"关闭搜索":"关闭开始菜单"');
+    expect(viewer).toContain(".photo-stage { position:relative; min-width:0; min-height:0; overflow:hidden; background:#0c0e0f; touch-action:none; }");
+    expect(desktopRoot).toContain('mobileWindowOpen?"mobile-window-open":""');
+    expect(desktopRoot).toContain("wallpaper-${settings.wallpaper}");
+    expect(desktopRoot).toContain('startMode==="search"?"关闭搜索":"关闭开始菜单"');
+    expect(page).toContain('import DesktopRoot from "../src/shell/DesktopRoot"');
+    expect(page).not.toContain("useState");
     expect(reader).toContain(".reader-sidebar-scrim");
     expect(reader).toContain(".reader-stage{padding:0;background:var(--reader-page)");
     expect(reader).toContain(".reader-page { width:100%; height:100%");
@@ -102,12 +108,15 @@ describe("application style loading", () => {
     expect(reader).toContain(".reader-turn-zone:hover,.reader-turn-zone:active{background:transparent;opacity:0}");
     expect(reader).not.toContain("@keyframes readerPageForward");
     expect(reader).not.toContain(".reader-window{inset:3px 2px 51px");
-    expect(productivity).toContain(".notepad-app.mobile-editor-open .note-workspace");
-    expect(productivity).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
-    expect(games).toContain(".focus-dial { width:min(64vw,260px,42dvh)");
-    expect(games).toContain(".wallpaper-options");
-    expect(games).toContain(".storage-group-toggle");
-    expect(games).toContain(".settings-reset-panel");
+    expect(reader).not.toMatch(/\.reader-window\s*\{\s*(?:inset|width|height|left|top):/);
+    expect(desktop).toContain(".window-size-standard");
+    expect(desktop).not.toMatch(/\.(?:photo|notes|viewer|explorer|folder|recycle|games|settings|mines|chess|gomoku|tower|calculator|drawing|focus|calendar)-window\s*\{/);
+    expect(notes).toContain(".notepad-app.mobile-editor-open .note-workspace");
+    expect(explorer).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
+    expect(focus).toContain(".focus-dial { width:min(64vw,260px,42dvh)");
+    expect(settings).toContain(".wallpaper-options");
+    expect(settings).toContain(".storage-group-toggle");
+    expect(settings).toContain(".settings-reset-panel");
     expect(layout).toContain('statusBarStyle: "black-translucent"');
     expect(layout).toContain('"mobile-web-app-capable": "yes"');
     expect(index).toContain("maximum-scale=1, user-scalable=no, viewport-fit=cover");

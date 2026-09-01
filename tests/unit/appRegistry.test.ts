@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  APP_COMPONENTS,
   APP_REGISTRY,
   LAUNCHER_APPS,
   REGISTERED_APPS,
+  appModuleLoaders,
   START_APP_GROUPS,
   START_PINNED_APPS,
-} from "../../app/appRegistry";
-import { GAME_CATALOG } from "../../app/GameHall";
-import { appModuleLoaders } from "../../app/lazyApps";
+} from "../../src/platform/apps/appRegistry";
+import { GAME_CATALOG } from "../../src/apps/games/entry";
 
 describe("appRegistry", () => {
   it("keeps registered application ids unique and addressable", () => {
@@ -41,5 +42,20 @@ describe("appRegistry", () => {
     expect(GAME_CATALOG.every((game) => APP_REGISTRY[game.id])).toBe(true);
     expect(GAME_CATALOG.every((game) => !APP_REGISTRY[game.id].launcher)).toBe(true);
     expect(Object.keys(APP_REGISTRY)).not.toEqual(expect.arrayContaining(["go", "sudoku", "voyage"]));
+  });
+
+  it("derives every hosted component from the manifest", () => {
+    expect(Object.keys(APP_COMPONENTS)).toEqual(
+      REGISTERED_APPS.map((app) => app.id),
+    );
+  });
+
+  it("defines window behavior for every registered application", () => {
+    expect(REGISTERED_APPS.every((app) => app.window.mobile === "fullscreen")).toBe(true);
+    expect(APP_REGISTRY.calendar.window).toMatchObject({
+      size: "wide",
+      minWidth: 700,
+      minHeight: 520,
+    });
   });
 });

@@ -1,0 +1,51 @@
+.recycle-bin { position:relative; height: 100%; display: flex; flex-direction: column; background: #fff; color: #222; }
+.recycle-bin > header { min-height: 58px; flex: none; padding: 8px 12px 8px 16px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; gap:12px; background: #f6f6f6; }
+.recycle-bin > header div { display: flex; flex-direction: column; gap: 2px; }
+.recycle-bin > header strong { font-size: 14px; }
+.recycle-bin > header span { color: #777; font-size: 11px; }
+.recycle-bin > header section { display:flex; align-items:center; gap:6px; }
+.recycle-bin > header label { display:flex; align-items:center; gap:4px; color:#555; font-size:10px; }
+.recycle-bin > header input,.recycle-list input { accent-color:#1687d7; }
+.recycle-bin > header button { height: 30px; padding: 0 9px; border: 1px solid #bbb; border-radius: 4px; background: #fff; color: #222; font-size: 10px; }
+.recycle-bin > header button.danger { color:#b82c20; }
+.recycle-bin > header button:disabled { color: #aaa; background: #f2f2f2; }
+.recycle-list { flex: 1; padding: 8px 12px; overflow: auto; }
+.recycle-list article { min-height: 64px; padding: 8px 9px; border-bottom: 1px solid #ececec; display: grid; grid-template-columns: 20px 48px minmax(0,1fr) auto auto; align-items: center; gap: 10px; }
+.recycle-list article:hover { background: #f3f8fc; }
+.recycle-list article.selected { background:#e6f3fc; }
+.recycle-list article > label { display:grid; place-items:center; }
+.recycle-file-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 5px; background: #eaf3f8; color: #39738c; font-size: 11px; font-weight: 700; overflow: hidden; }
+.recycle-file-icon.folder { background: #f5cb4c; color: #fff; font-size: 24px; }
+.recycle-file-icon.image i { width: 100%; height: 100%; background-size: cover; background-position: center; }
+.recycle-list article > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.recycle-list article strong { overflow: hidden; color: #222; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.recycle-list article small { color: #888; font-size: 10px; }
+.recycle-list article button { height: 28px; padding: 0 10px; border: 1px solid #bbb; border-radius: 4px; background: #fff; color: #222; font-size: 11px; }
+.recycle-list article .permanent-delete { color: #c42b1c; }
+.recycle-bin > .app-empty { flex: 1; }
+.recycle-confirm-layer { position:absolute; z-index:8; inset:0; display:grid; place-items:center; background:#0005; backdrop-filter:blur(2px); }
+.recycle-confirm-layer > section { width:min(350px,calc(100% - 30px)); padding:18px; border:1px solid #d0d5d8; border-radius:7px; background:#fff; box-shadow:0 22px 60px #0007; }
+.recycle-confirm-layer strong { font-size:14px; }.recycle-confirm-layer p { margin:7px 0 18px; color:#666; font-size:10px; }.recycle-confirm-layer div { display:flex; justify-content:flex-end; gap:7px; }.recycle-confirm-layer button { min-width:76px; height:30px; border:1px solid #bbb; border-radius:4px; background:#fff; color:#222; font-size:10px; }.recycle-confirm-layer button.danger { border-color:#c84436; background:#c84436; color:#fff; }
+.app-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #888; text-align: center; }
+.app-empty > span { font-size: 50px; color: #aaa; }
+.app-empty strong { font-size: 15px; color: #999; }
+.app-empty small { max-width: 320px; font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .recycle-bin { background:#f2f2f7; }
+  .recycle-bin > header { min-height:104px; padding:10px 12px; align-items:flex-start; flex-direction:column; gap:6px; background:#f9f9fbe8; backdrop-filter:blur(20px); }
+  .recycle-bin > header > div { width:100%; flex-direction:row; align-items:baseline; gap:8px; }
+  .recycle-bin > header strong { font-size:19px; }
+  .recycle-bin > header section { width:100%; overflow-x:auto; scrollbar-width:none; }
+  .recycle-bin > header section::-webkit-scrollbar { display:none; }
+  .recycle-bin > header label,.recycle-bin > header button { min-height:40px; flex:none; font-size:11px; }
+  .recycle-list { padding:8px 10px calc(14px + env(safe-area-inset-bottom)); }
+  .recycle-list article { min-height:112px; padding:10px 8px; grid-template-columns:24px 46px minmax(0,1fr); grid-template-rows:minmax(52px,auto) 38px; gap:6px 9px; border:0; border-radius:8px; background:#fff; }
+  .recycle-list article + article { margin-top:7px; }
+  .recycle-list article > button { display:block; height:36px; }
+  .recycle-list article > button:nth-of-type(1) { grid-column:2; }
+  .recycle-list article > button:nth-of-type(2) { grid-column:3; }
+  .recycle-confirm-layer { align-items:end; }
+  .recycle-confirm-layer > section { width:100%; padding:20px 18px calc(18px + env(safe-area-inset-bottom)); border-radius:12px 12px 0 0; }
+  .recycle-confirm-layer button { height:44px; font-size:13px; }
+}
