@@ -1,6 +1,6 @@
 importScripts("/resource-packages.generated.js");
 
-const VERSION = "nova-pwa-v19";
+const VERSION = "nova-pwa-v20";
 const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RESOURCE_CACHE_PREFIX = `${VERSION}:resource:`;
@@ -30,7 +30,7 @@ const findResourcePackage = (request, url) => (
 );
 
 const putResponse = async (cacheName, request, response) => {
-  if (response.ok && response.type === "basic") {
+  if (response.status === 200 && response.type === "basic") {
     const cache = await caches.open(cacheName);
     await cache.put(request, response.clone());
   }

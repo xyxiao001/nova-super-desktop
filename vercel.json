@@ -3,6 +3,16 @@
   "framework": "vite",
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist-vercel",
+  "rewrites": [
+    {
+      "source": "/games/youtd2/index.pck",
+      "destination": "https://media.githubusercontent.com/media/xyxiao001/nova-super-desktop/main/public/games/youtd2/index.pck"
+    },
+    {
+      "source": "/games/youtd2/index.side.wasm",
+      "destination": "https://media.githubusercontent.com/media/xyxiao001/nova-super-desktop/main/public/games/youtd2/index.side.wasm"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
