@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import GameResultDialog from "../games/shared/GameResultDialog";
 import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subscribeGameReset, touchGame } from "../games/shared/gameStorage";
 import GomokuWorker from "./gomoku.worker?worker";
+import { GOMOKU_DIFFICULTIES, gomokuDifficultyDetails, type GomokuDifficulty } from "./gomokuDifficulty";
 import { playNovaSound } from "../../../app/novaSettings";
 
 type Stone = 0|1|2;
@@ -37,6 +38,7 @@ export default function GomokuGame(){
   const [board,setBoard]=useState<Stone[]>(()=>{const next=EMPTY_BOARD();for(const move of restoredMoves)next[indexOf(move.row,move.column)]=move.stone;return next});
   const [moves,setMoves]=useState<Move[]>(restoredMoves);
   const [humanSide,setHumanSide]=useState<Side>(restored?.humanSide??"black");
+  const [difficulty,setDifficulty]=useState<GomokuDifficulty>("master");
   const [turn,setTurn]=useState<Exclude<Stone,0>>(restoredMoves.length%2===0?1:2);
   const [winner,setWinner]=useState<Exclude<Stone,0>|"draw"|null>(null);
   const [thinking,setThinking]=useState(false);
@@ -79,14 +81,14 @@ export default function GomokuGame(){
     const timer=window.setTimeout(()=>{
       setThinking(true);
       const requestId=++requestIdRef.current;
-      workerRef.current?.postMessage({moves:moves.map((move)=>({row:move.row,column:move.column,player:enginePlayer(move.stone)})),player:enginePlayer(aiStone),requestId});
+      workerRef.current?.postMessage({moves:moves.map((move)=>({row:move.row,column:move.column,player:enginePlayer(move.stone)})),player:enginePlayer(aiStone),difficulty,requestId});
     },180);
     return()=>window.clearTimeout(timer);
-  },[aiStone,moves,thinking,turn,winner]);
+  },[aiStone,difficulty,moves,thinking,turn,winner]);
   useEffect(()=>{touchGame("gomoku")},[]);
   useEffect(()=>{if(moves.length&&!winner)saveGameProgress<GomokuProgress>("gomoku",{moves,humanSide})},[humanSide,moves,winner]);
   useEffect(()=>{if(!winner)return;const key=`${winner}:${moves.length}`;if(resultRef.current===key)return;resultRef.current=key;const result=winner==="draw"?"draw":winner===humanStone?"win":"loss";finishGame("gomoku",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move")},[humanStone,moves.length,winner]);
-  useEffect(()=>subscribeGameReset("gomoku",()=>restart(humanSide)),[humanSide]);
+  useEffect(()=>subscribeGameReset("gomoku",()=>restart(humanSide)),[difficulty,humanSide]);
 
   const play=(index:number)=>{
     if(board[index]||winner||thinking||turn!==humanStone)return;
@@ -102,7 +104,7 @@ export default function GomokuGame(){
     else if(next.every(Boolean))setWinner("draw");
     else setTurn(aiStone);
   };
-  function restart(side=humanSide){requestIdRef.current++;const next=EMPTY_BOARD();boardRef.current=next;movesRef.current=[];resultRef.current="";clearGameProgress("gomoku");touchGame("gomoku");setHumanSide(side);setBoard(next);setMoves([]);setWinner(null);setResultDismissed(false);setThinking(false);setTurn(1)}
+  function restart(side=humanSide,nextDifficulty=difficulty){requestIdRef.current++;const next=EMPTY_BOARD();boardRef.current=next;movesRef.current=[];resultRef.current="";clearGameProgress("gomoku");touchGame("gomoku");setHumanSide(side);setDifficulty(nextDifficulty);setBoard(next);setMoves([]);setWinner(null);setResultDismissed(false);setThinking(false);setTurn(1)}
   const undo=()=>{
     if(!moves.length||thinking)return;
     const removeCount=moves.length>1?2:1,nextMoves=moves.slice(0,-removeCount),next=EMPTY_BOARD();
@@ -114,12 +116,12 @@ export default function GomokuGame(){
   return <main className="gomoku-game">
     <header className="board-game-toolbar">
       <div><strong>五子棋</strong><span>{status}</span></div>
-      <label>执棋<select value={humanSide} onChange={(event)=>restart(event.target.value as Side)}><option value="black">玩家执黑</option><option value="white">玩家执白</option></select></label>
+      <div className="gomoku-settings"><label>执棋<select value={humanSide} onChange={(event)=>restart(event.target.value as Side)}><option value="black">玩家执黑</option><option value="white">玩家执白</option></select></label><label>难度<select value={difficulty} onChange={(event)=>restart(humanSide,event.target.value as GomokuDifficulty)}>{GOMOKU_DIFFICULTIES.map((item)=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label></div>
       <div className="board-game-actions"><button aria-label="五子棋规则" title="规则" onClick={()=>setRulesOpen(true)}>?</button><button aria-label="悔棋" title="悔棋" disabled={!moves.length||thinking} onClick={undo}>↶</button><button aria-label="重新开始五子棋" title="重新开始" onClick={()=>restart()}>↻</button></div>
     </header>
     <section className="oriental-game-layout">
       <div className="gomoku-board" role="grid" aria-label="五子棋棋盘">{board.map((stone,index)=>{const row=Math.floor(index/SIZE),column=index%SIZE,isLast=lastMove?.row===row&&lastMove.column===column;return <button key={index} className={`row-${row} column-${column}`} role="gridcell" aria-label={`第 ${row+1} 行第 ${column+1} 列${stone?`，${sideName(stone)}`:"，空位"}`} onClick={()=>play(index)}><i className="line horizontal"/><i className="line vertical"/>{stars.has(index)&&<i className="star"/>}{stone>0&&<span className={`board-stone ${stone===1?"black":"white"} ${isLast?"last":""}`}/>}</button>})}</div>
-      <aside className="board-game-panel"><section><span>你</span><strong>{humanSide==="black"?"黑棋":"白棋"}</strong></section><section><span>对手</span><strong>Alpha-Beta AI</strong></section><section><span>手数</span><strong>{moves.length}</strong></section><p>AI 使用开源 Minimax 与 Alpha-Beta 剪枝引擎，重点识别连五、冲四、活三与防守要点。</p></aside>
+      <aside className="board-game-panel"><section><span>你</span><strong>{humanSide==="black"?"黑棋":"白棋"}</strong></section><section><span>对手</span><strong>{gomokuDifficultyDetails(difficulty).label}</strong></section><section><span>手数</span><strong>{moves.length}</strong></section><p>{gomokuDifficultyDetails(difficulty).description}。AI 使用 Minimax 与 Alpha-Beta 剪枝，重点识别连五、冲四、活三与防守要点。</p></aside>
     </section>
     {rulesOpen&&<section className="game-rules" role="dialog" aria-modal="true" aria-label="五子棋规则"><div><header><strong>五子棋规则</strong><button aria-label="关闭规则" onClick={()=>setRulesOpen(false)}>×</button></header><article><h3>胜负</h3><p>黑棋先行。任意一方在横、竖或斜线方向率先形成连续五枚或更多同色棋子即获胜。</p><h3>当前规则</h3><p>采用自由五子棋规则，不设置禁手；黑白双方均允许长连。棋盘为标准 15×15，落子后不能移动。</p><h3>人机对战</h3><p>可以选择执黑或执白。悔棋会同时撤回玩家和 AI 最近的一轮着法。</p></article></div></section>}
     {winner&&!resultDismissed&&<GameResultDialog tone={winner==="draw"?"draw":winner===humanStone?"win":"loss"} title={winner==="draw"?"本局和棋":winner===humanStone?"你赢了":"AI 获胜"} detail={`本局共进行 ${moves.length} 手`} onDismiss={()=>setResultDismissed(true)} onRestart={()=>restart()}/>}
