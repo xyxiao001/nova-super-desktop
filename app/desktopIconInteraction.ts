@@ -39,3 +39,13 @@ export function isMobileSearchPull(
   return deltaY >= MOBILE_SEARCH_PULL_DISTANCE
     && deltaY > Math.abs(deltaX) * 1.25;
 }
+
+export function reorderDesktopIconIds(ids: string[], sourceId: string, targetId: string) {
+  const sourceIndex = ids.indexOf(sourceId);
+  const targetIndex = ids.indexOf(targetId);
+  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return ids;
+  const next = [...ids];
+  const [source] = next.splice(sourceIndex, 1);
+  next.splice(targetIndex, 0, source);
+  return next;
+}

@@ -68,3 +68,7 @@ export const createPhotoLibrary = (images: DesktopItem[]): PhotoAsset[] => [
 export const clampPhotoZoom = (zoom: number) => (
   Math.min(4, Math.max(0.25, Math.round(zoom * 4) / 4))
 );
+
+export const photoZoomFromPinch = (zoom: number, startDistance: number, distance: number) => (
+  Math.min(4, Math.max(0.25, zoom * distance / startDistance))
+);

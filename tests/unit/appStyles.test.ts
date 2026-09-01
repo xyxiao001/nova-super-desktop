@@ -84,6 +84,7 @@ describe("application style loading", () => {
     expect(desktop).toContain(".windows-desktop.wallpaper-graphite");
     expect(desktop).toContain(".windows-taskbar,.taskbar-reveal-zone { display:none!important; }");
     expect(desktop).toContain("@keyframes mobileSearchDrop");
+    expect(productivity).toContain(".photo-stage { position:relative; min-width:0; min-height:0; overflow:hidden; background:#0c0e0f; touch-action:none; }");
     expect(page).toContain('mobileWindowOpen?"mobile-window-open":""');
     expect(page).toContain("wallpaper-${settings.wallpaper}");
     expect(page).toContain('startMode==="search"?"关闭搜索":"关闭开始菜单"');
@@ -109,7 +110,7 @@ describe("application style loading", () => {
     expect(games).toContain(".settings-reset-panel");
     expect(layout).toContain('statusBarStyle: "black-translucent"');
     expect(layout).toContain('"mobile-web-app-capable": "yes"');
-    expect(index).toContain("viewport-fit=cover");
+    expect(index).toContain("maximum-scale=1, user-scalable=no, viewport-fit=cover");
     expect(index).toContain('<meta name="theme-color" content="#0b4d7c"');
     expect(index).toContain('<meta name="mobile-web-app-capable" content="yes"');
     expect(manifest.display).toBe("fullscreen");

@@ -14,6 +14,7 @@ import type { DesktopItem } from "./desktopFiles";
 import {
   clampPhotoZoom,
   createPhotoLibrary,
+  photoZoomFromPinch,
   type PhotoAsset,
 } from "./photoLibrary";
 
@@ -44,6 +45,8 @@ export default function PhotoViewerApp({ images, active, focused, open, clearAct
   const [dimensions, setDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const canvasRef = useRef<HTMLDivElement>(null);
   const photoGestureRef = useRef<{ x: number; y: number } | null>(null);
+  const photoPointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const photoPinchRef = useRef<{ distance: number; zoom: number } | null>(null);
 
   const currentId = active ? `desktop:${active.id}` : selectedId;
   const current = photos.find((photo) => photo.id === currentId) ?? null;
@@ -77,17 +80,48 @@ export default function PhotoViewerApp({ images, active, focused, open, clearAct
     selectPhoto(photos[index]);
   }, [currentIndex, photos, selectPhoto]);
   const beginPhotoGesture = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType === "mouse" || zoom !== 1) return;
-    photoGestureRef.current = { x: event.clientX, y: event.clientY };
+    if (event.pointerType === "mouse") return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    photoPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const points = [...photoPointersRef.current.values()];
+    if (points.length === 2) {
+      photoGestureRef.current = null;
+      photoPinchRef.current = {
+        distance: Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y),
+        zoom,
+      };
+    } else if (points.length === 1 && zoom === 1) {
+      photoGestureRef.current = { x: event.clientX, y: event.clientY };
+    }
+  };
+  const updatePhotoGesture = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!photoPointersRef.current.has(event.pointerId)) return;
+    photoPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const points = [...photoPointersRef.current.values()];
+    const pinch = photoPinchRef.current;
+    if (!pinch || points.length < 2 || pinch.distance === 0) return;
+    event.preventDefault();
+    const distance = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+    if (currentId) setZoomState({ photoId: currentId, zoom: photoZoomFromPinch(pinch.zoom, pinch.distance, distance) });
   };
   const finishPhotoGesture = (event: ReactPointerEvent<HTMLElement>) => {
+    const pinching = photoPinchRef.current !== null;
+    photoPointersRef.current.delete(event.pointerId);
+    if (photoPointersRef.current.size < 2) photoPinchRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     const origin = photoGestureRef.current;
     photoGestureRef.current = null;
-    if (!origin) return;
+    if (pinching || !origin) return;
     const deltaX = event.clientX - origin.x;
     const deltaY = event.clientY - origin.y;
     if (Math.abs(deltaX) < 52 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) return;
     stepPhoto(deltaX < 0 ? 1 : -1);
+  };
+  const cancelPhotoGesture = (event: ReactPointerEvent<HTMLElement>) => {
+    photoPointersRef.current.delete(event.pointerId);
+    photoGestureRef.current = null;
+    photoPinchRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
   useEffect(() => {
     if (!focused || !currentId) return;
@@ -167,7 +201,7 @@ export default function PhotoViewerApp({ images, active, focused, open, clearAct
         <button aria-label="重置为100%" title="重置为100%" onClick={() => changeZoom(1)}>100%</button>
       </div>
     </header>
-    <section className="photo-stage" onPointerDown={beginPhotoGesture} onPointerUp={finishPhotoGesture} onPointerCancel={() => { photoGestureRef.current = null; }}>
+    <section className="photo-stage" onPointerDown={beginPhotoGesture} onPointerMove={updatePhotoGesture} onPointerUp={finishPhotoGesture} onPointerCancel={cancelPhotoGesture}>
       <button className="photo-step previous" aria-label="上一张" title="上一张" onClick={() => stepPhoto(-1)}>‹</button>
       <div ref={canvasRef} className="photo-canvas">
         <img

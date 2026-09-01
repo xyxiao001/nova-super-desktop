@@ -4,6 +4,7 @@ import {
   clampPhotoZoom,
   createPhotoLibrary,
   FEATURED_PHOTOS,
+  photoZoomFromPinch,
 } from "../../app/photoLibrary";
 
 const desktopPhoto = (id: string, createdAt: number): DesktopItem => ({
@@ -35,5 +36,11 @@ describe("photoLibrary", () => {
     expect(clampPhotoZoom(1.12)).toBe(1);
     expect(clampPhotoZoom(1.13)).toBe(1.25);
     expect(clampPhotoZoom(8)).toBe(4);
+  });
+
+  it("scales a photo with the distance between two pointers", () => {
+    expect(photoZoomFromPinch(1, 100, 175)).toBe(1.75);
+    expect(photoZoomFromPinch(3, 100, 200)).toBe(4);
+    expect(photoZoomFromPinch(1, 100, 10)).toBe(0.25);
   });
 });

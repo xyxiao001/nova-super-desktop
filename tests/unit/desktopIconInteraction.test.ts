@@ -6,6 +6,7 @@ import {
   desktopIconClickAction,
   isMobileSearchPull,
   movedBeyondLongPressTolerance,
+  reorderDesktopIconIds,
 } from "../../app/desktopIconInteraction";
 
 describe("desktop icon interaction", () => {
@@ -31,5 +32,10 @@ describe("desktop icon interaction", () => {
     expect(isMobileSearchPull({ x: 100, y: 120 }, { x: 108, y: 190 })).toBe(true);
     expect(isMobileSearchPull({ x: 100, y: 120 }, { x: 150, y: 170 })).toBe(false);
     expect(isMobileSearchPull({ x: 100, y: 120 }, { x: 104, y: 165 })).toBe(false);
+  });
+
+  it("pushes neighboring desktop icons aside when one changes slots", () => {
+    expect(reorderDesktopIconIds(["a", "b", "c", "d"], "a", "c")).toEqual(["b", "c", "a", "d"]);
+    expect(reorderDesktopIconIds(["a", "b", "c", "d"], "d", "b")).toEqual(["a", "d", "b", "c"]);
   });
 });
