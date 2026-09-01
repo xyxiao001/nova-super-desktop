@@ -5,7 +5,11 @@ export type NovaSound = "open"|"close"|"move"|"success"|"error";
 
 export const DEFAULT_SETTINGS:NovaSettings={theme:"system",wallpaper:"nova",sound:true,volume:.45};
 const SETTINGS_KEY="nova-settings";
+export const CALENDAR_ALMANAC_KEY="nova-calendar-almanac-enabled";
 const SETTINGS_EVENT="nova-settings-change";
+
+export const readCalendarAlmanacEnabled=()=>typeof window!=="undefined"&&localStorage.getItem(CALENDAR_ALMANAC_KEY)==="true";
+export const saveCalendarAlmanacEnabled=(enabled:boolean)=>localStorage.setItem(CALENDAR_ALMANAC_KEY,String(enabled));
 
 export const readNovaSettings=():NovaSettings=>{
   if(typeof window==="undefined")return DEFAULT_SETTINGS;

@@ -29,6 +29,7 @@ import {
   putCalendarEvent,
 } from "./calendarEventStorage";
 import { calendarDays } from "./desktopSystem";
+import { readCalendarAlmanacEnabled, saveCalendarAlmanacEnabled } from "./novaSettings";
 
 const MONTHS = Array.from({ length: 12 }, (_, index) => `${index + 1}月`);
 const YEARS = Array.from({ length: 11 }, (_, index) => 2021 + index);
@@ -60,7 +61,7 @@ export default function CalendarApp() {
     new Date(today.getFullYear(), today.getMonth(), 1)
   ));
   const [selectedIso, setSelectedIso] = useState(() => toIsoDate(today));
-  const [almanacEnabled, setAlmanacEnabled] = useState(false);
+  const [almanacEnabled, setAlmanacEnabled] = useState(readCalendarAlmanacEnabled);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState("");
@@ -120,6 +121,11 @@ export default function CalendarApp() {
     const next = new Date(visibleMonth.getFullYear(), month, 1);
     setVisibleMonth(next);
     setSelectedIso(toIsoDate(next));
+  };
+
+  const changeAlmanacEnabled = (enabled: boolean) => {
+    setAlmanacEnabled(enabled);
+    saveCalendarAlmanacEnabled(enabled);
   };
 
   const handleDateKey = (event: KeyboardEvent<HTMLButtonElement>, date: Date) => {
@@ -193,7 +199,7 @@ export default function CalendarApp() {
           <input
             type="checkbox"
             checked={almanacEnabled}
-            onChange={(event) => setAlmanacEnabled(event.target.checked)}
+            onChange={(event) => changeAlmanacEnabled(event.target.checked)}
           />
           <span>黄历</span>
         </label>

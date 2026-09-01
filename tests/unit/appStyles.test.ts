@@ -89,6 +89,8 @@ describe("application style loading", () => {
     expect(page).toContain('startMode==="search"?"关闭搜索":"关闭开始菜单"');
     expect(reader).toContain(".reader-sidebar-scrim");
     expect(reader).toContain(".reader-stage{padding:0;background:var(--reader-page)");
+    expect(reader).toContain(".reader-page { width:100%; height:100%");
+    expect(reader).toContain(".reader-page > .reader-content,.reader-page > .reader-page-viewport");
     expect(reader).toContain(".reader-page{padding-bottom:26px;font-size:calc(var(--reader-font-size) + 2px)}");
     expect(reader).toContain(".reader-book-info>strong{font-size:19px");
     expect(reader).toContain(".reader-shelf{grid-template-columns:repeat(3,minmax(0,1fr))");

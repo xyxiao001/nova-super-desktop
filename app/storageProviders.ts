@@ -68,7 +68,7 @@ export const localStorageCategory = (
   ) return "games";
   if (key.startsWith("nova-reader-")) return "reading";
   if (key.startsWith("nova-focus-")) return "focus";
-  if (key === "nova-settings" || key === "nova-desktop-positions" || key.startsWith("nova-window-geometry:")) return "settings";
+  if (key === "nova-settings" || key === "nova-calendar-almanac-enabled" || key === "nova-desktop-positions" || key.startsWith("nova-window-geometry:")) return "settings";
   return "other";
 };
 

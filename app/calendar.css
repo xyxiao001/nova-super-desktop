@@ -741,8 +741,8 @@
   .calendar-toolbar { padding:8px 10px; display:grid; grid-template-rows:42px 42px; gap:4px; }
   .calendar-month-picker { min-width:0; gap:4px; }
   .calendar-month-picker select { height:42px; min-width:0; padding-left:8px; }
-  .calendar-month-picker select:first-child { width:94px; }
-  .calendar-month-picker select:last-child { width:72px; }
+  .calendar-month-picker select:first-child { width:112px; }
+  .calendar-month-picker select:last-child { width:88px; }
   .calendar-navigation { width:100%; gap:3px; }
   .calendar-almanac-toggle { height:42px; margin-right:auto; font-size:11px; }
   .calendar-almanac-toggle input { width:17px; height:17px; }

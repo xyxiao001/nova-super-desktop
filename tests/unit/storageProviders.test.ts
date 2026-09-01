@@ -8,6 +8,7 @@ import {
 } from "../../app/novaBackup";
 import {
   STORAGE_PROVIDER_BY_ID,
+  localStorageCategory,
   readMagicTowerRecords,
   replaceMagicTowerRecords,
   type GameStorageProviderData,
@@ -62,6 +63,10 @@ afterEach(async () => {
 });
 
 describe("storage providers", () => {
+  it("keeps the calendar almanac choice with local settings", () => {
+    expect(localStorageCategory("nova-calendar-almanac-enabled")).toBe("settings");
+  });
+
   it("reads a Magic Tower database upgraded by localForage", async () => {
     await createLocalForageMagicTowerDatabase();
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
