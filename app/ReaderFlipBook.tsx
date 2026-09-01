@@ -15,6 +15,7 @@ type ReaderFlipBookProps = {
   paragraphs: Array<{ index: number; text: string }>;
   pageIndex: number;
   pageCount: number;
+  totalProgress: number;
   pageWidth: number;
   pageHeight: number;
   flowPageWidth: number;
@@ -39,7 +40,7 @@ type PendingTurn =
   | { type: "nextChapter" };
 
 const FlipPage = forwardRef<HTMLDivElement, ReaderFlipBookProps & { targetPage: number; pageLabel?: string }>(
-  function FlipPage({ title, author, chapterTitle, paragraphs, pageCount, flowPageWidth, pageGap, fontSize, lineHeight, targetPage, pageLabel }, ref) {
+  function FlipPage({ title, author, chapterTitle, paragraphs, pageCount, totalProgress, flowPageWidth, pageGap, fontSize, lineHeight, targetPage, pageLabel }, ref) {
     return <div className="reader-flip-sheet" ref={ref}>
       <article className="reader-page reader-flip-page" style={{ "--reader-font-size": `${fontSize}px`, lineHeight } as CSSProperties}>
         <header><span>{title}</span><span>{chapterTitle}</span></header>
@@ -49,7 +50,7 @@ const FlipPage = forwardRef<HTMLDivElement, ReaderFlipBookProps & { targetPage: 
             {paragraphs.map((paragraph) => <p key={paragraph.index}>{paragraph.text}</p>)}
           </div>
         </div>
-        <footer><span>{author}</span><span>{pageLabel ?? `${targetPage + 1} / ${pageCount}`}</span></footer>
+        <footer><span>{author}</span><span>{pageLabel ?? `${targetPage + 1} / ${pageCount}`} · 总进度 {totalProgress}%</span></footer>
       </article>
     </div>;
   },
@@ -75,7 +76,7 @@ export default function ReaderFlipBook(props: ReaderFlipBookProps) {
       () => pageWindow.map((page, index) => page.type === "nextChapter"
         ? <FlipPage key={index} {...props} chapterTitle={page.title} paragraphs={page.paragraphs} targetPage={0} pageLabel="1"/>
         : <FlipPage key={index} {...props} targetPage={page.pageIndex}/>),
-      [pageWindow, props.author, props.chapterTitle, props.flowPageWidth, props.fontSize, props.lineHeight, props.pageCount, props.pageGap, props.paragraphs, props.title],
+      [pageWindow, props.author, props.chapterTitle, props.flowPageWidth, props.fontSize, props.lineHeight, props.pageCount, props.pageGap, props.paragraphs, props.title, props.totalProgress],
     );
 
     const turn = (direction: "next" | "previous") => {

@@ -74,7 +74,7 @@ describe("application style loading", () => {
     expect(globals).toContain('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),textarea,select{font-size:16px!important}');
     expect(globals).toContain("background:#0b4d7c");
     expect(desktop).toContain("env(safe-area-inset-bottom)");
-    expect(desktop).toContain(".desktop-window.maximized { position:fixed; inset:0!important; width:100vw!important; height:100dvh!important");
+    expect(desktop).toContain(".desktop-window.maximized { position:fixed; inset:0!important; width:100vw!important; height:auto!important");
     expect(desktop).toContain("grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(desktop).toContain(".shortcut-icon { width:62px; height:62px; min-height:62px; flex:none");
     expect(desktop).toContain("font-size:14px; line-height:18px");
@@ -94,6 +94,7 @@ describe("application style loading", () => {
     expect(reader).toContain(".reader-shelf{grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(reader).toContain(".reader-reading.immersive.chrome-hidden>.reader-mobile-toolbar");
     expect(reader).toContain(".reader-library.editing .reader-book-delete{display:block}");
+    expect(reader).toContain(".reader-manage-button{display:none}");
     expect(reader).toContain(".reader-flip-book-shell");
     expect(reader).toContain(".reader-turn-zone:hover,.reader-turn-zone:active{background:transparent;opacity:0}");
     expect(reader).not.toContain("@keyframes readerPageForward");

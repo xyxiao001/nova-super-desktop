@@ -970,7 +970,7 @@ export default function ReaderApp({
   ));
 
   if (!activeBook) return <div className={`reader-library ${shelfEditing ? "editing" : ""}`}>
-    <header className="reader-library-header"><div><span className="reader-brand">阅</span><div><strong>NOVA 阅读</strong><small>{shelfEditing ? "管理书架" : `${localBooks.length + Object.keys(downloads).length} 本已存储`}</small></div></div><div className="reader-library-actions">{shelfEditing ? <button className="reader-library-done" aria-label="完成管理书架" title="完成" onClick={() => { setShelfEditing(false); setDeleteCandidate(null); }}><span aria-hidden="true">✓</span></button> : <><label className="reader-import-button">＋ 导入 TXT<input ref={importRef} aria-label="选择要导入的TXT书籍" type="file" accept=".txt,text/plain" onChange={(event) => { void importBook(event.target.files?.[0]); event.target.value = ""; }}/></label><button className="reader-refresh-button" aria-label="检查云端书库" title="检查云端书库" onClick={loadCatalog}>↻</button></>}</div></header>
+    <header className="reader-library-header"><div><span className="reader-brand">阅</span><div><strong>NOVA 阅读</strong><small>{shelfEditing ? "管理书架" : `${localBooks.length + Object.keys(downloads).length} 本已存储`}</small></div></div><div className="reader-library-actions">{shelfEditing ? <button className="reader-library-done" aria-label="完成管理书架" title="完成" onClick={() => { setShelfEditing(false); setDeleteCandidate(null); }}><span aria-hidden="true">✓</span></button> : <><button className="reader-manage-button" onClick={() => setShelfEditing(true)}>管理</button><label className="reader-import-button">＋ 导入 TXT<input ref={importRef} aria-label="选择要导入的TXT书籍" type="file" accept=".txt,text/plain" onChange={(event) => { void importBook(event.target.files?.[0]); event.target.value = ""; }}/></label><button className="reader-refresh-button" aria-label="检查云端书库" title="检查云端书库" onClick={loadCatalog}>↻</button></>}</div></header>
     <section className="reader-library-tools">
       <label className="reader-library-search"><span aria-hidden="true">⌕</span><input value={shelfQuery} onChange={(event) => setShelfQuery(event.target.value)} aria-label="搜索书架" placeholder="搜索书名、作者"/></label>
       <div className="reader-library-filters">{(["all", "downloaded", "local", "cloud"] as ShelfFilter[]).map((filter) => <button key={filter} className={shelfFilter === filter ? "active" : ""} onClick={() => setShelfFilter(filter)}>{filter === "all" ? "全部" : filter === "downloaded" ? "已下载" : filter === "local" ? "本地" : "云端"}</button>)}</div>
@@ -1014,7 +1014,7 @@ export default function ReaderApp({
           {preferences.readingMode === "scroll" && <h1>{chapter?.title}</h1>}
           {preferences.readingMode === "scroll" ? <div className="reader-content">{paragraphSegments.map((segment, segmentIndex) => <section className="reader-paragraph-segment" data-reader-segment={segmentIndex} key={segmentIndex}>{segment.map((paragraph) => <p key={paragraph.index} data-reader-paragraph={paragraph.index}>{paragraph.text}</p>)}</section>)}</div> : <div className="reader-page-viewport" ref={pageViewportRef}><div className="reader-page-flow" ref={pageFlowRef} style={{ columnWidth: pageWidth || undefined, columnGap: PAGE_GAP }}><h1>{chapter?.title}</h1>{paragraphs.map((paragraph) => <p key={paragraph.index}>{paragraph.text}</p>)}</div></div>}
           {preferences.readingMode === "scroll" && <nav className="reader-chapter-navigation" aria-label="章节切换"><button disabled={chapterIndex === 0} onClick={previousChapter}>← 上一章</button><span>第 {chapterIndex + 1} / {chapters.length} 章</span><button disabled={chapterIndex === chapters.length - 1} onClick={nextChapter}>下一章 →</button></nav>}
-          <footer><span>{activeBook.author}</span><span>{preferences.readingMode === "scroll" ? `${Math.round(scrollProgress * 100)}%` : `${safePageIndex + 1} / ${pageCount}`}</span></footer>
+          <footer><span>{activeBook.author}</span><span>{preferences.readingMode === "scroll" ? `总进度 ${progress}%` : `${safePageIndex + 1} / ${pageCount} · 总进度 ${progress}%`}</span></footer>
         </article>
         {pageFlipEnabled && <ReaderFlipBook
           key={`${chapter?.id ?? "chapter"}:${pageCount}`}
@@ -1024,6 +1024,7 @@ export default function ReaderApp({
           paragraphs={paragraphs}
           pageIndex={safePageIndex}
           pageCount={pageCount}
+          totalProgress={progress}
           pageWidth={pageSize.width}
           pageHeight={pageSize.height}
           flowPageWidth={pageWidth}
