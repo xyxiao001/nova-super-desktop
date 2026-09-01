@@ -43,11 +43,12 @@ describe("desktop shell boundaries", () => {
   });
 
   it("hosts runtime applications through the manifest-driven AppHost", async () => {
-    const [desktopRoot, appHost, appRegistry, tower, calculator, focus] = await Promise.all([
+    const [desktopRoot, appHost, appRegistry, tower, youTd2, calculator, focus] = await Promise.all([
       readWorkspaceFile("src/shell/DesktopRoot.tsx"),
       readWorkspaceFile("src/platform/apps/AppHost.tsx"),
       readWorkspaceFile("src/platform/apps/appRegistry.ts"),
       readWorkspaceFile("src/apps/tower/entry.tsx"),
+      readWorkspaceFile("src/apps/youtd2/entry.tsx"),
       readWorkspaceFile("src/apps/calculator/entry.tsx"),
       readWorkspaceFile("src/apps/focus/entry.tsx"),
     ]);
@@ -68,6 +69,7 @@ describe("desktop shell boundaries", () => {
       "chess",
       "gomoku",
       "tower",
+      "youtd2",
       "calculator",
       "drawing",
       "focus",
@@ -79,6 +81,7 @@ describe("desktop shell boundaries", () => {
     expect(appRegistry).not.toContain("LazyCalendarApp");
     expect(appRegistry).not.toContain("LazyFocusClockApp");
     expect(tower).toContain('isAppActive("tower")');
+    expect(youTd2).toContain('isAppActive("youtd2")');
     expect(calculator).toContain('isAppActive("calculator")');
     expect(focus).toContain('isAppActive("focus")');
   });

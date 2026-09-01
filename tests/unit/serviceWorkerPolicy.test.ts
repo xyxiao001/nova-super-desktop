@@ -13,7 +13,7 @@ const resourcePackages = readFileSync(
 
 describe("service worker resource policy", () => {
   it("keeps the install shell minimal and avoids recursive chunk discovery", () => {
-    expect(source).toContain('const VERSION = "nova-pwa-v15"');
+    expect(source).toContain('const VERSION = "nova-pwa-v16"');
     expect(source).not.toContain("BUILD_ASSET_PATTERN");
     expect(source).not.toContain("while (pending.length)");
   });
@@ -84,6 +84,7 @@ describe("service worker resource policy", () => {
   it("keeps large features in independent on-demand caches", () => {
     expect(source).toContain('importScripts("/resource-packages.generated.js")');
     expect(resourcePackages).toContain('"id": "magic-tower"');
+    expect(resourcePackages).toContain('"id": "youtd2"');
     expect(resourcePackages).toContain('"id": "chess-engine"');
     expect(resourcePackages).toContain('"id": "books"');
     expect(resourcePackages).toContain('"id": "photos"');

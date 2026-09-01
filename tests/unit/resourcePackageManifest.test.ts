@@ -20,6 +20,7 @@ describe("resource package manifest", () => {
   it("preserves the service worker resource match order", () => {
     expect(serviceWorkerResourcePackages().map((item) => item.id)).toEqual([
       "magic-tower",
+      "youtd2",
       "chess-engine",
       "books",
       "photos",

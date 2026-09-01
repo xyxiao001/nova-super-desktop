@@ -9,6 +9,15 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
+    "id": "youtd2",
+    "pathPrefixes": [
+      "/games/youtd2/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
     "id": "chess-engine",
     "pathPrefixes": [
       "/stockfish/"

@@ -13,7 +13,9 @@ import {
 import { localStorageCategory } from "../../src/platform/storage/providers/localSettings";
 import {
   readMagicTowerRecords,
+  readYouTd2Records,
   replaceMagicTowerRecords,
+  replaceYouTd2Records,
   type GameStorageProviderData,
 } from "../../src/apps/games/storageProvider";
 import type { CalendarEvent } from "../../src/apps/calendar/calendarEventCore";
@@ -36,6 +38,7 @@ const deleteDatabase = (name: string) => new Promise<void>((resolve, reject) => 
 });
 
 const deleteMagicTowerDatabase = () => deleteDatabase("nova-magic-tower");
+const deleteYouTd2Database = () => deleteDatabase("/userfs");
 const deleteCalendarDatabase = () => deleteDatabase("nova-calendar");
 
 const createLocalForageMagicTowerDatabase = () => new Promise<void>((resolve, reject) => {
@@ -56,11 +59,13 @@ beforeEach(async () => {
   vi.stubGlobal("indexedDB", fakeIndexedDB);
   vi.stubGlobal("IDBKeyRange", IDBKeyRange);
   await deleteMagicTowerDatabase();
+  await deleteYouTd2Database();
   await deleteCalendarDatabase();
 });
 
 afterEach(async () => {
   await deleteMagicTowerDatabase();
+  await deleteYouTd2Database();
   await deleteCalendarDatabase();
   vi.unstubAllGlobals();
 });
@@ -124,6 +129,7 @@ describe("storage providers", () => {
       { key: "autosave", value: { floorId: "MT1" } },
       { key: "save1", value: "compressed-save" },
     ]);
+    expect(data.youTd2).toEqual([]);
   });
 
   it("clears only game data across localStorage and IndexedDB", async () => {
@@ -131,6 +137,12 @@ describe("storage providers", () => {
     localStorage.setItem("HumanBreak_settings", "hard");
     localStorage.setItem("nova-reader-bookmarks", "[]");
     await replaceMagicTowerRecords([{ key: "save1", value: "saved" }]);
+    await replaceYouTd2Records([{
+      key: "/userfs/save.cfg",
+      timestamp: 1,
+      mode: 33206,
+      contents: [1, 2, 3],
+    }]);
 
     await (await getStorageProviderById("games")).clear();
 
@@ -138,6 +150,7 @@ describe("storage providers", () => {
     expect(localStorage.getItem("HumanBreak_settings")).toBeNull();
     expect(localStorage.getItem("nova-reader-bookmarks")).toBe("[]");
     expect(await readMagicTowerRecords()).toEqual([]);
+    expect(await readYouTd2Records()).toEqual([]);
   });
 
   it("replaces game data from a validated provider backup", async () => {
@@ -149,6 +162,12 @@ describe("storage providers", () => {
         "HumanBreak_settings": "normal",
       },
       magicTower: [{ key: "save2", value: "new-save" }],
+      youTd2: [{
+        key: "/userfs/save.cfg",
+        timestamp: 2,
+        mode: 33206,
+        contents: [4, 5, 6],
+      }],
     };
 
     const gamesProvider = await getStorageProviderById("games");
@@ -158,6 +177,12 @@ describe("storage providers", () => {
     expect(localStorage.getItem("nova-game-records")).toBe("new");
     expect(localStorage.getItem("HumanBreak_settings")).toBe("normal");
     expect(await readMagicTowerRecords()).toEqual([{ key: "save2", value: "new-save" }]);
+    expect(await readYouTd2Records()).toEqual([{
+      key: "/userfs/save.cfg",
+      timestamp: 2,
+      mode: 33206,
+      contents: [4, 5, 6],
+    }]);
   });
 
   it("round-trips Magic Tower and calendar data through a version 3 NOVA backup", async () => {
@@ -182,6 +207,7 @@ describe("storage providers", () => {
     expect(backup.providers.games).toEqual({
       localStorage: { "HumanBreak_settings": "hard" },
       magicTower: [{ key: "save1", value: "complete-save" }],
+      youTd2: [],
     });
     expect(backup.providers.calendar).toEqual([calendarEvent]);
 

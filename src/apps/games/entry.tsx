@@ -11,6 +11,7 @@ export const GAME_CATALOG = [
   {id:"chess",label:"国际象棋",category:"策略",meta:"Stockfish 18"},
   {id:"gomoku",label:"五子棋",category:"棋类",meta:"Alpha-Beta AI"},
   {id:"tower",label:"魔塔",category:"角色扮演",meta:"77 层 · 完整剧情"},
+  {id:"youtd2",label:"YouTD 2",category:"塔防",meta:"200+ 防御塔 · 300+ 物品"},
 ] as const;
 
 export type GameAppId = GameId;
@@ -19,7 +20,8 @@ function GameArtwork({id}:{id:GameAppId}){
   if(id==="mines")return <span className="game-artwork mines-artwork" aria-hidden="true"><i/><i/><i/></span>;
   if(id==="chess")return <span className="game-artwork chess-artwork" aria-hidden="true">♞</span>;
   if(id==="gomoku")return <span className="game-artwork gomoku-artwork" aria-hidden="true"><i/><i/><i/></span>;
-  return <span className="game-artwork tower-artwork" aria-hidden="true"><i/><i/><i/><b/></span>;
+  if(id==="tower")return <span className="game-artwork tower-artwork" aria-hidden="true"><i/><i/><i/><b/></span>;
+  return <span className="game-artwork youtd2-artwork" aria-hidden="true"><i/><i/><i/><b/></span>;
 }
 
 export default function GameHall(){

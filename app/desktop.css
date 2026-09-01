@@ -219,6 +219,7 @@
 .chess-glyph { background: #39745b; color: #fff; }
 .gomoku-glyph { background:#c99a50; color:#171513; }
 .tower-glyph { border:1px solid #7a6843; background:#24231b; color:#d8b965; font-family:Georgia,"Songti SC",serif; }
+.youtd2-glyph { border:1px solid #708d77; background:#1a2b22; color:#e1bc61; font:700 8px/1 "Trebuchet MS",sans-serif; }
 .calculator-glyph { background: #303941; }
 .reader-glyph { background: linear-gradient(145deg,#ff7a36,#d9481e); }
 .calendar-glyph { border-top:5px solid #d94a3f; background:#f5f7f6; color:#263237; font:800 8px/1 "Avenir Next","PingFang SC",sans-serif; }
