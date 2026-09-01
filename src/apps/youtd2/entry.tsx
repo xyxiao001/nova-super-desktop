@@ -89,7 +89,7 @@ export default function YouTd2Game() {
           src={YOUTD2_FRAME_SRC}
           title="YouTD 2 游戏画面"
           sandbox="allow-scripts allow-same-origin allow-downloads allow-pointer-lock"
-          allow="autoplay; fullscreen; gamepad"
+          allow="autoplay; fullscreen; gamepad; cross-origin-isolated"
           allowFullScreen
           referrerPolicy="no-referrer"
           onLoad={() => {

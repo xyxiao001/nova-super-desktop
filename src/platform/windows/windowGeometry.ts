@@ -46,6 +46,27 @@ export function fitWindowGeometry(
   };
 }
 
+export function centeredWindowGeometry(
+  geometry: WindowGeometry,
+  viewportWidth: number,
+  viewportHeight: number,
+  minimumWidth = 320,
+  minimumHeight = 260,
+): WindowGeometry {
+  const fitted = fitWindowGeometry(
+    geometry,
+    viewportWidth,
+    viewportHeight,
+    minimumWidth,
+    minimumHeight,
+  );
+  return {
+    ...fitted,
+    x: Math.max(0, Math.round((viewportWidth - fitted.width) / 2)),
+    y: Math.max(0, Math.round((viewportHeight - 49 - fitted.height) / 2)),
+  };
+}
+
 export function snappedWindowGeometry(
   mode: WindowSnapMode,
   viewportWidth: number,

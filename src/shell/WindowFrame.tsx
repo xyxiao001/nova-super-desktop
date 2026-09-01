@@ -15,6 +15,7 @@ import { isCompactDesktopViewport } from "../../app/desktopIconInteraction";
 import type { WindowAppId } from "../platform/apps/appRegistry";
 import {
   canMeasureWindowGeometry,
+  centeredWindowGeometry,
   edgeSnapMode,
   fitWindowGeometry,
   snappedWindowGeometry,
@@ -23,6 +24,7 @@ import {
 } from "../platform/windows/windowGeometry";
 
 const WINDOW_GEOMETRY_PREFIX = "nova-window-geometry:";
+const WINDOW_MENU_HOLD_MS = 450;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -103,8 +105,14 @@ export default function WindowFrame({
   const [geometry, setGeometry] = useState<WindowGeometry | null>(() =>
     readWindowGeometry(app),
   );
-  const [snapPickerOpen, setSnapPickerOpen] = useState(false);
+  const [windowMenuOpen, setWindowMenuOpen] = useState(false);
+  const [systemFullscreen, setSystemFullscreen] = useState(() =>
+    typeof document !== "undefined" && document.fullscreenElement !== null,
+  );
   const windowRef = useRef<HTMLElement>(null);
+  const snapControlRef = useRef<HTMLDivElement>(null);
+  const menuHoldTimer = useRef<number | null>(null);
+  const suppressMaximizeClick = useRef(false);
   const drag = useRef<{
     startX: number;
     startY: number;
@@ -182,6 +190,34 @@ export default function WindowFrame({
     window.addEventListener("resize", resizeWindow);
     return () => window.removeEventListener("resize", resizeWindow);
   }, [app, snapMode]);
+
+  useEffect(() => {
+    const syncFullscreen = () => setSystemFullscreen(document.fullscreenElement !== null);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  useEffect(() => {
+    if (!windowMenuOpen) return;
+    const closeMenu = (event: PointerEvent) => {
+      if (!snapControlRef.current?.contains(event.target as Node)) {
+        setWindowMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setWindowMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [windowMenuOpen]);
+
+  useEffect(() => () => {
+    if (menuHoldTimer.current !== null) window.clearTimeout(menuHoldTimer.current);
+  }, []);
 
   const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (
@@ -286,9 +322,58 @@ export default function WindowFrame({
     resize.current = null;
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const chooseSnap = (mode: WindowSnapMode) => {
-    onSnap(mode);
-    setSnapPickerOpen(false);
+
+  const clearMenuHold = () => {
+    if (menuHoldTimer.current === null) return;
+    window.clearTimeout(menuHoldTimer.current);
+    menuHoldTimer.current = null;
+  };
+  const startMenuHold = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0 || isCompactDesktopViewport()) return;
+    clearMenuHold();
+    suppressMaximizeClick.current = false;
+    menuHoldTimer.current = window.setTimeout(() => {
+      menuHoldTimer.current = null;
+      suppressMaximizeClick.current = true;
+      setWindowMenuOpen(true);
+    }, WINDOW_MENU_HOLD_MS);
+  };
+  const clickMaximize = () => {
+    clearMenuHold();
+    if (suppressMaximizeClick.current) {
+      suppressMaximizeClick.current = false;
+      return;
+    }
+    setWindowMenuOpen(false);
+    onMaximize();
+  };
+  const centerWindow = () => {
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (maximized) onMaximize();
+    onUnsnap();
+    setGeometry((current) => centeredWindowGeometry(
+      current ?? { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+      window.innerWidth,
+      window.innerHeight,
+      windowConfig.minWidth,
+      windowConfig.minHeight,
+    ));
+    setWindowMenuOpen(false);
+  };
+  const maximizeWindow = () => {
+    if (!maximized) onMaximize();
+    setWindowMenuOpen(false);
+  };
+  const toggleSystemFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch (error) {
+      console.error("Unable to change system fullscreen state", error);
+    } finally {
+      setWindowMenuOpen(false);
+    }
   };
   const initial = windowConfig.initial;
   const tablet = windowConfig.tablet;
@@ -349,61 +434,47 @@ export default function WindowFrame({
             —
           </button>
           <div
+            ref={snapControlRef}
             className="snap-control"
-            onPointerEnter={() => setSnapPickerOpen(true)}
-            onPointerLeave={() => setSnapPickerOpen(false)}
-            onFocusCapture={() => setSnapPickerOpen(true)}
-            onBlurCapture={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-                setSnapPickerOpen(false);
-              }
-            }}
           >
             <button
               className="window-maximize"
               aria-label={maximized ? `还原${title}` : `最大化${title}`}
-              onClick={onMaximize}
+              aria-haspopup="menu"
+              aria-expanded={windowMenuOpen}
+              onPointerDown={startMenuHold}
+              onPointerUp={clearMenuHold}
+              onPointerCancel={clearMenuHold}
+              onPointerLeave={clearMenuHold}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setWindowMenuOpen(true);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "ArrowDown") return;
+                event.preventDefault();
+                setWindowMenuOpen(true);
+              }}
+              onClick={clickMaximize}
             >
               □
             </button>
-            {snapPickerOpen && (
-              <aside className="snap-picker" aria-label="窗口贴靠布局">
-                <strong>贴靠布局</strong>
-                <div>
-                  <button aria-label="贴靠到左半屏" onClick={() => chooseSnap("left")}>
-                    <i />
-                    <i />
-                  </button>
-                  <button aria-label="贴靠到右半屏" onClick={() => chooseSnap("right")}>
-                    <i />
-                    <i />
-                  </button>
-                  <button aria-label="贴靠到左上角" onClick={() => chooseSnap("top-left")}>
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </button>
-                  <button aria-label="贴靠到右上角" onClick={() => chooseSnap("top-right")}>
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </button>
-                  <button aria-label="贴靠到左下角" onClick={() => chooseSnap("bottom-left")}>
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </button>
-                  <button aria-label="贴靠到右下角" onClick={() => chooseSnap("bottom-right")}>
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </button>
-                </div>
-              </aside>
+            {windowMenuOpen && (
+              <div className="window-layout-menu" role="menu" aria-label="调整窗口">
+                <strong>调整窗口</strong>
+                <button role="menuitem" onClick={centerWindow}>
+                  <span className="window-layout-icon center" aria-hidden="true"><i /></span>
+                  窗口居中
+                </button>
+                <button role="menuitem" aria-current={maximized ? "true" : undefined} onClick={maximizeWindow}>
+                  <span className="window-layout-icon maximize" aria-hidden="true"><i /></span>
+                  窗口全屏
+                </button>
+                <button role="menuitem" onClick={() => void toggleSystemFullscreen()}>
+                  <span className="window-layout-icon fullscreen" aria-hidden="true"><i /></span>
+                  {systemFullscreen ? "退出系统全屏" : "系统全屏"}
+                </button>
+              </div>
             )}
           </div>
           <button className="window-close" aria-label={`关闭${title}`} onClick={onClose}>

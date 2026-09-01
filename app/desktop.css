@@ -235,24 +235,24 @@
 .windows-desktop .snap-control > button:hover { background: #0001; }
 .windows-desktop .windows-controls > .window-close:hover { background: #e81123; color: #fff; }
 .snap-control { position:relative; height:100%; }
-.snap-picker { position:absolute; z-index:12; top:38px; right:-47px; width:218px; padding:11px; border:1px solid #ffffffb8; border-radius:7px; background:#f3f6f8f2; color:#28343b; box-shadow:0 16px 42px #0006; backdrop-filter:blur(20px); }
-.snap-picker > strong { display:block; padding:0 2px 9px; font-size:10px; font-weight:650; }
-.snap-picker > div { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
-.windows-desktop .snap-picker button { width:60px; height:43px; padding:4px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; border:1px solid #aebbc3; border-radius:4px; background:#fff; }
-.windows-desktop .snap-picker button:hover { border-color:#1687d7; background:#e8f4fc; }
-.snap-picker button i { display:block; border-radius:1px; background:#a9b7c0; }
-.snap-picker button:nth-child(1) i:first-child,
-.snap-picker button:nth-child(2) i:last-child { grid-row:1 / 3; background:#1687d7; }
-.snap-picker button:nth-child(1) i:last-child,
-.snap-picker button:nth-child(2) i:first-child { grid-row:1 / 3; }
-.snap-picker button:nth-child(3) i:first-child,
-.snap-picker button:nth-child(4) i:nth-child(2),
-.snap-picker button:nth-child(5) i:nth-child(3),
-.snap-picker button:nth-child(6) i:nth-child(4) { background:#1687d7; }
+.window-layout-menu { position:absolute; z-index:12; top:42px; right:3px; width:206px; padding:8px; display:flex; flex-direction:column; border:1px solid #ffffffc9; border-radius:8px; background:#f3f6f8f2; color:#28343b; box-shadow:0 16px 42px #0006; transform-origin:calc(100% - 20px) top; animation:window-layout-open .12s ease-out; backdrop-filter:blur(20px) saturate(130%); }
+.window-layout-menu::before { content:""; position:absolute; top:-6px; right:17px; width:10px; height:10px; border-left:1px solid #ffffffc9; border-top:1px solid #ffffffc9; background:#f3f6f8; transform:rotate(45deg); }
+.window-layout-menu > strong { height:31px; padding:0 8px; display:flex; align-items:center; border-bottom:1px solid #cad4da; font-size:10px; font-weight:650; }
+.windows-desktop .window-layout-menu button { width:100%; height:42px; padding:0 9px; display:grid; grid-template-columns:30px minmax(0,1fr); align-items:center; gap:8px; border:0; border-radius:4px; background:transparent; color:inherit; font-size:10px; text-align:left; }
+.windows-desktop .window-layout-menu button:hover,.windows-desktop .window-layout-menu button:focus-visible { background:#dceaf3; outline:0; }
+.windows-desktop .window-layout-menu button[aria-current="true"] { color:#086ea9; background:#e5f1f8; }
+.window-layout-icon { position:relative; width:28px; height:22px; display:block; color:#344047; }
+.window-layout-icon::before,.window-layout-icon i { content:""; position:absolute; display:block; box-sizing:border-box; }
+.window-layout-icon::before { inset:2px 1px; border:2px solid currentColor; border-radius:3px; }
+.window-layout-icon.center i { inset:6px 7px; border:2px solid currentColor; border-radius:1px; background:#f3f6f8; }
+.window-layout-icon.maximize i { left:4px; right:4px; top:5px; height:3px; border-radius:1px; background:currentColor; }
+.window-layout-icon.fullscreen::before { inset:1px; border:0; border-radius:0; background:linear-gradient(currentColor,currentColor) left top/8px 2px no-repeat,linear-gradient(currentColor,currentColor) left top/2px 8px no-repeat,linear-gradient(currentColor,currentColor) right top/8px 2px no-repeat,linear-gradient(currentColor,currentColor) right top/2px 8px no-repeat,linear-gradient(currentColor,currentColor) left bottom/8px 2px no-repeat,linear-gradient(currentColor,currentColor) left bottom/2px 8px no-repeat,linear-gradient(currentColor,currentColor) right bottom/8px 2px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 8px no-repeat; }
+.window-layout-icon.fullscreen i { inset:6px 8px; border:1px solid currentColor; opacity:.55; }
+@keyframes window-layout-open { from { opacity:0; transform:translateY(-4px) scale(.98); } }
 .windows-desktop .window-content { height: calc(100% - 38px); min-height: 0; background: #1c1c1c; }
 .app-loading,.app-load-error { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px; background:#eef1f2; color:#35434a; }.app-loading i { width:26px; height:26px; border:2px solid #b8c2c6; border-top-color:#1674bd; border-radius:50%; animation:app-loading-spin .72s linear infinite; }.app-loading strong,.app-load-error strong { font-size:11px; font-weight:600; }.app-load-error > span { width:34px; height:34px; display:grid; place-items:center; border:1px solid #c46b60; border-radius:50%; color:#a63e35; font:700 18px/1 ui-monospace,monospace; }.app-load-error button { height:31px; padding:0 12px; border:1px solid #9ca9ae; border-radius:4px; background:#fff; color:#26363d; font-size:9px; }.theme-dark .app-loading,.theme-dark .app-load-error { background:#202528; color:#e7eaea; }.theme-dark .app-load-error button { border-color:#566166; background:#30373a; color:#f0f2f2; }
 @keyframes app-loading-spin { to { transform:rotate(360deg); } }
-@media (prefers-reduced-motion:reduce) { .app-loading i { animation:none; border-color:#1674bd; } }
+@media (prefers-reduced-motion:reduce) { .app-loading i,.window-layout-menu { animation:none; }.app-loading i { border-color:#1674bd; } }
 
 
 .start-menu-scrim { position:absolute; z-index:99; inset:0; padding:0; border:0; background:transparent; }
@@ -432,11 +432,14 @@
 .windows-desktop.theme-dark .window-chrome { border-bottom-color:#39434a; background:#20272c; color:#e8edf0; }
 .windows-desktop.theme-dark .window-identity strong { color:#edf2f4; }
 .windows-desktop.theme-dark .windows-controls button { color:#e8edf0; }
-.windows-desktop.theme-dark .snap-picker,
+.windows-desktop.theme-dark .window-layout-menu,
 .windows-desktop.theme-dark .system-panel { border-color:#ffffff24; background:#222a30f2; color:#e7ecef; }
-.windows-desktop.theme-dark .snap-picker button { border-color:#52616a; background:#303940; }
-.windows-desktop.theme-dark .snap-picker button:hover { border-color:#54a9dc; background:#283f4d; }
-.windows-desktop.theme-dark .snap-picker button i { background:#71818b; }
+.windows-desktop.theme-dark .window-layout-menu::before { border-color:#ffffff24; background:#222a30; }
+.windows-desktop.theme-dark .window-layout-menu > strong { border-bottom-color:#3e4a52; }
+.windows-desktop.theme-dark .window-layout-menu button:hover,
+.windows-desktop.theme-dark .window-layout-menu button:focus-visible { background:#30434f; }
+.windows-desktop.theme-dark .window-layout-menu button[aria-current="true"] { color:#70c6f4; background:#263e4c; }
+.windows-desktop.theme-dark .window-layout-icon.center i { background:#222a30; }
 .windows-desktop.theme-dark .calendar-panel { border-color:#465159; }
 .windows-desktop.theme-dark .calendar-panel button:hover,
 .windows-desktop.theme-dark .notification-panel > header button:hover { background:#ffffff12; }
@@ -561,7 +564,7 @@
   .taskbar-preview { display:none; }
   .system-panel { right:5px; bottom:calc(8px + env(safe-area-inset-bottom)); width:calc(100vw - 10px); grid-template-columns:1fr; }
   .calendar-panel { display:none; }
-  .snap-picker { display:none; }
+  .window-layout-menu { display:none; }
   .windows-taskbar,.taskbar-reveal-zone { display:none!important; }
   .start-menu-scrim { background:#07131d70; backdrop-filter:blur(4px); }
   .start-menu { top:env(safe-area-inset-top); bottom:auto; left:8px; transform:none; width:calc(100% - 16px); height:min(72dvh,560px); padding:10px 10px calc(12px + env(safe-area-inset-bottom)); grid-template-rows:46px minmax(0,1fr); border-radius:0 0 8px 8px; animation:mobileSearchDrop .2s cubic-bezier(.2,.78,.25,1); }

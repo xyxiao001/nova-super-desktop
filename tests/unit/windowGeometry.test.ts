@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canMeasureWindowGeometry,
+  centeredWindowGeometry,
   edgeSnapMode,
   fitWindowGeometry,
   snappedWindowGeometry,
@@ -34,6 +35,24 @@ describe("fitWindowGeometry", () => {
       1000,
       700,
     )).toEqual({ x: 0, y: 0, width: 320, height: 500 });
+  });
+});
+
+describe("centeredWindowGeometry", () => {
+  it("keeps the current size and centers the window above the taskbar", () => {
+    expect(centeredWindowGeometry(
+      { x: 40, y: 80, width: 800, height: 600 },
+      1200,
+      800,
+    )).toEqual({ x: 200, y: 76, width: 800, height: 600 });
+  });
+
+  it("fits an oversized window before centering it", () => {
+    expect(centeredWindowGeometry(
+      { x: 0, y: 0, width: 1400, height: 900 },
+      1000,
+      700,
+    )).toEqual({ x: 4, y: 4, width: 992, height: 643 });
   });
 });
 

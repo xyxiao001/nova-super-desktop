@@ -13,7 +13,7 @@ const resourcePackages = readFileSync(
 
 describe("service worker resource policy", () => {
   it("keeps the install shell minimal and avoids recursive chunk discovery", () => {
-    expect(source).toContain('const VERSION = "nova-pwa-v16"');
+    expect(source).toContain('const VERSION = "nova-pwa-v17"');
     expect(source).not.toContain("BUILD_ASSET_PATTERN");
     expect(source).not.toContain("while (pending.length)");
   });
@@ -79,6 +79,12 @@ describe("service worker resource policy", () => {
     expect(lifetimePromise).toBeDefined();
     await expect(responsePromise).resolves.toBe(shellResponse);
     await expect(lifetimePromise).resolves.toBeUndefined();
+  });
+
+  it("keeps the generated offline document cross-origin isolated", () => {
+    expect(source).toContain('"Cross-Origin-Opener-Policy": "same-origin"');
+    expect(source).toContain('"Cross-Origin-Embedder-Policy": "require-corp"');
+    expect(source).toContain("...ISOLATION_HEADERS");
   });
 
   it("keeps large features in independent on-demand caches", () => {

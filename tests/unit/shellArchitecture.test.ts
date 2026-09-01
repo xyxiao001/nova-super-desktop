@@ -30,6 +30,12 @@ describe("desktop shell boundaries", () => {
     ]);
 
     expect(windowFrame).toContain("nova-window-geometry:");
+    expect(windowFrame).toContain("WINDOW_MENU_HOLD_MS = 450");
+    expect(windowFrame).toContain("document.documentElement.requestFullscreen()");
+    expect(windowFrame).toContain("窗口居中");
+    expect(windowFrame).toContain("窗口全屏");
+    expect(windowFrame).toContain("系统全屏");
+    expect(windowFrame).not.toContain("onPointerEnter");
     expect(windowFrame).not.toContain("desktopStorage");
     expect(windowFrame).not.toContain("Lazy");
     expect(icons).not.toContain("localStorage");

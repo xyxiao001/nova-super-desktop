@@ -1,6 +1,6 @@
 importScripts("/resource-packages.generated.js");
 
-const VERSION = "nova-pwa-v16";
+const VERSION = "nova-pwa-v17";
 const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RESOURCE_CACHE_PREFIX = `${VERSION}:resource:`;
@@ -13,6 +13,10 @@ const CORE_ASSETS = [
 ];
 
 const RESOURCE_PACKAGES = self.NOVA_RESOURCE_PACKAGES;
+const ISOLATION_HEADERS = {
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Embedder-Policy": "require-corp",
+};
 
 const resourceCacheName = (id) => `${RESOURCE_CACHE_PREFIX}${id}`;
 
@@ -171,7 +175,10 @@ const appShellNavigation = (event) => {
       return await network;
     } catch {
       return new Response("<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>NOVA 离线</title><body><main><h1>NOVA 暂时离线</h1><p>重新联网后刷新即可继续。</p></main></body></html>", {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          ...ISOLATION_HEADERS,
+        },
       });
     }
   });
