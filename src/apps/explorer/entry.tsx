@@ -18,9 +18,12 @@ import {
   useWindowTitle,
 } from "../../platform/windows/WindowRuntime";
 import {
+  desktopFileDragMode,
   descendantIds,
-  NOVA_FILE_DRAG_TYPE,
+  hasDesktopFileDrag,
+  readDesktopFileDragIds,
   visibleDesktopItems,
+  writeDesktopFileDragIds,
   type DesktopItem,
 } from "../../../app/desktopFiles";
 import { fileOpenOptions } from "../../../app/fileAssociations";
@@ -63,17 +66,6 @@ const formatBytes = (bytes: number) => {
 const itemSize = (item: DesktopItem) => (
   item.type === "folder" ? "—" : formatBytes(itemBytes(item))
 );
-
-const readDraggedIds = (event: DragEvent) => {
-  try {
-    const value = JSON.parse(event.dataTransfer.getData(NOVA_FILE_DRAG_TYPE));
-    return Array.isArray(value)
-      ? value.filter((id): id is string => typeof id === "string")
-      : [];
-  } catch {
-    return [];
-  }
-};
 
 function ItemIcon({ item }: { item: DesktopItem }) {
   if (item.type === "folder") return <span className="explorer-item-icon folder"><i /></span>;
@@ -370,17 +362,15 @@ export default function FileExplorer() {
   const writeDrag = (event: DragEvent, item: DesktopItem) => {
     const ids = selectedIds.includes(item.id) ? selectedIds : [item.id];
     if (!selectedIds.includes(item.id)) setSelectedIds(ids);
-    event.dataTransfer.effectAllowed = "copyMove";
-    event.dataTransfer.setData(NOVA_FILE_DRAG_TYPE, JSON.stringify(ids));
-    event.dataTransfer.setData("text/plain", ids.join(","));
+    writeDesktopFileDragIds(event.dataTransfer, ids);
   };
 
   const dropFiles = (event: DragEvent, parentId: string | null) => {
-    const ids = readDraggedIds(event);
+    const ids = readDesktopFileDragIds(event.dataTransfer);
     if (!ids.length) return;
     event.preventDefault();
     event.stopPropagation();
-    onFileOperation(event.ctrlKey || event.metaKey ? "copy" : "move", ids, parentId);
+    onFileOperation(desktopFileDragMode(event), ids, parentId);
     setDropTargetId(null);
     setSelectedIds([]);
   };
@@ -551,7 +541,7 @@ export default function FileExplorer() {
           className={location === "folder" && folderId === null ? "active" : ""}
           onClick={() => requestNavigation(null)}
           onDragOver={(event) => {
-            if (event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) event.preventDefault();
+            if (hasDesktopFileDrag(event.dataTransfer)) event.preventDefault();
           }}
           onDrop={(event) => dropFiles(event, null)}
         ><i className="desktop-mark">▦</i><span>桌面</span></button>
@@ -570,9 +560,9 @@ export default function FileExplorer() {
         onPointerUp={endLasso}
         onPointerCancel={endLasso}
         onDragOver={(event) => {
-          if (canCreate && event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) {
+          if (canCreate && hasDesktopFileDrag(event.dataTransfer)) {
             event.preventDefault();
-            event.dataTransfer.dropEffect = event.ctrlKey || event.metaKey ? "copy" : "move";
+            event.dataTransfer.dropEffect = desktopFileDragMode(event);
           }
         }}
         onDrop={(event) => {
@@ -616,10 +606,10 @@ export default function FileExplorer() {
             }}
             onDragEnd={() => setDropTargetId(null)}
             onDragOver={(event) => {
-              if (item.type !== "folder" || !event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) return;
+              if (item.type !== "folder" || !hasDesktopFileDrag(event.dataTransfer)) return;
               event.preventDefault();
               event.stopPropagation();
-              event.dataTransfer.dropEffect = event.ctrlKey || event.metaKey ? "copy" : "move";
+              event.dataTransfer.dropEffect = desktopFileDragMode(event);
               setDropTargetId(item.id);
             }}
             onDragLeave={() => setDropTargetId((current) => current === item.id ? null : current)}

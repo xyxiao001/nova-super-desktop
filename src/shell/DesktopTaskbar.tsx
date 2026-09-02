@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { AppDefinition, WindowAppId } from "../platform/apps/appRegistry";
 import type {
   WindowInstance,
@@ -40,6 +41,64 @@ type DesktopTaskbarProps = {
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
+const TASKBAR_PREVIEW_ITEM_WIDTH = 210;
+const TASKBAR_PREVIEW_BORDER_WIDTH = 2;
+const TASKBAR_PREVIEW_EDGE_GAP = 8;
+const TASKBAR_PREVIEW_MAX_VISIBLE_ITEMS = 4;
+
+type TaskbarPreviewLayoutInput = {
+  anchorCenter: number;
+  instanceCount: number;
+  viewportWidth: number;
+};
+
+export type TaskbarPreviewLayout = {
+  left: number;
+  width: number;
+  scrollable: boolean;
+};
+
+export function taskbarPreviewLayout({
+  anchorCenter,
+  instanceCount,
+  viewportWidth,
+}: TaskbarPreviewLayoutInput): TaskbarPreviewLayout {
+  const count = Math.max(1, instanceCount);
+  const availableWidth = Math.max(0, viewportWidth - TASKBAR_PREVIEW_EDGE_GAP * 2);
+  const visibleCount = Math.min(
+    count,
+    TASKBAR_PREVIEW_MAX_VISIBLE_ITEMS,
+    Math.max(
+      1,
+      Math.floor(
+        (availableWidth - TASKBAR_PREVIEW_BORDER_WIDTH) /
+          TASKBAR_PREVIEW_ITEM_WIDTH,
+      ),
+    ),
+  );
+  const naturalWidth =
+    count * TASKBAR_PREVIEW_ITEM_WIDTH + TASKBAR_PREVIEW_BORDER_WIDTH;
+  const width = Math.min(
+    availableWidth,
+    visibleCount * TASKBAR_PREVIEW_ITEM_WIDTH +
+      TASKBAR_PREVIEW_BORDER_WIDTH,
+  );
+  const left = clamp(
+    anchorCenter - width / 2,
+    TASKBAR_PREVIEW_EDGE_GAP,
+    Math.max(
+      TASKBAR_PREVIEW_EDGE_GAP,
+      viewportWidth - width - TASKBAR_PREVIEW_EDGE_GAP,
+    ),
+  );
+
+  return {
+    left,
+    width,
+    scrollable: naturalWidth > width,
+  };
+}
+
 const appInstances = (
   instances: WindowInstanceMap,
   app: WindowAppId,
@@ -73,6 +132,47 @@ export default function DesktopTaskbar({
   onOpenCalendar,
   canHide,
 }: DesktopTaskbarProps) {
+  const taskbarEntryRefs = useRef(new Map<WindowAppId, HTMLDivElement>());
+  const [previewPlacement, setPreviewPlacement] = useState<{
+    app: WindowAppId;
+    left: number;
+    width: number;
+    scrollable: boolean;
+  } | null>(null);
+
+  const positionPreview = useCallback((
+    app: WindowAppId,
+    instanceCount: number,
+  ) => {
+    const entry = taskbarEntryRefs.current.get(app);
+    if (!entry) return;
+    const entryRect = entry.getBoundingClientRect();
+    const layout = taskbarPreviewLayout({
+      anchorCenter: entryRect.left + entryRect.width / 2,
+      instanceCount,
+      viewportWidth: window.innerWidth,
+    });
+    setPreviewPlacement({
+      app,
+      left: layout.left - entryRect.left,
+      width: layout.width,
+      scrollable: layout.scrollable,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!previewApp) return;
+    const update = () => {
+      positionPreview(
+        previewApp,
+        appInstances(instances, previewApp).length,
+      );
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [instances, positionPreview, previewApp]);
+
   return (
     <>
       <button
@@ -108,12 +208,25 @@ export default function DesktopTaskbar({
             const label = labelFor(app);
             const running = appInstances(instances, app.id);
             const state = running[0];
+            const placement = previewPlacement?.app === app.id
+              ? previewPlacement
+              : null;
             return (
               <div
                 className="taskbar-entry"
                 key={app.id}
-                onPointerEnter={() => onPreviewChange(app.id)}
-                onFocusCapture={() => onPreviewChange(app.id)}
+                ref={(element) => {
+                  if (element) taskbarEntryRefs.current.set(app.id, element);
+                  else taskbarEntryRefs.current.delete(app.id);
+                }}
+                onPointerEnter={() => {
+                  if (running.length) positionPreview(app.id, running.length);
+                  onPreviewChange(app.id);
+                }}
+                onFocusCapture={() => {
+                  if (running.length) positionPreview(app.id, running.length);
+                  onPreviewChange(app.id);
+                }}
               >
                 <button
                   className={`task-app ${app.id === "photo" ? "photo-lab-app" : `${app.kind}-app`} ${state ? "active" : ""} ${state && focused === state.id && !state.minimized ? "selected" : ""}`}
@@ -137,7 +250,14 @@ export default function DesktopTaskbar({
                   <span>{app.taskbarIcon ?? app.icon}</span>
                 </button>
                 {state && previewApp === app.id && (
-                  <aside className="taskbar-preview">
+                  <aside
+                    className={`taskbar-preview ${placement?.scrollable ? "scrollable" : ""}`}
+                    style={placement ? {
+                      left: placement.left,
+                      width: placement.width,
+                      transform: "none",
+                    } : undefined}
+                  >
                     {running.map((instance) => {
                       const instanceLabel = instance.taskbarTitle ?? instance.title ?? label;
                       return (

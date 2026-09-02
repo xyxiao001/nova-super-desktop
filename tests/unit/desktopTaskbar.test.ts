@@ -2,10 +2,67 @@ import { jsx } from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { APP_REGISTRY } from "../../src/platform/apps/appRegistry";
-import DesktopTaskbar from "../../src/shell/DesktopTaskbar";
+import DesktopTaskbar, {
+  taskbarPreviewLayout,
+} from "../../src/shell/DesktopTaskbar";
 import type { WindowInstanceMap } from "../../src/platform/windows/windowInstanceState";
 
 describe("desktop taskbar", () => {
+  it("sizes previews in complete item increments and caps visible items at four", () => {
+    expect(taskbarPreviewLayout({
+      anchorCenter: 720,
+      instanceCount: 1,
+      viewportWidth: 1440,
+    })).toEqual({
+      left: 614,
+      width: 212,
+      scrollable: false,
+    });
+    expect(taskbarPreviewLayout({
+      anchorCenter: 720,
+      instanceCount: 4,
+      viewportWidth: 1440,
+    })).toEqual({
+      left: 299,
+      width: 842,
+      scrollable: false,
+    });
+    expect(taskbarPreviewLayout({
+      anchorCenter: 720,
+      instanceCount: 5,
+      viewportWidth: 1440,
+    })).toEqual({
+      left: 299,
+      width: 842,
+      scrollable: true,
+    });
+  });
+
+  it("keeps previews within both viewport edges", () => {
+    expect(taskbarPreviewLayout({
+      anchorCenter: 21,
+      instanceCount: 4,
+      viewportWidth: 1440,
+    }).left).toBe(8);
+    expect(taskbarPreviewLayout({
+      anchorCenter: 1419,
+      instanceCount: 4,
+      viewportWidth: 1440,
+    }).left).toBe(590);
+  });
+
+  it("reduces visible capacity without clipping an item on narrower desktops", () => {
+    expect(taskbarPreviewLayout({
+      anchorCenter: 400,
+      instanceCount: 4,
+      viewportWidth: 800,
+    })).toEqual({
+      left: 84,
+      width: 632,
+      scrollable: true,
+    });
+  });
+
   it("groups multiple application windows under one taskbar entry", () => {
     const instances: WindowInstanceMap = {
       "explorer:first": {

@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyDesktopFileOperation,
+  desktopFileDragMode,
   desktopFileOperationConflicts,
   descendantIds,
   duplicateDesktopItem,
+  hasDesktopFileDrag,
   permanentlyDeleteDesktopItems,
+  readDesktopFileDragIds,
   recycleBinItems,
   replaceDesktopImage,
   restoreDesktopItem,
@@ -13,6 +16,7 @@ import {
   trashDesktopItems,
   topLevelDesktopItemIds,
   visibleDesktopItems,
+  writeDesktopFileDragIds,
   moveDesktopItem,
   type DesktopItem,
 } from "../../app/desktopFiles";
@@ -25,6 +29,46 @@ const items: DesktopItem[] = [
 ];
 
 describe("desktopFiles", () => {
+  it("round-trips the shared desktop drag payload", () => {
+    const values = new Map<string, string>();
+    const dataTransfer = {
+      effectAllowed: "none" as DataTransfer["effectAllowed"],
+      types: [] as string[],
+      getData: (type: string) => values.get(type) ?? "",
+      setData(type: string, value: string) {
+        values.set(type, value);
+        if (!this.types.includes(type)) this.types.push(type);
+      },
+    };
+
+    writeDesktopFileDragIds(dataTransfer, ["folder-a", "image-a"]);
+
+    expect(dataTransfer.effectAllowed).toBe("copyMove");
+    expect(hasDesktopFileDrag(dataTransfer)).toBe(true);
+    expect(readDesktopFileDragIds(dataTransfer)).toEqual(["folder-a", "image-a"]);
+    expect(values.get("text/plain")).toBe("folder-a,image-a");
+  });
+
+  it("uses a copy operation for every supported drag modifier", () => {
+    expect(desktopFileDragMode({ altKey: false, ctrlKey: false, metaKey: false }))
+      .toBe("move");
+    expect(desktopFileDragMode({ altKey: true, ctrlKey: false, metaKey: false }))
+      .toBe("copy");
+    expect(desktopFileDragMode({ altKey: false, ctrlKey: true, metaKey: false }))
+      .toBe("copy");
+    expect(desktopFileDragMode({ altKey: false, ctrlKey: false, metaKey: true }))
+      .toBe("copy");
+  });
+
+  it("ignores malformed or non-array desktop drag payloads", () => {
+    expect(readDesktopFileDragIds({ getData: () => "{" })).toEqual([]);
+    expect(readDesktopFileDragIds({ getData: () => JSON.stringify({ id: "folder-a" }) }))
+      .toEqual([]);
+    expect(readDesktopFileDragIds({
+      getData: () => JSON.stringify(["folder-a", 1, null, "image-a"]),
+    })).toEqual(["folder-a", "image-a"]);
+  });
+
   it("collects all descendants for recursive operations", () => {
     expect([...descendantIds(items, ["folder-a"])]).toEqual([
       "folder-a",

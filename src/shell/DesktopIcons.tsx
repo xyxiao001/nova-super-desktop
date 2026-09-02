@@ -13,7 +13,7 @@ import {
   isCompactDesktopViewport,
   movedBeyondLongPressTolerance,
 } from "../../app/desktopIconInteraction";
-import { NOVA_FILE_DRAG_TYPE, type DesktopItem } from "../../app/desktopFiles";
+import { hasDesktopFileDrag, type DesktopItem } from "../../app/desktopFiles";
 
 export type IconPosition = { x: number; y: number };
 
@@ -244,7 +244,7 @@ export function DesktopFile({
       onDragEnd={onDragEnd}
       onDragEnter={() => onIconDragEnter?.(item.id)}
       onDragOver={(event) => {
-        if (!onFileDrop || !event.dataTransfer.types.includes(NOVA_FILE_DRAG_TYPE)) return;
+        if (!onFileDrop || !hasDesktopFileDrag(event.dataTransfer)) return;
         event.preventDefault();
         event.stopPropagation();
         event.currentTarget.classList.add("drop-target");

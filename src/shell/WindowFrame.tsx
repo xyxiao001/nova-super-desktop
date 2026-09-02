@@ -144,6 +144,7 @@ export default function WindowFrame({
       `[data-window-preview-target="${CSS.escape(instanceId)}"]`,
     );
     if (!element || !target) return;
+    const preview = target.closest<HTMLElement>(".taskbar-preview");
     const updatePreview = () => {
       const targetRect = target.getBoundingClientRect();
       const sourceWidth = element.offsetWidth;
@@ -160,12 +161,13 @@ export default function WindowFrame({
     updatePreview();
     const observer = new ResizeObserver(updatePreview);
     observer.observe(target);
+    if (preview) observer.observe(preview);
     window.addEventListener("resize", updatePreview);
-    target.closest(".taskbar-preview")?.addEventListener("scroll", updatePreview);
+    preview?.addEventListener("scroll", updatePreview);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", updatePreview);
-      target.closest(".taskbar-preview")?.removeEventListener("scroll", updatePreview);
+      preview?.removeEventListener("scroll", updatePreview);
     };
   }, [instanceId, minimized, taskbarPreviewing]);
 

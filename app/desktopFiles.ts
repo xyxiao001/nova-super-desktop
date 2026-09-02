@@ -28,6 +28,40 @@ export type FileOperationResult = {
 
 export const NOVA_FILE_DRAG_TYPE = "application/x-nova-desktop-items";
 
+export const hasDesktopFileDrag = (
+  dataTransfer: Pick<DataTransfer, "types">,
+) => Array.from(dataTransfer.types).includes(NOVA_FILE_DRAG_TYPE);
+
+export function readDesktopFileDragIds(
+  dataTransfer: Pick<DataTransfer, "getData">,
+) {
+  try {
+    const value = JSON.parse(dataTransfer.getData(NOVA_FILE_DRAG_TYPE));
+    return Array.isArray(value)
+      ? value.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeDesktopFileDragIds(
+  dataTransfer: Pick<DataTransfer, "effectAllowed" | "setData">,
+  ids: string[],
+) {
+  dataTransfer.effectAllowed = "copyMove";
+  dataTransfer.setData(NOVA_FILE_DRAG_TYPE, JSON.stringify(ids));
+  dataTransfer.setData("text/plain", ids.join(","));
+}
+
+export const desktopFileDragMode = ({
+  altKey,
+  ctrlKey,
+  metaKey,
+}: Pick<DragEvent, "altKey" | "ctrlKey" | "metaKey">): FileOperationMode => (
+  altKey || ctrlKey || metaKey ? "copy" : "move"
+);
+
 export const descendantIds = (items: DesktopItem[], roots: string[]) => {
   const ids = new Set(roots);
   let changed = true;
