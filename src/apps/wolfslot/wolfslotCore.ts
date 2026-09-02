@@ -49,14 +49,14 @@ const indicesOf = (symbol: SlotSymbolId) => SLOT_PATH.flatMap((item, index) => i
 const pick = (values: number[], random: () => number) => values[Math.floor(random() * values.length) % values.length];
 
 const NORMAL_OUTCOME_WEIGHTS: Array<[SlotSymbolId, number]> = [
-  ["apple", .58],
-  ["orange", .17],
-  ["plum", .085],
-  ["bell", .055],
-  ["melon", .03],
-  ["star", .015],
-  ["seven", .009],
-  ["bar", .006],
+  ["apple", .09],
+  ["orange", .12],
+  ["plum", .12],
+  ["bell", .11],
+  ["melon", .11],
+  ["star", .15],
+  ["seven", .09],
+  ["bar", .06],
 ];
 
 export function createSlotOutcome(random: () => number = Math.random): SlotOutcome {

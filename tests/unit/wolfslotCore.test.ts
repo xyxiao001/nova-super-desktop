@@ -34,11 +34,17 @@ describe("wolf slot outcomes", () => {
     expect(resolveSlotRound({ bar: 1 }, { apple: 5 })).toEqual({ bets: { bar: 1 }, total: 1, repeated: false });
   });
 
-  it("uses five percent wolf landings and waits to decide the train reward", () => {
-    expect(createSlotOutcome(sequence(.949, 0)).kind).toBe("normal");
-    const outcome = createSlotOutcome(sequence(.97, .1));
+  it("uses fifteen percent wolf landings and waits to decide the train reward", () => {
+    expect(createSlotOutcome(sequence(.849, 0)).kind).toBe("normal");
+    const outcome = createSlotOutcome(sequence(.9, .1));
     expect(outcome).toMatchObject({kind:"wolf",special:true,targets:[]});
     expect(SLOT_PATH[outcome.landing]).toBe("wolf");
+  });
+
+  it("gives the three highest prizes ten times their previous landing chance", () => {
+    expect(SLOT_PATH[createSlotOutcome(sequence(.69, 0)).landing]).toBe("star");
+    expect(SLOT_PATH[createSlotOutcome(sequence(.75, 0)).landing]).toBe("seven");
+    expect(SLOT_PATH[createSlotOutcome(sequence(.82, 0)).landing]).toBe("bar");
   });
 
   it("can swallow the train without a reward", () => {
