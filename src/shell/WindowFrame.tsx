@@ -78,6 +78,7 @@ export type WindowFrameProps = {
   snapMode?: WindowSnapMode;
   focused: boolean;
   zIndex: number;
+  taskbarPreviewing?: boolean;
   onFocus: () => void;
   onClose: () => void;
   onMinimize: () => void;
@@ -97,6 +98,7 @@ export default function WindowFrame({
   snapMode,
   focused,
   zIndex,
+  taskbarPreviewing = false,
   onFocus,
   onClose,
   onMinimize,
@@ -113,6 +115,7 @@ export default function WindowFrame({
   const [systemFullscreen, setSystemFullscreen] = useState(() =>
     typeof document !== "undefined" && document.fullscreenElement !== null,
   );
+  const [taskbarPreviewStyle, setTaskbarPreviewStyle] = useState<CSSProperties>();
   const windowRef = useRef<HTMLElement>(null);
   const snapControlRef = useRef<HTMLDivElement>(null);
   const menuHoldTimer = useRef<number | null>(null);
@@ -130,6 +133,41 @@ export default function WindowFrame({
     width: number;
     height: number;
   } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!minimized || !taskbarPreviewing) {
+      setTaskbarPreviewStyle(undefined);
+      return;
+    }
+    const element = windowRef.current;
+    const target = document.querySelector<HTMLElement>(
+      `[data-window-preview-target="${CSS.escape(instanceId)}"]`,
+    );
+    if (!element || !target) return;
+    const updatePreview = () => {
+      const targetRect = target.getBoundingClientRect();
+      const sourceWidth = element.offsetWidth;
+      const sourceHeight = element.offsetHeight;
+      const scale = Math.min(targetRect.width / sourceWidth, targetRect.height / sourceHeight);
+      setTaskbarPreviewStyle({
+        left: targetRect.left + (targetRect.width - sourceWidth * scale) / 2,
+        top: targetRect.top + (targetRect.height - sourceHeight * scale) / 2,
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        zIndex: 112,
+      });
+    };
+    updatePreview();
+    const observer = new ResizeObserver(updatePreview);
+    observer.observe(target);
+    window.addEventListener("resize", updatePreview);
+    target.closest(".taskbar-preview")?.addEventListener("scroll", updatePreview);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updatePreview);
+      target.closest(".taskbar-preview")?.removeEventListener("scroll", updatePreview);
+    };
+  }, [instanceId, minimized, taskbarPreviewing]);
 
   useLayoutEffect(() => {
     const element = windowRef.current;
@@ -405,8 +443,13 @@ export default function WindowFrame({
     "--window-tablet-left": tablet?.left,
     "--window-tablet-top": tablet?.top,
   } as CSSProperties;
-  const style: CSSProperties =
-    geometry && !maximized
+  const style: CSSProperties = taskbarPreviewStyle
+    ? {
+        ...manifestStyle,
+        ...(geometry ? { width: geometry.width, height: geometry.height } : {}),
+        ...taskbarPreviewStyle,
+      }
+    : geometry && !maximized
       ? {
           ...manifestStyle,
           left: geometry.x,
@@ -423,7 +466,7 @@ export default function WindowFrame({
     <section
       ref={windowRef}
       data-window-instance={instanceId}
-      className={`desktop-window ${app}-window window-size-${windowConfig.size} ${tablet?.inset ? "window-tablet-inset" : ""} ${minimized ? "minimized" : ""} ${maximized ? "maximized" : ""} ${focused ? "focused" : ""}`}
+      className={`desktop-window ${app}-window window-size-${windowConfig.size} ${tablet?.inset ? "window-tablet-inset" : ""} ${minimized ? "minimized" : ""} ${taskbarPreviewing ? "taskbar-live-preview" : ""} ${maximized && !taskbarPreviewing ? "maximized" : ""} ${focused ? "focused" : ""}`}
       style={style}
       onPointerDown={onFocus}
     >

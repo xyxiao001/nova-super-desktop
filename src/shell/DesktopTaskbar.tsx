@@ -152,7 +152,8 @@ export default function DesktopTaskbar({
                             </button>
                           </header>
                           <button
-                            className="taskbar-preview-body"
+                            className={`taskbar-preview-body ${instance.minimized ? "live" : ""}`}
+                            data-window-preview-target={instance.id}
                             onClick={() => {
                               onPreviewChange(null);
                               onActivateInstance(instance.id);
