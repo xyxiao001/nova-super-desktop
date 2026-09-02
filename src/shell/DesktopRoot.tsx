@@ -1,7 +1,7 @@
 "use client";
 
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { windowIsActive, WindowRuntimeProvider } from "../platform/windows/WindowRuntime";
+import { notifyWindowClosing, windowIsActive, WindowRuntimeProvider } from "../platform/windows/WindowRuntime";
 import StartMenu from "../../app/StartMenu";
 import {
   APP_REGISTRY,
@@ -133,7 +133,7 @@ export default function DesktopRoot() {
   const notifyFile=(message:string,itemId?:string)=>{setToast(message);setNotifications((current)=>appendDesktopNotification(current,{id:++notificationIdRef.current,message,createdAt:Date.now(),itemId}))};
   const clearWindowTitle=useCallback((app:WindowAppId)=>{setWindowTitles((current)=>({...current,[app]:undefined}));setTaskbarTitles((current)=>({...current,[app]:undefined}))},[]);
   const dismissWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"dismiss",app});clearWindowTitle(app)},[clearWindowTitle]);
-  const closeWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"close",app});clearWindowTitle(app);if(app==="photo")setPhotoSourceId(null);setTaskbarMenu(null);setTaskbarPreview(null);setTaskbarRevealed(false);playNovaSound("close")},[clearWindowTitle]);
+  const closeWindow=useCallback((app:WindowAppId)=>{notifyWindowClosing(app);dispatchWindow({type:"close",app});clearWindowTitle(app);if(app==="photo")setPhotoSourceId(null);setTaskbarMenu(null);setTaskbarPreview(null);setTaskbarRevealed(false);playNovaSound("close")},[clearWindowTitle]);
   const minimizeWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"minimize",app});setTaskbarMenu(null);setTaskbarRevealed(false)},[]);
   const toggleMaximizeWindow=useCallback((app:WindowAppId)=>{dispatchWindow({type:"toggle-maximize",app});setTaskbarRevealed(false)},[]);
   const snapWindow=useCallback((app:WindowAppId,mode:WindowSnapMode)=>dispatchWindow({type:"snap",app,mode}),[]);

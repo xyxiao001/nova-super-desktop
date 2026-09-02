@@ -47,10 +47,11 @@ afterEach(() => {
 
 describe("resetAllGameData", () => {
   it("clears records, progress, and mines auxiliary data while preserving unrelated settings", () => {
-    const gameIds: GameId[] = ["mines", "chess", "gomoku", "tower", "youtd2"];
+    const gameIds: GameId[] = ["mines", "chess", "gomoku", "tower", "youtd2", "wolfslot"];
     for (const id of gameIds) saveGameProgress(id, { board: id });
     localStorage.setItem("nova-mines-difficulty", "expert");
     localStorage.setItem("nova-mines-best", JSON.stringify({ expert: 42 }));
+    localStorage.setItem("nova-game-coins", "120");
     localStorage.setItem("nova-game-progress:removed-game", JSON.stringify({ board: "stale" }));
     localStorage.setItem("nova-settings", JSON.stringify({ theme: "dark" }));
 
@@ -60,6 +61,7 @@ describe("resetAllGameData", () => {
       gomoku: vi.fn<() => void>(),
       tower: vi.fn<() => void>(),
       youtd2: vi.fn<() => void>(),
+      wolfslot: vi.fn<() => void>(),
     } satisfies Record<GameId, () => void>;
     const unsubscribe = gameIds.map((id) => subscribeGameReset(id, resetListeners[id]));
     const unsubscribeRecreatingListener = subscribeGameReset("mines", () => {
@@ -78,6 +80,7 @@ describe("resetAllGameData", () => {
     }
     expect(localStorage.getItem("nova-mines-difficulty")).toBeNull();
     expect(localStorage.getItem("nova-mines-best")).toBeNull();
+    expect(localStorage.getItem("nova-game-coins")).toBeNull();
     expect(localStorage.getItem("nova-game-progress:removed-game")).toBeNull();
     expect(localStorage.getItem("nova-settings")).not.toBeNull();
     expect(recordsListener).toHaveBeenCalled();

@@ -15,6 +15,19 @@ export type WindowRuntimeValue = {
 };
 
 const WindowRuntimeContext = createContext<WindowRuntimeValue | null>(null);
+const WINDOW_CLOSING_EVENT = "nova-window-closing";
+
+export const notifyWindowClosing = (app: WindowAppId) => {
+  window.dispatchEvent(new CustomEvent(WINDOW_CLOSING_EVENT, { detail: app }));
+};
+
+export const subscribeWindowClosing = (app: WindowAppId, listener: () => void) => {
+  const handler = (event: Event) => {
+    if ((event as CustomEvent<WindowAppId>).detail === app) listener();
+  };
+  window.addEventListener(WINDOW_CLOSING_EVENT, handler);
+  return () => window.removeEventListener(WINDOW_CLOSING_EVENT, handler);
+};
 
 export const windowIsActive = (
   windows: WindowStateMap,

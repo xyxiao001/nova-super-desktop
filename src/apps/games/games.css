@@ -1,4 +1,4 @@
-.game-hall { height:100%; min-height:0; display:grid; grid-template-rows:72px minmax(0,1fr) 34px; overflow:hidden; background:radial-gradient(circle at 18% 0,#283440 0,transparent 36%),#11171d; color:#f3f5f6; }
+.game-hall { position:relative; height:100%; min-height:0; display:grid; grid-template-rows:72px minmax(0,1fr) 34px; overflow:hidden; background:radial-gradient(circle at 18% 0,#283440 0,transparent 36%),#11171d; color:#f3f5f6; }
 .game-hall-header { padding:0 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ffffff12; background:#10161bd9; backdrop-filter:blur(18px); }
 .game-hall-brand { display:flex; align-items:center; gap:11px; }
 .game-hall-brand > div { display:flex; flex-direction:column; gap:3px; }
@@ -10,6 +10,19 @@
 .game-hall-status { display:flex; align-items:baseline; gap:6px; color:#87949e; }
 .game-hall-status b { color:#f3ca52; font:700 20px/1 ui-monospace,monospace; }
 .game-hall-status span { font-size:9px; }
+.game-hall-meta { min-width:0; display:flex; align-items:center; gap:14px; }
+.game-hall-wallet { height:38px; padding:0 6px 0 11px; display:grid; grid-template-columns:auto auto auto; align-items:center; gap:8px; border:1px solid #ffffff18; border-radius:9px; background:#070b0f73; box-shadow:inset 0 1px #ffffff0a; }
+.game-hall-wallet span { color:#84929c; font-size:8px; }
+.game-hall-wallet strong { color:#f3ca52; font:700 18px/1 ui-monospace,monospace; }
+.game-hall-wallet button { height:26px; padding:0 8px; border:1px solid #f3ca5240; border-radius:6px; background:#f3ca5210; color:#e8c861; font-size:8px; cursor:pointer; }
+.game-hall-wallet button:hover,.game-hall-wallet button:focus-visible { border-color:#f3ca527d; background:#f3ca5220; outline:0; }
+.game-coins-confirm-layer { position:absolute; z-index:12; inset:0; display:grid; place-items:center; padding:18px; background:#030609b8; backdrop-filter:blur(3px); }
+.game-coins-confirm-layer section { width:min(330px,100%); box-sizing:border-box; padding:20px; border:1px solid #4e5b63; border-radius:10px; background:#151c21; color:#edf1f3; box-shadow:0 20px 60px #000b; }
+.game-coins-confirm-layer strong { font-size:15px; }
+.game-coins-confirm-layer p { margin:8px 0 19px; color:#9ba8b0; font-size:10px; line-height:1.55; }
+.game-coins-confirm-layer div { display:flex; justify-content:flex-end; gap:8px; }
+.game-coins-confirm-layer button { min-width:78px; height:32px; border:1px solid #58666e; border-radius:5px; background:#20292f; color:#e9eef0; font-size:10px; cursor:pointer; }
+.game-coins-confirm-layer button.confirm { border-color:#c49b3e; background:#c49b3e; color:#17130a; font-weight:800; }
 
 .game-library { min-height:0; padding:14px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:202px; align-content:start; gap:12px; overflow:auto; }
 .game-tile { position:relative; min-width:0; min-height:0; overflow:hidden; display:grid; grid-template-rows:minmax(0,1fr) 88px; border:1px solid #ffffff1a; border-radius:12px; outline:0; background:#1c242c; color:#f4f5f3; text-align:left; box-shadow:0 10px 24px #0004; cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
@@ -51,6 +64,11 @@
   .game-hall-brand strong { font-size:16px; }
   .game-hall-brand small { display:none; }
   .game-hall-status { max-width:42%; text-align:right; }
+  .game-hall-meta { gap:6px; }
+  .game-hall-wallet { height:36px; padding-left:7px; gap:5px; }
+  .game-hall-wallet span,.game-hall-status { display:none; }
+  .game-hall-wallet strong { font-size:15px; }
+  .game-hall-wallet button { height:28px; }
   .game-library { padding:10px 10px calc(14px + env(safe-area-inset-bottom)); grid-template-columns:1fr; grid-auto-rows:152px; gap:9px; }
   .game-tile { grid-template-columns:122px minmax(0,1fr); grid-template-rows:1fr; border-radius:10px; box-shadow:none; }
   .game-tile:active { border-color:#ffffff52; transform:scale(.985); }

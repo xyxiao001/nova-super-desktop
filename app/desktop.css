@@ -226,6 +226,7 @@
 .drawing-glyph { background: #f8fafb; color: #2778d4; }
 .games-glyph { position:relative; overflow:hidden; background:#1b222a; font-size:0; }
 .games-glyph::before { content:""; width:4px; height:4px; border-radius:50%; background:#f3ca52; box-shadow:7px 0 #55aee9,0 7px #df6758,7px 7px #6cad70; transform:translate(-3.5px,-3.5px); }
+.wolfslot-glyph { background:url("/assets/games/wolf-slot/wolf-slot-icon-v2.png") center/cover no-repeat; font-size:0; }
 .settings-glyph { background:#586976; color:#fff; }
 
 .windows-controls { margin-left: auto; height: 100%; display: flex; gap: 0 !important; }
@@ -384,6 +385,8 @@
 .task-app.reader-app > span { background: linear-gradient(145deg,#ff7a36,#d9481e); font:700 14px/1 Georgia,serif; }
 .task-app.games-app > span { position:relative; overflow:hidden; background:#202832; font-size:0; }
 .task-app.games-app > span::before { content:""; width:6px; height:6px; border-radius:50%; background:#f3ca52; box-shadow:9px 0 #55aee9,0 9px #df6758,9px 9px #6cad70; transform:translate(-4.5px,-4.5px); }
+.task-app.wolfslot-app > span { background:url("/assets/games/wolf-slot/wolf-slot-icon-v2.png") center/cover no-repeat; font-size:0; }
+.wolfslot-preview-mark { width:62px; height:62px; background:url("/assets/games/wolf-slot/wolf-slot-icon-v2.png") center/contain no-repeat; font-size:0!important; opacity:.72!important; }
 .task-app.settings-app > span { background:#586976; color:#fff; }
 .task-app.folder-app > span { background: #eab526; }
 .task-app.recycle-app > span { background: linear-gradient(145deg, #dff6ff, #70bddd); color: #287392; }
