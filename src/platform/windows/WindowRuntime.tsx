@@ -2,38 +2,70 @@
 
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import type { WindowAppId } from "../apps/appRegistry";
-import type { DesktopFocus, WindowStateMap } from "./windowState";
+import type {
+  WindowInstanceId,
+  WindowInstanceMap,
+  WindowInstanceTarget,
+} from "./windowInstanceState";
 
 export type WindowRuntimeValue = {
-  windows: WindowStateMap;
-  focused: DesktopFocus;
-  windowTitles: Partial<Record<WindowAppId, string>>;
-  taskbarTitles: Partial<Record<WindowAppId, string>>;
-  openApp: (app: WindowAppId) => void;
+  instances: WindowInstanceMap;
+  focused: "desktop" | WindowInstanceId;
+  openApp: (app: WindowAppId) => WindowInstanceId;
+  openNewWindow: (app: WindowAppId) => WindowInstanceId;
+  openResource: (
+    app: WindowAppId,
+    target: WindowInstanceTarget,
+  ) => WindowInstanceId;
+  retargetInstance: (
+    id: WindowInstanceId,
+    target?: WindowInstanceTarget,
+  ) => WindowInstanceId;
+  focusInstance: (id: WindowInstanceId) => void;
+  closeInstance: (id: WindowInstanceId) => void;
+  isAppOpen: (app: WindowAppId) => boolean;
   isAppActive: (app: WindowAppId) => boolean;
-  setWindowTitle: (app: WindowAppId, title?: string, taskbar?: boolean) => void;
+  isInstanceActive: (id: WindowInstanceId) => boolean;
+  setWindowTitle: (
+    id: WindowInstanceId,
+    title?: string,
+    taskbar?: boolean,
+  ) => void;
+};
+
+type WindowInstanceContextValue = {
+  id: WindowInstanceId;
+  app: WindowAppId;
+  target?: WindowInstanceTarget;
 };
 
 const WindowRuntimeContext = createContext<WindowRuntimeValue | null>(null);
+const WindowInstanceContext = createContext<WindowInstanceContextValue | null>(null);
 const WINDOW_CLOSING_EVENT = "nova-window-closing";
 
-export const notifyWindowClosing = (app: WindowAppId) => {
-  window.dispatchEvent(new CustomEvent(WINDOW_CLOSING_EVENT, { detail: app }));
+export const notifyWindowClosing = (id: WindowInstanceId) => {
+  window.dispatchEvent(new CustomEvent(WINDOW_CLOSING_EVENT, { detail: id }));
 };
 
-export const subscribeWindowClosing = (app: WindowAppId, listener: () => void) => {
+export const subscribeWindowClosing = (
+  id: WindowInstanceId,
+  listener: () => void,
+) => {
   const handler = (event: Event) => {
-    if ((event as CustomEvent<WindowAppId>).detail === app) listener();
+    if ((event as CustomEvent<WindowInstanceId>).detail === id) listener();
   };
   window.addEventListener(WINDOW_CLOSING_EVENT, handler);
   return () => window.removeEventListener(WINDOW_CLOSING_EVENT, handler);
 };
 
 export const windowIsActive = (
-  windows: WindowStateMap,
-  focused: DesktopFocus,
+  instances: WindowInstanceMap,
+  focused: "desktop" | WindowInstanceId,
   app: WindowAppId,
-) => focused === app && windows[app].open && !windows[app].minimized;
+) => {
+  const instance = focused === "desktop" ? undefined : instances[focused];
+  return instance?.app === app && !instance.minimized;
+};
 
 export function WindowRuntimeProvider({
   value,
@@ -45,13 +77,28 @@ export function WindowRuntimeProvider({
   return <WindowRuntimeContext.Provider value={value}>{children}</WindowRuntimeContext.Provider>;
 }
 
+export function WindowInstanceProvider({
+  value,
+  children,
+}: {
+  value: WindowInstanceContextValue;
+  children: ReactNode;
+}) {
+  return <WindowInstanceContext.Provider value={value}>{children}</WindowInstanceContext.Provider>;
+}
+
 export function useWindowRuntime() {
   return useContext(WindowRuntimeContext)!;
 }
 
+export function useWindowInstance() {
+  return useContext(WindowInstanceContext)!;
+}
+
 export function useWindowTitle(app: WindowAppId, title?: string, taskbar = false) {
-  const runtime = useWindowRuntime();
+  const { setWindowTitle } = useWindowRuntime();
+  const instance = useWindowInstance();
   useEffect(() => {
-    runtime.setWindowTitle(app, title, taskbar);
-  }, [app, runtime, taskbar, title]);
+    setWindowTitle(instance.id, title, taskbar);
+  }, [app, instance.id, setWindowTitle, taskbar, title]);
 }

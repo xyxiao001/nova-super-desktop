@@ -10,6 +10,7 @@ import {
 export type {
   AppDefinition,
   StartAppGroup,
+  WindowInstancePolicy,
   WindowAppId,
 } from "./appManifest";
 
@@ -33,7 +34,10 @@ export const APP_REGISTRY = Object.fromEntries(
       startGroup: entry.startGroup,
       windowIcon: entry.windowIcon,
       taskbarIcon: entry.taskbarIcon,
-      window: entry.window,
+      window: {
+        ...entry.window,
+        instancePolicy: entry.window.instancePolicy ?? "singleton",
+      },
     };
     return [id, definition];
   }),

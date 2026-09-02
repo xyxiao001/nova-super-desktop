@@ -10,7 +10,11 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { useWindowRuntime, useWindowTitle } from "../../platform/windows/WindowRuntime";
+import {
+  useWindowInstance,
+  useWindowRuntime,
+  useWindowTitle,
+} from "../../platform/windows/WindowRuntime";
 import { useWorkspaceRuntime } from "../../platform/workspace/WorkspaceRuntime";
 import {
   clampPhotoZoom,
@@ -31,14 +35,16 @@ const FILTERS: { id: AlbumFilter; label: string }[] = [
 
 export default function PhotoViewerApp() {
   const {
-    imageItems: images,
-    activeImage: active,
-    openImage: open,
-    clearActiveImage: clearActive,
+    visibleItems,
     editImage: edit,
   } = useWorkspaceRuntime();
-  const focused = useWindowRuntime().isAppActive("viewer");
-  useWindowTitle("viewer", active?.name);
+  const windowInstance = useWindowInstance();
+  const { isInstanceActive, retargetInstance } = useWindowRuntime();
+  const images = visibleItems.filter((item) => item.type === "image");
+  const active = windowInstance.target?.kind === "image"
+    ? images.find((item) => item.id === windowInstance.target?.itemId) ?? null
+    : null;
+  const focused = isInstanceActive(windowInstance.id);
   const photos = useMemo(() => createPhotoLibrary(images), [images]);
   const [filter, setFilter] = useState<AlbumFilter>("all");
   const [layout, setLayout] = useState<AlbumLayout>("comfortable");
@@ -53,6 +59,7 @@ export default function PhotoViewerApp() {
 
   const currentId = active ? `desktop:${active.id}` : selectedId;
   const current = photos.find((photo) => photo.id === currentId) ?? null;
+  useWindowTitle("viewer", current?.name ?? "照片", true);
   const currentIndex = current ? photos.findIndex((photo) => photo.id === current.id) : -1;
   const zoom = current && zoomState.photoId === current.id ? zoomState.zoom : 1;
   const visiblePhotos = photos.filter((photo) => (
@@ -60,19 +67,23 @@ export default function PhotoViewerApp() {
   ));
 
   const selectPhoto = useCallback((photo: PhotoAsset) => {
-    setZoomState({ photoId: photo.id, zoom: 1 });
     if (photo.desktopItem) {
+      const targetInstance = retargetInstance(windowInstance.id, {
+        kind: "image",
+        itemId: photo.desktopItem.id,
+      });
+      if (targetInstance !== windowInstance.id) return;
       setSelectedId(null);
-      open(photo.desktopItem);
     } else {
-      clearActive();
+      retargetInstance(windowInstance.id);
       setSelectedId(photo.id);
     }
-  }, [clearActive, open]);
+    setZoomState({ photoId: photo.id, zoom: 1 });
+  }, [retargetInstance, windowInstance.id]);
   const closePhoto = useCallback(() => {
-    clearActive();
+    retargetInstance(windowInstance.id);
     setSelectedId(null);
-  }, [clearActive]);
+  }, [retargetInstance, windowInstance.id]);
   const changeZoom = useCallback((next: number) => {
     if (!currentId) return;
     setZoomState({ photoId: currentId, zoom: clampPhotoZoom(next) });

@@ -7,6 +7,10 @@ import {
   useAppLaunchIntent,
 } from "../../src/platform/launch/LaunchRuntime";
 import {
+  WindowInstanceProvider,
+  useWindowInstance,
+} from "../../src/platform/windows/WindowRuntime";
+import {
   WorkspaceRuntimeProvider,
   useWorkspaceRuntime,
   type WorkspaceRuntimeValue,
@@ -36,10 +40,12 @@ describe("platform runtimes", () => {
   it("selects and acknowledges launch intents through LaunchRuntime", () => {
     const markHandled = vi.fn();
     let requestId: number | undefined;
+    let targetItemId: string | undefined;
     let acknowledge: ((requestId: number) => void) | undefined;
 
     function Probe() {
       const runtime = useAppLaunchIntent("reader");
+      targetItemId = useWindowInstance().target?.itemId;
       requestId = runtime.launchIntent?.requestId;
       acknowledge = runtime.onLaunchHandled;
       return null;
@@ -48,15 +54,30 @@ describe("platform runtimes", () => {
     renderToStaticMarkup(
       jsx(LaunchRuntimeProvider, {
         value: {
-          intent: { app: "reader", kind: "book", bookId: "book-1", requestId: 7 },
+          intents: {
+            "reader:main": {
+              app: "reader",
+              kind: "book",
+              bookId: "book-1",
+              requestId: 7,
+            },
+          },
           markHandled,
         },
-        children: jsx(Probe, {}),
+        children: jsx(WindowInstanceProvider, {
+          value: {
+            id: "reader:main",
+            app: "reader",
+            target: { kind: "text", itemId: "note-1" },
+          },
+          children: jsx(Probe, {}),
+        }),
       }),
     );
     acknowledge?.(requestId!);
 
     expect(requestId).toBe(7);
-    expect(markHandled).toHaveBeenCalledWith(7);
+    expect(targetItemId).toBe("note-1");
+    expect(markHandled).toHaveBeenCalledWith("reader:main", 7);
   });
 });

@@ -6,10 +6,12 @@ import {
   type AppLaunchIntent,
   type AppLaunchTarget,
 } from "../../../app/appLaunch";
+import { useWindowInstance } from "../windows/WindowRuntime";
+import type { WindowInstanceId } from "../windows/windowInstanceState";
 
 export type LaunchRuntimeValue = {
-  intent: AppLaunchIntent | null;
-  markHandled: (requestId: number) => void;
+  intents: Partial<Record<WindowInstanceId, AppLaunchIntent>>;
+  markHandled: (instanceId: WindowInstanceId, requestId: number) => void;
 };
 
 const LaunchRuntimeContext = createContext<LaunchRuntimeValue | null>(null);
@@ -30,8 +32,9 @@ export function LaunchRuntimeProvider({
 
 export function useAppLaunchIntent<TApp extends AppLaunchTarget["app"]>(app: TApp) {
   const runtime = useContext(LaunchRuntimeContext)!;
+  const instance = useWindowInstance();
   return {
-    launchIntent: launchIntentFor(runtime.intent, app),
-    onLaunchHandled: runtime.markHandled,
+    launchIntent: launchIntentFor(runtime.intents[instance.id] ?? null, app),
+    onLaunchHandled: (requestId: number) => runtime.markHandled(instance.id, requestId),
   };
 }

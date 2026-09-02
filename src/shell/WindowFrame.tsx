@@ -18,10 +18,12 @@ import {
   centeredWindowGeometry,
   edgeSnapMode,
   fitWindowGeometry,
+  offsetWindowGeometry,
   snappedWindowGeometry,
   type WindowGeometry,
   type WindowSnapMode,
 } from "../platform/windows/windowGeometry";
+import type { WindowInstanceId } from "../platform/windows/windowInstanceState";
 
 const WINDOW_GEOMETRY_PREFIX = "nova-window-geometry:";
 const WINDOW_MENU_HOLD_MS = 450;
@@ -43,7 +45,7 @@ const fitAppWindowGeometry = (
   );
 };
 
-const readWindowGeometry = (app: WindowAppId) => {
+const readWindowGeometry = (app: WindowAppId, instanceId: WindowInstanceId) => {
   if (isCompactDesktopViewport()) return null;
   const key = `${WINDOW_GEOMETRY_PREFIX}${app}`;
   const saved = localStorage.getItem(key);
@@ -59,7 +61,7 @@ const readWindowGeometry = (app: WindowAppId) => {
       localStorage.removeItem(key);
       return null;
     }
-    return fitAppWindowGeometry(app, geometry);
+    return fitAppWindowGeometry(app, offsetWindowGeometry(geometry, instanceId));
   } catch {
     localStorage.removeItem(key);
     return null;
@@ -67,6 +69,7 @@ const readWindowGeometry = (app: WindowAppId) => {
 };
 
 export type WindowFrameProps = {
+  instanceId: WindowInstanceId;
   app: WindowAppId;
   title: string;
   icon: string;
@@ -85,6 +88,7 @@ export type WindowFrameProps = {
 };
 
 export default function WindowFrame({
+  instanceId,
   app,
   title,
   icon,
@@ -103,7 +107,7 @@ export default function WindowFrame({
 }: WindowFrameProps) {
   const windowConfig = APP_REGISTRY[app].window;
   const [geometry, setGeometry] = useState<WindowGeometry | null>(() =>
-    readWindowGeometry(app),
+    readWindowGeometry(app, instanceId),
   );
   const [windowMenuOpen, setWindowMenuOpen] = useState(false);
   const [systemFullscreen, setSystemFullscreen] = useState(() =>
@@ -131,29 +135,24 @@ export default function WindowFrame({
     const element = windowRef.current;
     if (!element || isCompactDesktopViewport()) return;
     const rect = element.getBoundingClientRect();
+    const initialGeometry = offsetWindowGeometry({
+      x: (window.innerWidth - rect.width) / 2,
+      y: (window.innerHeight - 49 - rect.height) / 2,
+      width: rect.width,
+      height: rect.height,
+    }, instanceId);
     setGeometry((current) =>
       current
         ? fitAppWindowGeometry(app, current)
-        : fitAppWindowGeometry(app, {
-            x: (window.innerWidth - rect.width) / 2,
-            y: (window.innerHeight - 49 - rect.height) / 2,
-            width: rect.width,
-            height: rect.height,
-          }),
+        : fitAppWindowGeometry(app, initialGeometry),
     );
-  }, [app]);
+  }, [app, instanceId]);
 
   useEffect(() => {
     if (snapMode && !isCompactDesktopViewport()) {
       setGeometry(snappedWindowGeometry(snapMode, window.innerWidth, window.innerHeight));
     }
   }, [snapMode]);
-
-  useEffect(() => {
-    if (geometry && !isCompactDesktopViewport()) {
-      localStorage.setItem(`${WINDOW_GEOMETRY_PREFIX}${app}`, JSON.stringify(geometry));
-    }
-  }, [app, geometry]);
 
   useEffect(() => {
     const element = windowRef.current;
@@ -219,6 +218,12 @@ export default function WindowFrame({
     if (menuHoldTimer.current !== null) window.clearTimeout(menuHoldTimer.current);
   }, []);
 
+  const saveGeometryTemplate = (next: WindowGeometry) => {
+    if (!isCompactDesktopViewport()) {
+      localStorage.setItem(`${WINDOW_GEOMETRY_PREFIX}${app}`, JSON.stringify(next));
+    }
+  };
+
   const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (
       event.button !== 0 ||
@@ -257,12 +262,14 @@ export default function WindowFrame({
     const rect = element.getBoundingClientRect();
     const x = clamp(current.originX + dx, 0, Math.max(0, window.innerWidth - 120));
     const y = clamp(current.originY + dy, 0, Math.max(0, window.innerHeight - 87));
-    setGeometry((value) => ({
+    const next = {
       x,
       y,
-      width: value?.width ?? rect.width,
-      height: value?.height ?? rect.height,
-    }));
+      width: geometry?.width ?? rect.width,
+      height: geometry?.height ?? rect.height,
+    };
+    setGeometry(next);
+    saveGeometryTemplate(next);
   };
 
   const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -309,12 +316,14 @@ export default function WindowFrame({
       minimum.minHeight ?? 260,
       Math.max(minimum.minHeight ?? 260, window.innerHeight - 49 - rect.top),
     );
-    setGeometry((value) => ({
-      x: value?.x ?? rect.left,
-      y: value?.y ?? rect.top,
+    const next = {
+      x: geometry?.x ?? rect.left,
+      y: geometry?.y ?? rect.top,
       width,
       height,
-    }));
+    };
+    setGeometry(next);
+    saveGeometryTemplate(next);
   };
 
   const endResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -352,13 +361,15 @@ export default function WindowFrame({
     if (!rect) return;
     if (maximized) onMaximize();
     onUnsnap();
-    setGeometry((current) => centeredWindowGeometry(
-      current ?? { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+    const next = centeredWindowGeometry(
+      geometry ?? { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
       window.innerWidth,
       window.innerHeight,
       windowConfig.minWidth,
       windowConfig.minHeight,
-    ));
+    );
+    setGeometry(next);
+    saveGeometryTemplate(next);
     setWindowMenuOpen(false);
   };
   const maximizeWindow = () => {
@@ -411,6 +422,7 @@ export default function WindowFrame({
   return (
     <section
       ref={windowRef}
+      data-window-instance={instanceId}
       className={`desktop-window ${app}-window window-size-${windowConfig.size} ${tablet?.inset ? "window-tablet-inset" : ""} ${minimized ? "minimized" : ""} ${maximized ? "maximized" : ""} ${focused ? "focused" : ""}`}
       style={style}
       onPointerDown={onFocus}

@@ -7,6 +7,7 @@ import type {
   FileOperationMode,
 } from "../../../app/desktopFiles";
 import type { FileOpenApp } from "../../../app/fileAssociations";
+import type { WindowInstanceId } from "../windows/windowInstanceState";
 
 export type WorkspacePhotoSource = {
   id?: string;
@@ -19,26 +20,19 @@ export type WorkspaceRuntimeValue = {
   visibleItems: DesktopItem[];
   clipboard: FileClipboard | null;
   canUndo: boolean;
-  activeNote: DesktopItem | null;
-  noteItems: DesktopItem[];
-  activeImage: DesktopItem | null;
-  imageItems: DesktopItem[];
-  activeFolder: DesktopItem | null;
-  folderItems: DesktopItem[];
-  activeFolderId: string | null;
   photoEditorSource: WorkspacePhotoSource | null;
   trashedItems: DesktopItem[];
-  selectNote: (id: string) => void;
-  createText: (parentId?: string | null) => void;
+  createText: (
+    parentId?: string | null,
+    sourceInstanceId?: WindowInstanceId,
+  ) => void;
   createFolder: (parentId?: string | null) => void;
   updateItem: (id: string, patch: Partial<DesktopItem>) => void;
   removeNote: (id: string) => void;
   openItem: (item: DesktopItem) => void;
   openItemWith: (item: DesktopItem, app: FileOpenApp) => void;
-  openImage: (item: DesktopItem) => void;
-  clearActiveImage: () => void;
+  openFolderWindow: (item: DesktopItem) => void;
   editImage: (item: DesktopItem) => void;
-  navigateExplorer: (folderId: string | null) => void;
   renameItem: (item: DesktopItem) => void;
   setClipboard: (mode: FileOperationMode, ids: string[]) => void;
   paste: (parentId: string | null) => void;
@@ -50,7 +44,6 @@ export type WorkspaceRuntimeValue = {
   trashFromExplorer: (ids: string[]) => void;
   undoFileOperation: () => void;
   openRecycleBin: () => void;
-  goBackFolder: () => void;
   openItemMenu: (item: DesktopItem, x: number, y: number) => void;
   restoreItems: (ids: string[]) => void;
   permanentlyDeleteItems: (ids: string[]) => void;

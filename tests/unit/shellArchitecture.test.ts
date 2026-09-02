@@ -59,7 +59,7 @@ describe("desktop shell boundaries", () => {
       readWorkspaceFile("src/apps/focus/entry.tsx"),
     ]);
 
-    expect(desktopRoot).toContain("REGISTERED_APPS.map");
+    expect(desktopRoot).toContain("allWindowInstances(windowInstances).map");
     for (const app of [
       "photo",
       "explorer",
@@ -83,6 +83,7 @@ describe("desktop shell boundaries", () => {
       expect(desktopRoot).not.toContain(`<WindowFrame {...windowProps("${app}")}`);
     }
     expect(appHost).toContain("APP_COMPONENTS[app]");
+    expect(appHost).toContain("WindowInstanceProvider");
     expect(appHost).toContain("<AppComponent />");
     expect(appRegistry).not.toContain("LazyCalendarApp");
     expect(appRegistry).not.toContain("LazyFocusClockApp");
@@ -114,12 +115,23 @@ describe("desktop shell boundaries", () => {
     expect(desktopRoot).toContain("<WorkspaceRuntimeProvider");
     expect(desktopRoot).toContain("<LaunchRuntimeProvider");
     expect(desktopRoot).toContain("<SettingsRuntimeProvider");
+    expect(desktopRoot).not.toContain("activeFolderId");
+    expect(desktopRoot).not.toContain("activeNoteId");
+    expect(desktopRoot).not.toContain("activeImageId");
     expect(workspaceRuntime).not.toContain("useState");
+    expect(workspaceRuntime).not.toContain("activeFolderId");
+    expect(workspaceRuntime).not.toContain("activeNote");
+    expect(workspaceRuntime).not.toContain("activeImage");
     expect(workspaceRuntime).not.toContain("localStorage");
     expect(workspaceRuntime).not.toContain("indexedDB");
     expect(launchRuntime).not.toContain("useState");
     expect(launchRuntime).not.toContain("localStorage");
     expect(applications.every((source) => source.includes("useWorkspaceRuntime"))).toBe(true);
+    expect(applications[0]).toContain("useWindowInstance");
+    expect(applications[0]).toContain("retargetInstance");
+    expect(applications[1]).toContain("useWindowInstance");
+    expect(applications[2]).toContain("isInstanceActive");
+    expect(applications[6]).toContain("useWindowInstance");
     expect(settingsRuntime).not.toContain("useState");
     expect(appRegistry).not.toMatch(/export const Lazy[A-Z]/);
   });

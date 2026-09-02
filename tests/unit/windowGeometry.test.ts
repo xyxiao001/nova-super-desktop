@@ -5,6 +5,7 @@ import {
   centeredWindowGeometry,
   edgeSnapMode,
   fitWindowGeometry,
+  offsetWindowGeometry,
   snappedWindowGeometry,
   windowShortcutAction,
 } from "../../src/platform/windows/windowGeometry";
@@ -53,6 +54,25 @@ describe("centeredWindowGeometry", () => {
       1000,
       700,
     )).toEqual({ x: 4, y: 4, width: 992, height: 643 });
+  });
+});
+
+describe("offsetWindowGeometry", () => {
+  it("keeps the main instance on the application template", () => {
+    const geometry = { x: 40, y: 60, width: 800, height: 600 };
+
+    expect(offsetWindowGeometry(geometry, "explorer:main")).toBe(geometry);
+  });
+
+  it("applies a stable offset without mutating the application template", () => {
+    const geometry = { x: 40, y: 60, width: 800, height: 600 };
+    const first = offsetWindowGeometry(geometry, "explorer:secondary");
+    const second = offsetWindowGeometry(geometry, "explorer:secondary");
+
+    expect(first).toEqual(second);
+    expect(first.x).toBeGreaterThan(geometry.x);
+    expect(first.y).toBeGreaterThan(geometry.y);
+    expect(geometry).toEqual({ x: 40, y: 60, width: 800, height: 600 });
   });
 });
 

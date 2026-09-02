@@ -4,8 +4,13 @@ import "./folder.css";
 
 import { useEffect, useRef, type PointerEvent } from "react";
 
-import { useWindowTitle } from "../../platform/windows/WindowRuntime";
+import {
+  useWindowInstance,
+  useWindowRuntime,
+  useWindowTitle,
+} from "../../platform/windows/WindowRuntime";
 import type { DesktopItem } from "../../../app/desktopFiles";
+import { visibleDesktopItems } from "../../../app/desktopFiles";
 import {
   DESKTOP_ICON_LONG_PRESS_MS,
   isCompactDesktopViewport,
@@ -15,14 +20,39 @@ import { useWorkspaceRuntime } from "../../platform/workspace/WorkspaceRuntime";
 
 export default function FolderViewApp() {
   const {
-    activeFolder: folder,
-    folderItems: items,
+    items: desktopItems,
     openItem: open,
+    openFolderWindow,
     createText,
     createFolder,
-    goBackFolder: goBack,
     openItemMenu: context,
   } = useWorkspaceRuntime();
+  const windowInstance = useWindowInstance();
+  const { closeInstance, retargetInstance } = useWindowRuntime();
+  const visibleItems = visibleDesktopItems(desktopItems);
+  const folderId = windowInstance.target?.kind === "folder"
+    ? windowInstance.target.itemId
+    : null;
+  const folder = folderId
+    ? visibleItems.find((item) => item.id === folderId && item.type === "folder") ?? null
+    : null;
+  const items = folder
+    ? visibleItems.filter((item) => item.parentId === folder.id)
+    : [];
+  const goBack = () => {
+    if (!folder?.parentId) {
+      closeInstance(windowInstance.id);
+      return;
+    }
+    retargetInstance(windowInstance.id, { kind: "folder", itemId: folder.parentId });
+  };
+  const openFolder = (item: DesktopItem) => {
+    if (isCompactDesktopViewport()) {
+      retargetInstance(windowInstance.id, { kind: "folder", itemId: item.id });
+      return;
+    }
+    openFolderWindow(item);
+  };
   useWindowTitle("folder", folder?.name, true);
   const pressRef = useRef<{ item: DesktopItem; x: number; y: number; timer: number } | null>(null);
   const longPressedIdRef = useRef<string | null>(null);
@@ -68,11 +98,18 @@ export default function FolderViewApp() {
         longPressedIdRef.current = null;
         return;
       }
-      open(item);
+      if (item.type === "folder") openFolder(item);
+      else open(item);
     }} onDoubleClick={() => {
-      if (!isCompactDesktopViewport()) open(item);
+      if (!isCompactDesktopViewport()) {
+        if (item.type === "folder") openFolder(item);
+        else open(item);
+      }
     }} onKeyDown={(event) => {
-      if (event.key === "Enter") open(item);
+      if (event.key === "Enter") {
+        if (item.type === "folder") openFolder(item);
+        else open(item);
+      }
     }} onContextMenu={(event) => {
       event.preventDefault();
       event.stopPropagation();

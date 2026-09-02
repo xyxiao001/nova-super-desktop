@@ -4,7 +4,10 @@ import "./wolfslot.css";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { playNovaSound } from "../../../app/novaSettings";
-import { subscribeWindowClosing } from "../../platform/windows/WindowRuntime";
+import {
+  subscribeWindowClosing,
+  useWindowInstance,
+} from "../../platform/windows/WindowRuntime";
 import {
   loadGameProgress,
   saveGameProgress,
@@ -62,6 +65,7 @@ const cellPosition = (index: number) => {
 };
 
 export default function WolfSlotGame() {
+  const windowInstance = useWindowInstance();
   const [restored] = useState(() => loadGameProgress<SlotProgress>("wolfslot"));
   const [coins, setCoins] = useState(readGameCoins);
   const [credits, setCredits] = useState(restored?.credits ?? 0);
@@ -132,12 +136,12 @@ export default function WolfSlotGame() {
   useEffect(() => {
     saveGameProgress<SlotProgress>("wolfslot", { credits, bets, lastBets, roomMultiplier, lossProtection });
   }, [bets, credits, lastBets, lossProtection, roomMultiplier]);
-  useEffect(() => subscribeWindowClosing("wolfslot", () => {
+  useEffect(() => subscribeWindowClosing(windowInstance.id, () => {
     const refundable = creditsRef.current;
     if (refundable > 0) awardGameCoins(refundable);
     creditsRef.current = 0;
     saveGameProgress<SlotProgress>("wolfslot", { credits: 0, bets: EMPTY_BETS, lastBets: EMPTY_BETS, roomMultiplier: roomMultiplierRef.current, lossProtection:{ streak:0, accumulatedLoss:0 } });
-  }), []);
+  }), [windowInstance.id]);
   useEffect(() => clearTimers, []);
 
   const scoreUp = () => {

@@ -52,6 +52,12 @@ describe("appRegistry", () => {
 
   it("defines window behavior for every registered application", () => {
     expect(REGISTERED_APPS.every((app) => app.window.mobile === "fullscreen")).toBe(true);
+    expect(APP_REGISTRY.explorer.window.instancePolicy).toBe("multiple");
+    expect(APP_REGISTRY.folder.window.instancePolicy).toBe("per-resource");
+    expect(APP_REGISTRY.notes.window.instancePolicy).toBe("per-resource");
+    expect(APP_REGISTRY.viewer.window.instancePolicy).toBe("per-resource");
+    expect(REGISTERED_APPS.filter((app) => !["explorer", "folder", "notes", "viewer"].includes(app.id))
+      .every((app) => app.window.instancePolicy === "singleton")).toBe(true);
     expect(APP_REGISTRY.calendar.window).toMatchObject({
       size: "wide",
       minWidth: 700,

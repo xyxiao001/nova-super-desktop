@@ -12,7 +12,11 @@ import {
   type PointerEvent,
 } from "react";
 
-import { useWindowTitle } from "../../platform/windows/WindowRuntime";
+import {
+  useWindowInstance,
+  useWindowRuntime,
+  useWindowTitle,
+} from "../../platform/windows/WindowRuntime";
 import {
   descendantIds,
   NOVA_FILE_DRAG_TYPE,
@@ -82,12 +86,11 @@ function ItemIcon({ item }: { item: DesktopItem }) {
 export default function FileExplorer() {
   const {
     items,
-    activeFolderId: folderId,
     clipboard,
     canUndo,
-    navigateExplorer: onNavigate,
     openItem: onOpen,
     openItemWith: onOpenWith,
+    openFolderWindow,
     createFolder: onCreateFolder,
     createText: onCreateText,
     renameItem: onRename,
@@ -98,6 +101,11 @@ export default function FileExplorer() {
     undoFileOperation: onUndo,
     openRecycleBin: onOpenRecycle,
   } = useWorkspaceRuntime();
+  const windowInstance = useWindowInstance();
+  const { retargetInstance } = useWindowRuntime();
+  const folderId = windowInstance.target?.kind === "folder"
+    ? windowInstance.target.itemId
+    : null;
   const { launchIntent, onLaunchHandled } = useAppLaunchIntent("explorer");
   const [location, setLocation] = useState<ExplorerLocation>("folder");
   const [history, setHistory] = useState<(string | null)[]>([folderId]);
@@ -138,7 +146,7 @@ export default function FileExplorer() {
   const currentFolder = folderId
     ? liveItems.find((item) => item.id === folderId && item.type === "folder") ?? null
     : null;
-  useWindowTitle("explorer", currentFolder?.name);
+  useWindowTitle("explorer", currentFolder?.name ?? "文件资源管理器", true);
 
   useEffect(() => {
     const pending = pendingNavigationRef.current;
@@ -153,8 +161,8 @@ export default function FileExplorer() {
   }, [folderId]);
 
   useEffect(() => {
-    if (folderId && !currentFolder) onNavigate(null);
-  }, [currentFolder, folderId, onNavigate]);
+    if (folderId && !currentFolder) retargetInstance(windowInstance.id);
+  }, [currentFolder, folderId, retargetInstance, windowInstance.id]);
 
   useEffect(() => {
     if (!launchIntent) return;
@@ -180,7 +188,10 @@ export default function FileExplorer() {
       setHistory((current) => [...current.slice(0, historyIndex + 1), next]);
       setHistoryIndex((current) => current + 1);
     }
-    onNavigate(next);
+    retargetInstance(
+      windowInstance.id,
+      next ? { kind: "folder", itemId: next } : undefined,
+    );
   };
 
   const goHistory = (index: number) => {
@@ -653,6 +664,7 @@ export default function FileExplorer() {
 
     {contextMenu && primarySelected && <div className="explorer-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
       {selectedItems.length === 1 && <button onClick={() => { activateItem(primarySelected); setContextMenu(null); }}>打开</button>}
+      {selectedItems.length === 1 && primarySelected.type === "folder" && <button className="desktop-new-window-command" onClick={() => { openFolderWindow(primarySelected); setContextMenu(null); }}>在新窗口中打开</button>}
       {selectedItems.length === 1 && fileOpenOptions(primarySelected.type).filter((option) => !option.primary).map((option) => <button key={option.app} onClick={() => { onOpenWith(primarySelected, option.app); setContextMenu(null); }}>使用{option.label}打开</button>)}
       <button onClick={() => { onSetClipboard("move", selectedIds); setContextMenu(null); }}>剪切</button>
       <button onClick={() => { onSetClipboard("copy", selectedIds); setContextMenu(null); }}>复制</button>

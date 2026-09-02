@@ -4,19 +4,29 @@ import "./notes.css";
 
 import { useState } from "react";
 
-import { useWindowTitle } from "../../platform/windows/WindowRuntime";
+import {
+  useWindowInstance,
+  useWindowRuntime,
+  useWindowTitle,
+} from "../../platform/windows/WindowRuntime";
 import { useWorkspaceRuntime } from "../../platform/workspace/WorkspaceRuntime";
 
 export default function NotepadApp() {
   const {
-    noteItems: items,
-    activeNote: item,
-    selectNote: select,
+    visibleItems,
     createText: create,
     updateItem: update,
     removeNote: remove,
   } = useWorkspaceRuntime();
-  useWindowTitle("notes", item?.name);
+  const windowInstance = useWindowInstance();
+  const { retargetInstance } = useWindowRuntime();
+  const items = visibleItems
+    .filter((entry) => entry.type === "text")
+    .sort((left, right) => right.createdAt - left.createdAt);
+  const item = windowInstance.target?.kind === "text"
+    ? items.find((entry) => entry.id === windowInstance.target?.itemId) ?? null
+    : null;
+  useWindowTitle("notes", item?.name ?? "记事本", true);
   const [query, setQuery] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
@@ -30,7 +40,7 @@ export default function NotepadApp() {
   const createNote = () => {
     setPendingDeleteId(null);
     setMobileEditorOpen(true);
-    create();
+    create(null, windowInstance.id);
   };
   return <div className={`notepad-app ${mobileEditorOpen && item ? "mobile-editor-open" : ""}`}>
     <aside className="note-sidebar">
@@ -41,7 +51,7 @@ export default function NotepadApp() {
         return <button key={note.id} className={note.id === item?.id ? "active" : ""} aria-current={note.id === item?.id ? "page" : undefined} onClick={() => {
           setPendingDeleteId(null);
           setMobileEditorOpen(true);
-          select(note.id);
+          retargetInstance(windowInstance.id, { kind: "text", itemId: note.id });
         }}><strong>{note.name || "未命名.txt"}</strong><p>{preview}</p><span>{formatDate(note.createdAt)}</span></button>;
       })}{!visible.length && <div className="note-list-empty"><span>{search ? "⌕" : "▤"}</span><strong>{search ? "没有匹配的文稿" : "还没有文稿"}</strong></div>}</div>
     </aside>

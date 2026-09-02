@@ -51,7 +51,7 @@ describe("application directory architecture", () => {
       readdir(new URL("../../app", import.meta.url)),
     ]);
 
-    expect(desktopRoot).toContain("REGISTERED_APPS.map");
+    expect(desktopRoot).toContain("allWindowInstances(windowInstances).map");
     expect(desktopRoot).not.toContain("<WindowFrame");
     expect(windowFrame).not.toContain("WINDOW_MINIMUMS");
     expect(appRegistry).toContain("Object.keys(APP_MANIFESTS)");

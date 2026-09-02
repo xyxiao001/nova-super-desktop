@@ -1,14 +1,19 @@
 "use client";
 
 import type { AppDefinition, WindowAppId } from "../platform/apps/appRegistry";
-import type { DesktopFocus, WindowStateMap } from "../platform/windows/windowState";
+import type {
+  WindowInstance,
+  WindowInstanceId,
+  WindowInstanceMap,
+} from "../platform/windows/windowInstanceState";
+import { allWindowInstances } from "../platform/windows/windowInstanceState";
 
 export type TaskbarMenuState = { app: WindowAppId; x: number };
 
 type DesktopTaskbarProps = {
   apps: AppDefinition[];
-  windows: WindowStateMap;
-  focused: DesktopFocus;
+  instances: WindowInstanceMap;
+  focused: "desktop" | WindowInstanceId;
   clock: string;
   notificationCount: number;
   startOpen: boolean;
@@ -21,10 +26,13 @@ type DesktopTaskbarProps = {
   onRevealChange: (revealed: boolean) => void;
   onToggleStart: () => void;
   onActivate: (app: WindowAppId) => void;
+  onActivateInstance: (id: WindowInstanceId) => void;
   onOpen: (app: WindowAppId) => void;
-  onMinimize: (app: WindowAppId) => void;
-  onToggleMaximize: (app: WindowAppId) => void;
-  onClose: (app: WindowAppId) => void;
+  onNewWindow: (app: WindowAppId) => void;
+  onMinimize: (id: WindowInstanceId) => void;
+  onToggleMaximize: (id: WindowInstanceId) => void;
+  onClose: (id: WindowInstanceId) => void;
+  onCloseAll: (app: WindowAppId) => void;
   onOpenCalendar: () => void;
   canHide: boolean;
 };
@@ -32,9 +40,16 @@ type DesktopTaskbarProps = {
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
+const appInstances = (
+  instances: WindowInstanceMap,
+  app: WindowAppId,
+): WindowInstance[] => allWindowInstances(instances)
+  .filter((instance) => instance.app === app)
+  .sort((left, right) => right.z - left.z);
+
 export default function DesktopTaskbar({
   apps,
-  windows,
+  instances,
   focused,
   clock,
   notificationCount,
@@ -48,10 +63,13 @@ export default function DesktopTaskbar({
   onRevealChange,
   onToggleStart,
   onActivate,
+  onActivateInstance,
   onOpen,
+  onNewWindow,
   onMinimize,
   onToggleMaximize,
   onClose,
+  onCloseAll,
   onOpenCalendar,
   canHide,
 }: DesktopTaskbarProps) {
@@ -88,7 +106,8 @@ export default function DesktopTaskbar({
           </button>
           {apps.map((app) => {
             const label = labelFor(app);
-            const state = windows[app.id];
+            const running = appInstances(instances, app.id);
+            const state = running[0];
             return (
               <div
                 className="taskbar-entry"
@@ -97,7 +116,7 @@ export default function DesktopTaskbar({
                 onFocusCapture={() => onPreviewChange(app.id)}
               >
                 <button
-                  className={`task-app ${app.id === "photo" ? "photo-lab-app" : `${app.kind}-app`} ${state.open ? "active" : ""} ${focused === app.id && !state.minimized ? "selected" : ""}`}
+                  className={`task-app ${app.id === "photo" ? "photo-lab-app" : `${app.kind}-app`} ${state ? "active" : ""} ${state && focused === state.id && !state.minimized ? "selected" : ""}`}
                   onClick={() => {
                     onPreviewChange(null);
                     onActivate(app.id);
@@ -117,29 +136,42 @@ export default function DesktopTaskbar({
                 >
                   <span>{app.taskbarIcon ?? app.icon}</span>
                 </button>
-                {state.open && previewApp === app.id && (
+                {state && previewApp === app.id && (
                   <aside className="taskbar-preview">
-                    <header>
-                      <span className={`app-glyph ${app.id}-glyph`}>
-                        {app.windowIcon ?? app.icon}
-                      </span>
-                      <strong>{label}</strong>
-                      <button aria-label={`关闭${label}`} onClick={() => onClose(app.id)}>
-                        ×
-                      </button>
-                    </header>
-                    <div>
-                      <span>
-                        {state.minimized
-                          ? "已最小化"
-                          : state.maximized
-                            ? "已最大化"
-                            : "正在运行"}
-                      </span>
-                      <i className={`${app.kind}-preview-mark`}>
-                        {app.windowIcon ?? app.icon}
-                      </i>
-                    </div>
+                    {running.map((instance) => {
+                      const instanceLabel = instance.taskbarTitle ?? instance.title ?? label;
+                      return (
+                        <section className="taskbar-preview-item" key={instance.id}>
+                          <header>
+                            <span className={`app-glyph ${app.id}-glyph`}>
+                              {app.windowIcon ?? app.icon}
+                            </span>
+                            <strong>{instanceLabel}</strong>
+                            <button aria-label={`关闭${instanceLabel}`} onClick={() => onClose(instance.id)}>
+                              ×
+                            </button>
+                          </header>
+                          <button
+                            className="taskbar-preview-body"
+                            onClick={() => {
+                              onPreviewChange(null);
+                              onActivateInstance(instance.id);
+                            }}
+                          >
+                            <span>
+                              {instance.minimized
+                                ? "已最小化"
+                                : instance.maximized
+                                  ? "已最大化"
+                                  : "正在运行"}
+                            </span>
+                            <i className={`${app.kind}-preview-mark`}>
+                              {app.windowIcon ?? app.icon}
+                            </i>
+                          </button>
+                        </section>
+                      );
+                    })}
                   </aside>
                 )}
               </div>
@@ -157,30 +189,48 @@ export default function DesktopTaskbar({
           </button>
         </div>
       </nav>
-      {menu && menuApp && (
-        <div className="taskbar-window-menu" style={{ left: menu.x }}>
-          <strong>{labelFor(menuApp)}</strong>
-          <button onClick={() => onOpen(menu.app)}>切换到窗口</button>
-          {windows[menu.app].open && (
-            <>
-              <button
-                onClick={() =>
-                  windows[menu.app].minimized ? onOpen(menu.app) : onMinimize(menu.app)
-                }
-              >
-                {windows[menu.app].minimized ? "还原" : "最小化"}
+      {menu && menuApp && (() => {
+        const running = appInstances(instances, menu.app);
+        const state = running[0];
+        return (
+          <div className="taskbar-window-menu" style={{ left: menu.x }}>
+            <strong>{labelFor(menuApp)}</strong>
+            <button onClick={() => onOpen(menu.app)}>切换到窗口</button>
+            {menuApp.window.instancePolicy === "multiple" && (
+              <button className="new-window-command" onClick={() => onNewWindow(menu.app)}>
+                新建窗口
               </button>
-              <button onClick={() => onToggleMaximize(menu.app)}>
-                {windows[menu.app].maximized ? "还原窗口" : "最大化"}
+            )}
+            {running.length > 1 && running.map((instance) => (
+              <button key={instance.id} onClick={() => onActivateInstance(instance.id)}>
+                {instance.taskbarTitle ?? instance.title ?? menuApp.label}
               </button>
-              <span />
-              <button className="danger" onClick={() => onClose(menu.app)}>
-                关闭窗口
-              </button>
-            </>
-          )}
-        </div>
-      )}
+            ))}
+            {state && (
+              <>
+                {running.length === 1 && (
+                  <>
+                    <button
+                      onClick={() =>
+                        state.minimized ? onOpen(menu.app) : onMinimize(state.id)
+                      }
+                    >
+                      {state.minimized ? "还原" : "最小化"}
+                    </button>
+                    <button onClick={() => onToggleMaximize(state.id)}>
+                      {state.maximized ? "还原窗口" : "最大化"}
+                    </button>
+                  </>
+                )}
+                <span />
+                <button className="danger" onClick={() => running.length > 1 ? onCloseAll(menu.app) : onClose(state.id)}>
+                  {running.length > 1 ? "关闭所有窗口" : "关闭窗口"}
+                </button>
+              </>
+            )}
+          </div>
+        );
+      })()}
     </>
   );
 }

@@ -19,8 +19,8 @@ export const GAME_CATALOG = [
 export type GameAppId = GameId;
 
 export default function GameHall(){
-  const {windows,openApp}=useWindowRuntime();
-  const running=Object.fromEntries(GAME_CATALOG.map((game)=>[game.id,windows[game.id].open])) as Record<GameAppId,boolean>;
+  const {isAppOpen,openApp}=useWindowRuntime();
+  const running=Object.fromEntries(GAME_CATALOG.map((game)=>[game.id,isAppOpen(game.id)])) as Record<GameAppId,boolean>;
   const runningCount=GAME_CATALOG.filter((game)=>running[game.id]).length;
   const [records,setRecords]=useState<GameRecords>(readGameRecords);
   const [coins,setCoins]=useState(readGameCoins);

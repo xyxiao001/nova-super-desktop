@@ -67,6 +67,23 @@ export function centeredWindowGeometry(
   };
 }
 
+export function offsetWindowGeometry(
+  geometry: WindowGeometry,
+  instanceId: string,
+): WindowGeometry {
+  if (instanceId.endsWith(":main")) return geometry;
+  const hash = [...instanceId].reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  );
+  const offset = ((hash % 4) + 1) * 18;
+  return {
+    ...geometry,
+    x: geometry.x + offset,
+    y: geometry.y + offset,
+  };
+}
+
 export function snappedWindowGeometry(
   mode: WindowSnapMode,
   viewportWidth: number,
