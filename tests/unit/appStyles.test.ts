@@ -45,7 +45,7 @@ describe("application style loading", () => {
     expect(flipBook).toContain('engineRef.current?.flipNext("bottom")');
     expect(flipBook).toContain('engineRef.current?.flipPrev("bottom")');
     expect(flipBook).toContain('event.data !== "read"');
-    expect(flipBook).toContain('target.type === "nextChapter"');
+    expect(flipBook).toContain('target?.type === "nextChapter") props.onBoundaryNext()');
     expect(flipBook).toContain("translate3d(${-targetPage * (flowPageWidth + pageGap)}px");
     expect(notes).toContain('import "./notes.css"');
     expect(games).toContain('import "./games.css"');
@@ -56,7 +56,7 @@ describe("application style loading", () => {
   });
 
   it("keeps the mobile desktop and reader inside the dynamic viewport", async () => {
-    const [globals, desktop, reader, notes, viewer, explorer, focus, settings, desktopRoot, page, layout, index, manifestSource] = await Promise.all([
+    const [globals, desktop, reader, notes, viewer, explorer, focus, settings, desktopRoot, windowFrame, page, layout, index, manifestSource] = await Promise.all([
       readWorkspaceFile("app/globals.css"),
       readWorkspaceFile("app/desktop.css"),
       readWorkspaceFile("src/apps/reader/reader.css"),
@@ -66,6 +66,7 @@ describe("application style loading", () => {
       readWorkspaceFile("src/apps/focus/focus.css"),
       readWorkspaceFile("src/apps/settings/settings.css"),
       readWorkspaceFile("src/shell/DesktopRoot.tsx"),
+      readWorkspaceFile("src/shell/WindowFrame.tsx"),
       readWorkspaceFile("app/page.tsx"),
       readWorkspaceFile("app/layout.tsx"),
       readWorkspaceFile("index.html"),
@@ -102,6 +103,8 @@ describe("application style loading", () => {
     expect(reader).toContain(".reader-book-info>strong{font-size:19px");
     expect(reader).toContain(".reader-shelf{grid-template-columns:repeat(3,minmax(0,1fr))");
     expect(reader).toContain(".reader-reading.immersive.chrome-hidden>.reader-mobile-toolbar");
+    expect(reader).toContain(".reader-window:has(.reader-reading) .window-chrome{display:none}");
+    expect(windowFrame).toContain("desktop-window ${app}-window");
     expect(reader).toContain(".reader-library.editing .reader-book-delete{display:block}");
     expect(reader).toContain(".reader-manage-button{display:none}");
     expect(reader).toContain(".reader-flip-book-shell");

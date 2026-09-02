@@ -411,7 +411,7 @@ export default function WindowFrame({
   return (
     <section
       ref={windowRef}
-      className={`desktop-window window-size-${windowConfig.size} ${tablet?.inset ? "window-tablet-inset" : ""} ${minimized ? "minimized" : ""} ${maximized ? "maximized" : ""} ${focused ? "focused" : ""}`}
+      className={`desktop-window ${app}-window window-size-${windowConfig.size} ${tablet?.inset ? "window-tablet-inset" : ""} ${minimized ? "minimized" : ""} ${maximized ? "maximized" : ""} ${focused ? "focused" : ""}`}
       style={style}
       onPointerDown={onFocus}
     >

@@ -35,9 +35,7 @@ type FlipSlot =
   | { type: "page"; pageIndex: number }
   | { type: "nextChapter"; title: string; paragraphs: Array<{ index: number; text: string }> };
 
-type PendingTurn =
-  | { type: "page"; pageIndex: number }
-  | { type: "nextChapter" };
+type PendingTurn = { type: "page"; pageIndex: number };
 
 const FlipPage = forwardRef<HTMLDivElement, ReaderFlipBookProps & { targetPage: number; pageLabel?: string }>(
   function FlipPage({ title, author, chapterTitle, paragraphs, pageCount, totalProgress, flowPageWidth, pageGap, fontSize, lineHeight, targetPage, pageLabel }, ref) {
@@ -123,15 +121,14 @@ export default function ReaderFlipBook(props: ReaderFlipBookProps) {
         }}
         onFlip={(event: { data?: number }) => {
           const target = pageWindow[event.data ?? startPage];
-          if (target?.type === "nextChapter") pendingTurnRef.current = { type: "nextChapter" };
+          if (target?.type === "nextChapter") props.onBoundaryNext();
           else if (target?.type === "page" && target.pageIndex !== props.pageIndex) pendingTurnRef.current = target;
         }}
         onChangeState={(event: { data?: string }) => {
           if (event.data !== "read" || pendingTurnRef.current === null) return;
           const target = pendingTurnRef.current;
           pendingTurnRef.current = null;
-          if (target.type === "nextChapter") props.onBoundaryNext();
-          else props.onPageChange(target.pageIndex);
+          props.onPageChange(target.pageIndex);
         }}
       >
         {flipPages}
