@@ -6,11 +6,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
-import { subscribeNovaActivityEvents } from "../../../app/activityEvents";
+import {
+  subscribeNovaActivityEvents,
+  type NovaActivityEvent,
+} from "../../../app/activityEvents";
 import {
   DEFAULT_PET_POSITION,
   createPetData,
@@ -31,6 +35,7 @@ import {
 
 export type PetRuntimeValue = {
   data: PetData | null;
+  latestActivity: NovaActivityEvent | null;
   status: "loading" | "ready" | "error";
   createPet: (name: string, personality: PetPersonality) => Promise<void>;
   updateProfile: (patch: Pick<PetProfile, "name" | "personality">) => Promise<void>;
@@ -45,6 +50,8 @@ const PetRuntimeContext = createContext<PetRuntimeValue | null>(null);
 
 export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<PetData | null>(null);
+  const dataRef = useRef<PetData | null>(null);
+  const [latestActivity, setLatestActivity] = useState<NovaActivityEvent | null>(null);
   const [status, setStatus] = useState<PetRuntimeValue["status"]>("loading");
 
   useEffect(() => {
@@ -60,6 +67,7 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
         const restored = restoredState === stored.state
           ? stored
           : { ...stored, state: restoredState };
+        dataRef.current = restored;
         setData(restored);
         setStatus("ready");
         if (restored !== stored) await savePetRuntime(restored.state, restored.memory);
@@ -73,13 +81,23 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => subscribeNovaActivityEvents((event) => {
-    setData((current) => {
-      if (!current?.preferences.enabled) return current;
-      const next = reducePetData(current, event);
-      void savePetRuntime(next.state, next.memory).catch(() => setStatus("error"));
-      return next;
-    });
+    const current = dataRef.current;
+    if (!current?.preferences.enabled) return;
+    const next = reducePetData(current, event);
+    dataRef.current = next;
+    setData(next);
+    if (
+      next.state.lastReactionAt[event.type]
+      !== current.state.lastReactionAt[event.type]
+    ) {
+      setLatestActivity(event);
+    }
+    void savePetRuntime(next.state, next.memory).catch(() => setStatus("error"));
   }), []);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const createPet = useCallback(async (
     name: string,
@@ -87,7 +105,9 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   ) => {
     const next = createPetData({ name, personality });
     await savePetData(next);
+    dataRef.current = next;
     setData(next);
+    setLatestActivity(null);
     setStatus("ready");
   }, []);
 
@@ -104,6 +124,7 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
       },
     };
     await savePetData(next);
+    dataRef.current = next;
     setData(next);
   }, [data]);
 
@@ -113,14 +134,18 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
     if (!data) return;
     const preferences = { ...data.preferences, ...patch };
     await savePetPreferences(preferences);
-    setData({ ...data, preferences });
+    const next = { ...data, preferences };
+    dataRef.current = next;
+    setData(next);
   }, [data]);
 
   const setPosition = useCallback(async (x: number, y: number) => {
     if (!data) return;
     const state = { ...data.state, x, y, lastActiveAt: Date.now() };
     await savePetRuntime(state, data.memory);
-    setData({ ...data, state });
+    const next = { ...data, state };
+    dataRef.current = next;
+    setData(next);
   }, [data]);
 
   const resetPosition = useCallback(async () => {
@@ -132,24 +157,31 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
       lastActiveAt: Date.now(),
     };
     await savePetRuntime(state, data.memory);
-    setData({ ...data, state });
+    const next = { ...data, state };
+    dataRef.current = next;
+    setData(next);
   }, [data]);
 
   const setHidden = useCallback(async (hidden: boolean) => {
     if (!data) return;
     const state = { ...data.state, hidden, lastActiveAt: Date.now() };
     await savePetRuntime(state, data.memory);
-    setData({ ...data, state });
+    const next = { ...data, state };
+    dataRef.current = next;
+    setData(next);
   }, [data]);
 
   const clearPet = useCallback(async () => {
     await clearPetData();
+    dataRef.current = null;
     setData(null);
+    setLatestActivity(null);
     setStatus("ready");
   }, []);
 
   const value = useMemo<PetRuntimeValue>(() => ({
     data,
+    latestActivity,
     status,
     createPet,
     updateProfile,
@@ -162,6 +194,7 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
     clearPet,
     createPet,
     data,
+    latestActivity,
     resetPosition,
     setHidden,
     setPosition,

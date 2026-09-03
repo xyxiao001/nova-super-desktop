@@ -312,4 +312,30 @@ describe("OpenAI-compatible pet AI adapter", () => {
     )).rejects.toEqual(new NovaAiRequestError("AI 请求超时"));
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+
+  it("distinguishes a user cancellation from a timeout", async () => {
+    const controller = new AbortController();
+    const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      void input;
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        }, { once: true });
+      });
+    });
+    const request = requestOpenAiCompletion(
+      profile,
+      [{ role: "user", content: "Hello" }],
+      {
+        fetcher: fetcher as typeof fetch,
+        signal: controller.signal,
+        timeoutMs: 5_000,
+      },
+    );
+
+    controller.abort();
+
+    await expect(request).rejects.toEqual(new NovaAiRequestError("AI 请求已取消"));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
 });

@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { COMPACT_DESKTOP_QUERY } from "../../app/desktopIconInteraction";
+import { publishNovaActivityEvent } from "../../app/activityEvents";
 import {
   getActiveAiConnection,
   readAiConnectionState,
@@ -36,17 +37,26 @@ import {
   type StoredPetConversation,
   type StoredPetConversationMessage,
 } from "../../app/petConversationStorage";
-import type { PetMood } from "../../app/petModel";
+import {
+  petActivityFeedback,
+  type PetMood,
+} from "../../app/petModel";
+import {
+  DESKTOP_PET_HORIZONTAL_INSET,
+  clampDesktopPetX,
+} from "../../app/petPosition";
 import { usePetRuntime } from "../platform/pet/PetRuntime";
 import { useWindowRuntime } from "../platform/windows/WindowRuntime";
 import { useWorkspaceRuntime } from "../platform/workspace/WorkspaceRuntime";
 
 type PetPosition = { x: number; y: number };
 type PetPanelSize = { width: number; height: number };
+type PetInteraction = "pet" | "high-five" | "play";
 type PetStyle = CSSProperties & {
   "--pet-x": string;
   "--pet-y": string;
   "--pet-wander-x": string;
+  "--pet-edge-x": string;
 };
 
 const MOOD_LABELS: Record<PetMood, string> = {
@@ -70,9 +80,21 @@ const QUICK_APPS: readonly (PetDialogueAction & { icon: string })[] = [
   { kind: "open-app", app: "games", label: "陪我玩", icon: "✦" },
 ] as const;
 
+const PET_INTERACTIONS: ReadonlyArray<{
+  id: PetInteraction;
+  label: string;
+  icon: string;
+}> = [
+  { id: "pet", label: "摸摸", icon: "♡" },
+  { id: "high-five", label: "击掌", icon: "✦" },
+  { id: "play", label: "逗玩", icon: "●" },
+];
+
 const clamp = (value: number, min: number, max: number) => (
   Math.min(max, Math.max(min, value))
 );
+
+const TRANSIENT_PET_ACTIVITIES = new Set(["draw", "celebrate", "nuzzle", "pounce"]);
 
 export default function DesktopPetLayer({
   maximizedWindow,
@@ -81,7 +103,13 @@ export default function DesktopPetLayer({
   maximizedWindow: boolean;
   windowOpen: boolean;
 }) {
-  const { data, setHidden, setPosition, resetPosition } = usePetRuntime();
+  const {
+    data,
+    latestActivity,
+    setHidden,
+    setPosition,
+    resetPosition,
+  } = usePetRuntime();
   const { openApp } = useWindowRuntime();
   const { visibleItems } = useWorkspaceRuntime();
   const [panelOpen, setPanelOpen] = useState(false);
@@ -91,6 +119,7 @@ export default function DesktopPetLayer({
   const [pulse, setPulse] = useState(0);
   const [compactViewport, setCompactViewport] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [activityFeedback, setActivityFeedback] = useState("");
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState<StoredPetConversationMessage[]>([]);
   const [storedConversations, setStoredConversations] = useState<StoredPetConversation[]>([]);
@@ -99,10 +128,13 @@ export default function DesktopPetLayer({
   const [conversationReady, setConversationReady] = useState(false);
   const [conversationStorageFailed, setConversationStorageFailed] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [panelSize, setPanelSize] = useState<PetPanelSize>({ width: 400, height: 420 });
   const rootRef = useRef<HTMLDivElement>(null);
   const chatLogRef = useRef<HTMLDivElement>(null);
   const clickTimerRef = useRef<number | null>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
+  const requestAbortRef = useRef<AbortController | null>(null);
   const suppressClickRef = useRef(false);
   const messageIdRef = useRef(0);
   const conversationRef = useRef<StoredPetConversationMessage[]>([]);
@@ -204,14 +236,33 @@ export default function DesktopPetLayer({
     const interval = data?.preferences.motion === "active" ? 8_000 : 14_000;
     const wander = () => {
       if (document.visibilityState !== "visible" || dragRef.current) return;
-      setWanderX((current) => current === 0 ? (Math.random() > 0.5 ? 18 : -18) : 0);
+      setWanderX((current) => {
+        if (current !== 0) return 0;
+        if ((data?.state.x ?? 0.5) >= 0.85) return -18;
+        if ((data?.state.x ?? 0.5) <= 0.15) return 18;
+        return Math.random() > 0.5 ? 18 : -18;
+      });
     };
     const timer = window.setInterval(wander, interval);
     return () => window.clearInterval(timer);
-  }, [canWander, data?.preferences.motion, profileId]);
+  }, [canWander, data?.preferences.motion, data?.state.x, profileId]);
+
+  useEffect(() => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    const feedback = latestActivity ? petActivityFeedback(latestActivity) : null;
+    setActivityFeedback(feedback ?? "");
+    if (!feedback) return;
+    setPulse((current) => current + 1);
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setActivityFeedback("");
+      feedbackTimerRef.current = null;
+    }, 4_000);
+  }, [latestActivity]);
 
   useEffect(() => () => {
     if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    requestAbortRef.current?.abort();
   }, []);
 
   useEffect(() => {
@@ -232,10 +283,15 @@ export default function DesktopPetLayer({
   const activeConversation = storedConversations.find(
     ({ id }) => id === activeConversationId,
   );
+  const visualActivity = activityFeedback
+    || !TRANSIENT_PET_ACTIVITIES.has(data.state.activity)
+    ? data.state.activity
+    : "idle";
   const style: PetStyle = {
     "--pet-x": `${position.x * 100}%`,
     "--pet-y": `${position.y * 100}%`,
     "--pet-wander-x": `${canWander ? wanderX : 0}px`,
+    "--pet-edge-x": `${DESKTOP_PET_HORIZONTAL_INSET}px`,
   };
 
   const beginDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -260,7 +316,10 @@ export default function DesktopPetLayer({
     drag.moved = true;
     setPanelOpen(false);
     setDraftPosition({
-      x: clamp(drag.position.x + deltaX / bounds.width, 0.17, 0.83),
+      x: clampDesktopPetX(
+        drag.position.x + deltaX / bounds.width,
+        bounds.width,
+      ),
       y: clamp(drag.position.y + deltaY / Math.max(1, bounds.height - 54), 0.1, 0.9),
     });
   };
@@ -330,12 +389,17 @@ export default function DesktopPetLayer({
     }, 220);
   };
 
+  const playInteraction = (interaction: PetInteraction) => {
+    publishNovaActivityEvent("pet-interacted", "desktop", { interaction });
+    setPanelOpen(false);
+  };
+
   const playMood = () => {
     if (clickTimerRef.current) {
       window.clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
     }
-    setPulse((current) => current + 1);
+    playInteraction("pet");
   };
 
   const runAction = (action: PetDialogueAction) => {
@@ -428,20 +492,28 @@ export default function DesktopPetLayer({
       role: "user",
       text,
     };
-    await commitConversation([...conversationRef.current, userMessage]);
+    const immediateAction = localReply.action?.execution === "immediate"
+      ? localReply.action
+      : null;
+    const userCommit = commitConversation([...conversationRef.current, userMessage]);
     setMessage("");
+    if (immediateAction) runAction(immediateAction);
+    await userCommit;
     if (localReply.action) {
+      const immediate = localReply.action.execution === "immediate";
       const replyMessage: StoredPetConversationMessage = {
         id: ++messageIdRef.current,
         role: "pet",
         text: localReply.text,
-        action: localReply.action,
+        ...(immediate ? {} : { action: localReply.action }),
       };
       await commitConversation([...conversationRef.current, replyMessage]);
       return;
     }
 
     setThinking(true);
+    const requestController = new AbortController();
+    requestAbortRef.current = requestController;
     let pendingReplyId: number | null = null;
     try {
       const aiState = await readAiConnectionState();
@@ -473,6 +545,7 @@ export default function DesktopPetLayer({
       const streamingMessages = [...conversationRef.current, streamingReply];
       conversationRef.current = streamingMessages;
       setConversation(streamingMessages);
+      setStreaming(true);
       const completion = await requestOpenAiCompletion(
         profile,
         buildPetAiMessages({
@@ -497,6 +570,7 @@ export default function DesktopPetLayer({
             setConversation(next);
           },
           sessionId: aiSessionIdRef.current,
+          signal: requestController.signal,
         },
       );
       const replyMessage: StoredPetConversationMessage = {
@@ -508,6 +582,15 @@ export default function DesktopPetLayer({
         item.id === replyId ? replyMessage : item
       )));
     } catch (error) {
+      if (error instanceof NovaAiRequestError && error.message === "AI 请求已取消") {
+        const stoppedMessages = pendingReplyId === null
+          ? conversationRef.current
+          : conversationRef.current.map((item) => item.id === pendingReplyId
+            ? { ...item, text: item.text === "…" ? "已停止生成。" : item.text }
+            : item);
+        await commitConversation(stoppedMessages);
+        return;
+      }
       const reason = error instanceof NovaAiRequestError
         ? error.message
         : "AI 对话失败";
@@ -521,8 +604,16 @@ export default function DesktopPetLayer({
         : [...conversationRef.current, replyMessage];
       await commitConversation(messages);
     } finally {
+      if (requestAbortRef.current === requestController) {
+        requestAbortRef.current = null;
+      }
+      setStreaming(false);
       setThinking(false);
     }
+  };
+
+  const stopGeneration = () => {
+    requestAbortRef.current?.abort();
   };
 
   const interactionPanel = (className = "") => <aside
@@ -593,6 +684,13 @@ export default function DesktopPetLayer({
         <i aria-hidden="true">{action.icon}</i><span>{action.label}</span>
       </button>)}
     </div>}
+    <div className="pet-touch-actions" aria-label="和伙伴互动">
+      {PET_INTERACTIONS.map((interaction) => <button
+        key={interaction.id}
+        type="button"
+        onClick={() => playInteraction(interaction.id)}
+      ><i aria-hidden="true">{interaction.icon}</i><span>{interaction.label}</span></button>)}
+    </div>
     <form className="pet-chat-input" onSubmit={sendMessage}>
       <span className="pet-chat-field">
         <input
@@ -604,7 +702,9 @@ export default function DesktopPetLayer({
           onChange={(event) => setMessage(event.target.value)}
         />
       </span>
-      <button aria-label="发送消息" disabled={thinking || !conversationReady || conversationStorageFailed || !message.trim()} type="submit">{thinking ? "…" : "➤"}</button>
+      {streaming
+        ? <button className="stop" aria-label="停止生成" title="停止生成" type="button" onClick={stopGeneration}>■</button>
+        : <button aria-label="发送消息" disabled={thinking || !conversationReady || conversationStorageFailed || !message.trim()} type="submit">{thinking ? "…" : "➤"}</button>}
     </form>
     <div className="pet-panel-tools">
       <div className="pet-energy"><span>活力</span><meter min="0" max="100" value={data.state.energy}>{data.state.energy}</meter><b>{data.state.energy}</b></div>
@@ -627,6 +727,7 @@ export default function DesktopPetLayer({
   if (data.state.hidden || compacted) {
     return <div className="desktop-pet-layer compact" aria-live="polite">
       {compacted && panelOpen && interactionPanel("compact-panel")}
+      {activityFeedback && !panelOpen && <span className="pet-activity-feedback" role="status">{activityFeedback}</span>}
       <button
         className="desktop-pet-status"
         aria-label={data.state.hidden ? `显示桌面伙伴${data.profile.name}` : `${data.profile.name}当前心情：${MOOD_LABELS[data.state.mood]}`}
@@ -636,7 +737,7 @@ export default function DesktopPetLayer({
           else setPanelOpen((current) => !current);
         }}
       >
-        <span className={`pet-status-face mood-${data.state.mood}`} aria-hidden="true"><i/><b/></span>
+        <span className={`pet-status-face pet-${visualActivity} mood-${data.state.mood}`} aria-hidden="true"><i/><b/></span>
       </button>
     </div>;
   }
@@ -644,9 +745,10 @@ export default function DesktopPetLayer({
   return <div ref={rootRef} className={`desktop-pet-layer ${draftPosition ? "dragging" : ""}`} style={style}>
     <div className={`desktop-pet-anchor motion-${data.preferences.motion}`}>
       {(introVisible || panelOpen) && interactionPanel(panelBelow ? "below" : "")}
+      {activityFeedback && !panelOpen && <span className="pet-activity-feedback" role="status">{activityFeedback}</span>}
       <button
         key={pulse}
-        className={`desktop-pet pet-${data.state.activity} mood-${data.state.mood}`}
+        className={`desktop-pet pet-${visualActivity} mood-${data.state.mood}`}
         aria-label={`${data.profile.name}，${MOOD_LABELS[data.state.mood]}`}
         aria-expanded={panelOpen}
         onClick={togglePanel}
@@ -657,18 +759,24 @@ export default function DesktopPetLayer({
         onPointerCancel={endDrag}
       >
         <span className="nova-cat" aria-hidden="true">
+          <i className="cat-emote"><b/><b/><b/></i>
           <i className="cat-tail"/>
           <i className="cat-body"/>
           <i className="cat-head">
             <b className="cat-ear left"/>
             <b className="cat-ear right"/>
             <b className="cat-fringe"/>
+            <b className="cat-brow left"/>
+            <b className="cat-brow right"/>
             <b className="cat-eye left"/>
             <b className="cat-eye right"/>
             <b className="cat-muzzle"/>
+            <b className="cat-whiskers left"/>
+            <b className="cat-whiskers right"/>
           </i>
           <i className="cat-paw left"/>
           <i className="cat-paw right"/>
+          <i className="cat-action-prop"><b/><b/></i>
         </span>
       </button>
     </div>

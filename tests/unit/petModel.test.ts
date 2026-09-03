@@ -4,12 +4,14 @@ import {
   NOVA_ACTIVITY_EVENT,
   createNovaActivityEvent,
   publishNovaActivityEvent,
+  readingMilestoneForProgress,
   subscribeNovaActivityEvents,
 } from "../../app/activityEvents";
 import {
   PET_IDLE_RESET_MS,
   PET_REACTION_COOLDOWN_MS,
   createPetData,
+  petActivityFeedback,
   reducePetData,
   reducePetState,
   restorePetState,
@@ -53,6 +55,13 @@ describe("NOVA activity events", () => {
       payload: { itemType: "image" },
     }));
     expect(NOVA_ACTIVITY_EVENT).toBe("nova-activity");
+  });
+
+  it("returns only the highest newly crossed reading milestone", () => {
+    expect(readingMilestoneForProgress(24, 25)).toBe(25);
+    expect(readingMilestoneForProgress(24, 76)).toBe(75);
+    expect(readingMilestoneForProgress(76, 74)).toBeUndefined();
+    expect(readingMilestoneForProgress(100, 100)).toBeUndefined();
   });
 });
 
@@ -183,6 +192,107 @@ describe("pet state model", () => {
     expect(repeatedEarlierMilestone.memory.readingMilestones).toEqual({
       "book-1": 50,
     });
+  });
+
+  it("keeps quiet focus posture until completion and provides local feedback", () => {
+    const data = createPetData({
+      name: "Nova",
+      personality: "quiet",
+      id: "pet-1",
+      now: 0,
+    });
+    const focusing = reducePetData(data, createNovaActivityEvent(
+      "focus-started",
+      "focus",
+      undefined,
+      "focus-start",
+      1_000,
+    ));
+    const completedEvent = createNovaActivityEvent(
+      "focus-completed",
+      "focus",
+      { durationBucket: "medium" },
+      "focus-complete",
+      2_000,
+    );
+    const completed = reducePetData(focusing, completedEvent);
+
+    expect(focusing.state).toMatchObject({
+      mood: "calm",
+      activity: "focus",
+      energy: data.state.energy,
+      affinity: data.state.affinity,
+    });
+    expect(completed.state).toMatchObject({
+      mood: "happy",
+      activity: "celebrate",
+    });
+    expect(completed.memory.eventCounts["focus-completed"]).toBe(1);
+    expect(petActivityFeedback(completedEvent)).toBe("专注完成，做得很好！");
+  });
+
+  it("uses milestone-specific local feedback without resource names", () => {
+    const event = createNovaActivityEvent(
+      "reading-milestone",
+      "reader",
+      { localResourceId: "book-1", progressBucket: 50 },
+      "read-1",
+      1_000,
+    );
+
+    expect(petActivityFeedback(event)).toBe("读到一半啦，我继续陪你。");
+    expect(petActivityFeedback(event)).not.toContain("book-1");
+  });
+
+  it("reacts differently to direct local pet interactions", () => {
+    const data = createPetData({
+      name: "Nova",
+      personality: "lively",
+      id: "pet-1",
+      now: 0,
+    });
+    const pettedEvent = createNovaActivityEvent(
+      "pet-interacted",
+      "desktop",
+      { interaction: "pet" },
+      "pet-1",
+      1_000,
+    );
+    const playedEvent = createNovaActivityEvent(
+      "pet-interacted",
+      "desktop",
+      { interaction: "play" },
+      "play-1",
+      2_000,
+    );
+    const petted = reducePetData(data, pettedEvent);
+    const played = reducePetData(petted, playedEvent);
+
+    expect(petted.state.activity).toBe("nuzzle");
+    expect(played.state.activity).toBe("pounce");
+    expect(played.memory.eventCounts["pet-interacted"]).toBe(2);
+    expect(petActivityFeedback(pettedEvent)).toContain("呼噜");
+    expect(petActivityFeedback(playedEvent)).toContain("抓到");
+  });
+
+  it("provides source-specific creative feedback without resource content", () => {
+    const photo = createNovaActivityEvent(
+      "creative-saved",
+      "photo",
+      { itemType: "image" },
+      "photo-1",
+      1_000,
+    );
+    const drawing = createNovaActivityEvent(
+      "creative-saved",
+      "drawing",
+      { itemType: "image" },
+      "drawing-1",
+      2_000,
+    );
+
+    expect(petActivityFeedback(photo)).toBe("照片收好啦，这个光影真好看！");
+    expect(petActivityFeedback(drawing)).toBe("新作品保存好啦，我很喜欢！");
   });
 
   it("restores calm without reducing affinity after a long absence", () => {

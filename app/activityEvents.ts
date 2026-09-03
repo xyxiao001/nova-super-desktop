@@ -11,7 +11,10 @@ export type NovaActivityEventType =
   | "reading-milestone"
   | "excerpt-created"
   | "note-created"
+  | "focus-started"
+  | "focus-ended"
   | "focus-completed"
+  | "pet-interacted"
   | "game-finished"
   | "wallpaper-changed";
 
@@ -22,6 +25,7 @@ export type NovaActivityEventPayload = {
   count?: number;
   progressBucket?: 25 | 50 | 75 | 100;
   durationBucket?: "short" | "medium" | "long";
+  interaction?: "pet" | "high-five" | "play";
   localResourceId?: string;
 };
 
@@ -33,10 +37,19 @@ export type NovaActivityEvent = {
   payload?: NovaActivityEventPayload;
 };
 
+const READING_MILESTONES = [25, 50, 75, 100] as const;
+
 type ActivityEventTarget = Pick<
   Window,
   "addEventListener" | "removeEventListener" | "dispatchEvent"
 >;
+
+export const readingMilestoneForProgress = (
+  previousProgress: number,
+  currentProgress: number,
+) => READING_MILESTONES.filter(
+  (milestone) => previousProgress < milestone && currentProgress >= milestone,
+).at(-1);
 
 export const createNovaActivityEvent = (
   type: NovaActivityEventType,

@@ -44,6 +44,10 @@ import {
   isCompactDesktopViewport,
   movedBeyondLongPressTolerance,
 } from "../../../app/desktopIconInteraction";
+import {
+  publishNovaActivityEvent,
+  readingMilestoneForProgress,
+} from "../../../app/activityEvents";
 import ReaderFlipBook from "./ReaderFlipBook";
 import ReaderWorker from "./reader.worker?worker";
 import { useAppLaunchIntent } from "../../platform/launch/LaunchRuntime";
@@ -126,6 +130,7 @@ export default function ReaderApp() {
   const pendingLocationRef = useRef<ReaderLocation | null>(null);
   const semanticLocationRef = useRef({ paragraphIndex: 0, characterOffset: 0 });
   const progressSnapshotRef = useRef<{ bookId: string; location: ReaderLocation } | null>(null);
+  const readingProgressRef = useRef<{ bookId: string; progress: number } | null>(null);
   const progressTimerRef = useRef<number | null>(null);
   const scrollFrameRef = useRef<number | null>(null);
   const requestedBookRef = useRef<string | null>(null);
@@ -353,6 +358,19 @@ export default function ReaderApp() {
     progressSnapshotRef.current = { bookId: activeBook.id, location };
     if (progressTimerRef.current) window.clearTimeout(progressTimerRef.current);
     progressTimerRef.current = window.setTimeout(() => {
+      const previous = readingProgressRef.current;
+      if (!previous || previous.bookId !== activeBook.id) {
+        readingProgressRef.current = { bookId: activeBook.id, progress };
+      } else {
+        const milestone = readingMilestoneForProgress(previous.progress, progress);
+        previous.progress = Math.max(previous.progress, progress);
+        if (milestone) {
+          publishNovaActivityEvent("reading-milestone", "reader", {
+            localResourceId: activeBook.id,
+            progressBucket: milestone,
+          });
+        }
+      }
       saveReaderLocation(activeBook.id, location);
       saveReaderActivity({
         bookId: activeBook.id,
@@ -424,6 +442,9 @@ export default function ReaderApp() {
     setChromeHidden(false);
     if (chromeTimerRef.current) window.clearTimeout(chromeTimerRef.current);
     if (compact) chromeTimerRef.current = window.setTimeout(() => setChromeHidden(true), 2200);
+    publishNovaActivityEvent("reading-started", "reader", {
+      localResourceId: book.id,
+    });
   };
 
   const openBook = async (book: StoredBook | StoredBookSummary) => {

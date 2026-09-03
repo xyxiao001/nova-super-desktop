@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import {
   appendFocusSession,
+  focusDurationBucket,
   focusSessionStats,
   formatClockDuration,
   timerProgress,
@@ -14,6 +15,7 @@ import {
   type FocusSession,
 } from "./focusClock";
 import { playNovaSound } from "../../../app/novaSettings";
+import { publishNovaActivityEvent } from "../../../app/activityEvents";
 import { publishNovaSystemMoment } from "../../../app/systemMoments";
 
 type ClockView = "focus" | "timer" | "stopwatch";
@@ -48,10 +50,17 @@ export default function FocusClockApp() {
   const [laps, setLaps] = useState<number[]>([]);
   const [sessions, setSessions] = useState<FocusSession[]>(readSessions);
   const completionRef = useRef(false);
+  const focusCompanionRef = useRef(false);
   const stopwatchStartRef = useRef(0);
 
   const stats = useMemo(() => focusSessionStats(sessions), [sessions]);
   const progress = view === "stopwatch" ? 0 : timerProgress(total, remaining);
+
+  const setFocusCompanion = (next: boolean) => {
+    if (focusCompanionRef.current === next) return;
+    focusCompanionRef.current = next;
+    publishNovaActivityEvent(next ? "focus-started" : "focus-ended", "focus");
+  };
 
   const saveSession = (duration: number) => {
     setSessions((current) => {
@@ -65,6 +74,7 @@ export default function FocusClockApp() {
     if (endAt) setRemaining(timerRemaining(endAt, Date.now()));
     setRunning(false);
     setEndAt(null);
+    setFocusCompanion(false);
   };
 
   const toggleCountdown = () => {
@@ -77,9 +87,11 @@ export default function FocusClockApp() {
     setRemaining(duration);
     setEndAt(Date.now() + duration * 1000);
     setRunning(true);
+    if (view === "focus" && preset === "focus") setFocusCompanion(true);
   };
 
   const resetCountdown = (seconds = total) => {
+    setFocusCompanion(false);
     completionRef.current = false;
     setRunning(false);
     setEndAt(null);
@@ -133,7 +145,11 @@ export default function FocusClockApp() {
       setRunning(false);
       setEndAt(null);
       if (view === "focus" && preset === "focus") {
+        focusCompanionRef.current = false;
         saveSession(total);
+        publishNovaActivityEvent("focus-completed", "focus", {
+          durationBucket: focusDurationBucket(total),
+        });
         publishNovaSystemMoment("focus-complete", "focus");
       }
       playNovaSound("success");
@@ -142,6 +158,12 @@ export default function FocusClockApp() {
     const timer = window.setInterval(tick, 250);
     return () => window.clearInterval(timer);
   }, [endAt, preset, running, total, view]);
+
+  useEffect(() => () => {
+    if (focusCompanionRef.current) {
+      publishNovaActivityEvent("focus-ended", "focus");
+    }
+  }, []);
 
   useEffect(() => {
     if (!stopwatchRunning) return;

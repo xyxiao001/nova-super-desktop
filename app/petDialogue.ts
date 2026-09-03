@@ -1,11 +1,10 @@
 import type { PetMood, PetPersonality } from "./petModel";
-import type { WindowAppId } from "../src/platform/apps/appManifest";
+import {
+  matchPetSystemCommand,
+  type PetSystemAction,
+} from "./petSystemCommands";
 
-export type PetDialogueAction = {
-  kind: "open-app";
-  app: WindowAppId;
-  label: string;
-};
+export type PetDialogueAction = PetSystemAction;
 
 export type PetDialogueReply = {
   text: string;
@@ -18,26 +17,6 @@ export type PetDialogueContext = {
   mood: PetMood;
   energy: number;
 };
-
-type AppIntent = {
-  pattern: RegExp;
-  app: WindowAppId;
-  label: string;
-  reply: string;
-};
-
-const APP_INTENTS: readonly AppIntent[] = [
-  { pattern: /记事本|笔记|写(点|些|一会|东西|文字)|文稿/, app: "notes", label: "打开记事本", reply: "想法值得马上记下来。" },
-  { pattern: /阅读|读书|读.*书|陪.*读|看书|书架/, app: "reader", label: "打开 NOVA 阅读", reply: "找个舒服的位置，读一会儿吧。" },
-  { pattern: /照片|图片|相册/, app: "viewer", label: "打开照片", reply: "一起看看桌面里的照片吧。" },
-  { pattern: /画板|画画|绘画|涂鸦/, app: "drawing", label: "打开 NOVA 画板", reply: "画点什么会让今天更有意思。" },
-  { pattern: /专注|番茄|计时|集中/, app: "focus", label: "打开专注时钟", reply: "我会安静陪你完成这一段专注。" },
-  { pattern: /文件|整理|资源管理器/, app: "explorer", label: "打开文件资源管理器", reply: "我们去把桌面和文件整理清楚。" },
-  { pattern: /日历|日期|几号|安排|日程/, app: "calendar", label: "打开日历", reply: "日历里能看清今天和接下来的安排。" },
-  { pattern: /游戏|陪.*玩|放松|摸鱼|下棋|扫雷/, app: "games", label: "打开游戏大厅", reply: "休息一会儿也很重要。" },
-  { pattern: /计算|算一下|计算器/, app: "calculator", label: "打开计算器", reply: "把数字交给计算器会更快。" },
-  { pattern: /设置|配置|选项/, app: "settings", label: "打开设置", reply: "可以在设置里调整桌面和我的状态。" },
-] as const;
 
 const MOOD_LABELS: Record<PetMood, string> = {
   calm: "很平静",
@@ -58,14 +37,15 @@ export function createLocalPetReply(
   context: PetDialogueContext,
 ): PetDialogueReply {
   const normalized = message.trim().slice(0, 120);
-  const appIntent = APP_INTENTS.find(({ pattern }) => pattern.test(normalized));
-  if (appIntent) {
+  const command = matchPetSystemCommand(normalized);
+  if (command) {
     return {
-      text: appIntent.reply,
+      text: command.reply,
       action: {
         kind: "open-app",
-        app: appIntent.app,
-        label: appIntent.label,
+        app: command.app,
+        label: command.label,
+        execution: "immediate",
       },
     };
   }

@@ -53,7 +53,7 @@ export type WorkspaceRuntimeValue = {
     mode: "copy" | "replace",
     name: string,
     content: string,
-  ) => void;
+  ) => boolean;
   createReaderExcerpt: (excerpt: { title: string; content: string }) => void;
 };
 

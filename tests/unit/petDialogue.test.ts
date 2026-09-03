@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createLocalPetReply } from "../../app/petDialogue";
+import { PET_SYSTEM_COMMANDS } from "../../app/petSystemCommands";
 
 const context = {
   name: "Nova",
@@ -28,8 +29,41 @@ describe("local pet dialogue", () => {
       kind: "open-app",
       app,
       label,
+      execution: "immediate",
     });
     expect(reply.text.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ["我想玩五子棋", "gomoku"],
+    ["我想看书", "reader"],
+    ["打开系统设置", "settings"],
+    ["来一局国际象棋", "chess"],
+    ["开始玩扫雷", "mines"],
+    ["我想写点东西", "notes"],
+    ["我想下棋", "games"],
+  ] as const)("routes the explicit system command %s before AI", (message, app) => {
+    expect(createLocalPetReply(message, context).action).toMatchObject({
+      app,
+      execution: "immediate",
+    });
+  });
+
+  it("keeps the system command registry unique and app-specific", () => {
+    expect(new Set(PET_SYSTEM_COMMANDS.map(({ id }) => id)).size)
+      .toBe(PET_SYSTEM_COMMANDS.length);
+    expect(PET_SYSTEM_COMMANDS.find(({ id }) => id === "gomoku")?.app)
+      .toBe("gomoku");
+    expect(PET_SYSTEM_COMMANDS.find(({ id }) => id === "games")?.app)
+      .toBe("games");
+  });
+
+  it.each([
+    "五子棋真难",
+    "这本书很好看",
+    "系统设置很多",
+  ])("does not launch an app for ordinary discussion: %s", (message) => {
+    expect(createLocalPetReply(message, context).action).toBeUndefined();
   });
 
   it("answers pet state questions without producing an action", () => {

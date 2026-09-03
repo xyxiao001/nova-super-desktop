@@ -48,7 +48,7 @@ describe("desktop pet integration", () => {
     expect(petSettings).toContain("不影响 AI 配置");
   });
 
-  it("keeps local dialogue actions behind explicit buttons", async () => {
+  it("keeps suggested actions behind buttons and routes them through WindowRuntime", async () => {
     const [layer, root] = await Promise.all([
       readWorkspaceFile("src/shell/DesktopPetLayer.tsx"),
       readWorkspaceFile("src/shell/DesktopRoot.tsx"),
@@ -59,5 +59,64 @@ describe("desktop pet integration", () => {
     expect(layer).toContain("onClick={() => runAction(action)}");
     expect(layer).toContain("openApp(action.app)");
     expect(root).toContain('publishNovaActivityEvent("app-activated",app)');
+  });
+
+  it("executes deterministic local system commands before consulting AI", async () => {
+    const layer = await readWorkspaceFile("src/shell/DesktopPetLayer.tsx");
+
+    expect(layer).toContain('localReply.action?.execution === "immediate"');
+    expect(layer).toContain("if (immediateAction) runAction(immediateAction)");
+    expect(layer.indexOf("if (immediateAction)")).toBeLessThan(
+      layer.indexOf("readAiConnectionState()"),
+    );
+  });
+
+  it("links reading and focus milestones without sending content to AI", async () => {
+    const [reader, focus, layer] = await Promise.all([
+      readWorkspaceFile("src/apps/reader/entry.tsx"),
+      readWorkspaceFile("src/apps/focus/entry.tsx"),
+      readWorkspaceFile("src/shell/DesktopPetLayer.tsx"),
+    ]);
+
+    expect(reader).toContain('publishNovaActivityEvent("reading-started", "reader"');
+    expect(reader).toContain('publishNovaActivityEvent("reading-milestone", "reader"');
+    expect(reader).toContain("localResourceId: activeBook.id");
+    expect(reader).not.toContain("requestOpenAiCompletion");
+    expect(focus).toContain('publishNovaActivityEvent(next ? "focus-started" : "focus-ended", "focus")');
+    expect(focus).toContain('publishNovaActivityEvent("focus-completed", "focus"');
+    expect(focus).not.toContain("requestOpenAiCompletion");
+    expect(layer).toContain("petActivityFeedback(latestActivity)");
+    expect(layer).toContain('className="pet-activity-feedback"');
+  });
+
+  it("links creative saves and keeps their payload content-free", async () => {
+    const [photo, drawing] = await Promise.all([
+      readWorkspaceFile("src/apps/photo/entry.tsx"),
+      readWorkspaceFile("src/apps/drawing/entry.tsx"),
+    ]);
+
+    expect(photo).toContain('publishNovaActivityEvent("creative-saved","photo",{itemType:"image"})');
+    expect(photo).toContain("const saved=onSave");
+    expect(photo).toContain("if(saved)publishNovaActivityEvent");
+    expect(drawing).toContain('publishNovaActivityEvent("creative-saved","drawing",{itemType:"image"})');
+    expect(photo).not.toContain('publishNovaActivityEvent("creative-saved","photo",{content');
+    expect(drawing).not.toContain('publishNovaActivityEvent("creative-saved","drawing",{content');
+  });
+
+  it("supports stopping streamed replies and direct local pet interactions", async () => {
+    const [layer, styles] = await Promise.all([
+      readWorkspaceFile("src/shell/DesktopPetLayer.tsx"),
+      readWorkspaceFile("src/shell/desktopPet.css"),
+    ]);
+
+    expect(layer).toContain("const requestAbortRef = useRef<AbortController | null>(null)");
+    expect(layer).toContain("signal: requestController.signal");
+    expect(layer).toContain('aria-label="停止生成"');
+    expect(layer).toContain("requestAbortRef.current?.abort()");
+    expect(layer).toContain('"pet-interacted"');
+    expect(layer).toContain("PET_INTERACTIONS.map");
+    expect(styles).toContain(".desktop-pet.pet-draw .cat-action-prop");
+    expect(styles).toContain(".desktop-pet.pet-nuzzle");
+    expect(styles).toContain(".desktop-pet.pet-pounce");
   });
 });

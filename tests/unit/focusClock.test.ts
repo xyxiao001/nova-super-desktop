@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   appendFocusSession,
+  focusDurationBucket,
   focusSessionStats,
   formatClockDuration,
   timerProgress,
@@ -18,6 +19,12 @@ describe("focus clock", () => {
     expect(timerRemaining(12_500, 10_000)).toBe(3);
     expect(timerRemaining(9_000, 10_000)).toBe(0);
     expect(timerProgress(100, 25)).toBe(.75);
+  });
+
+  it("maps completed focus durations to coarse local buckets", () => {
+    expect(focusDurationBucket(10 * 60)).toBe("short");
+    expect(focusDurationBucket(25 * 60)).toBe("medium");
+    expect(focusDurationBucket(50 * 60)).toBe("long");
   });
 
   it("limits history and aggregates daily and weekly focus", () => {

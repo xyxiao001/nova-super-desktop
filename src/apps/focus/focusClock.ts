@@ -22,6 +22,12 @@ export function timerProgress(total: number, remaining: number) {
   return Math.max(0, Math.min(1, (total - remaining) / total));
 }
 
+export function focusDurationBucket(totalSeconds: number) {
+  if (totalSeconds < 25 * 60) return "short" as const;
+  if (totalSeconds < 50 * 60) return "medium" as const;
+  return "long" as const;
+}
+
 export function appendFocusSession(
   sessions: FocusSession[],
   session: FocusSession,

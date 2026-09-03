@@ -13,6 +13,8 @@ export type PetActivity =
   | "focus"
   | "celebrate"
   | "comfort"
+  | "nuzzle"
+  | "pounce"
   | "sleep";
 export type PetMotionIntensity = "static" | "gentle" | "active";
 export type PetBubbleFrequency = "low" | "medium" | "high";
@@ -72,7 +74,10 @@ export const PET_REACTION_COOLDOWN_MS: Record<NovaActivityEventType, number> = {
   "reading-milestone": 60_000,
   "excerpt-created": 60_000,
   "note-created": 60_000,
+  "focus-started": 0,
+  "focus-ended": 0,
   "focus-completed": 60_000,
+  "pet-interacted": 800,
   "game-finished": 60_000,
   "wallpaper-changed": 60_000,
 };
@@ -93,7 +98,10 @@ const BASE_REACTIONS: Record<NovaActivityEventType, PetReaction> = {
   "reading-milestone": { mood: "happy", activity: "read", energyDelta: -1, affinityDelta: 2 },
   "excerpt-created": { mood: "curious", activity: "read", energyDelta: -1, affinityDelta: 1 },
   "note-created": { mood: "curious", activity: "draw", energyDelta: -1, affinityDelta: 1 },
+  "focus-started": { mood: "calm", activity: "focus", energyDelta: 0, affinityDelta: 0 },
+  "focus-ended": { mood: "calm", activity: "idle", energyDelta: 0, affinityDelta: 0 },
   "focus-completed": { mood: "happy", activity: "celebrate", energyDelta: -2, affinityDelta: 3 },
+  "pet-interacted": { mood: "happy", activity: "nuzzle", energyDelta: 0, affinityDelta: 1 },
   "game-finished": { mood: "curious", activity: "idle", energyDelta: -2, affinityDelta: 1 },
   "wallpaper-changed": { mood: "curious", activity: "idle", energyDelta: -1, affinityDelta: 0 },
 };
@@ -103,12 +111,21 @@ const clampPetValue = (value: number) => (
 );
 
 const reactionFor = (event: NovaActivityEvent): PetReaction => {
-  if (event.type !== "game-finished") return BASE_REACTIONS[event.type];
-  if (event.payload?.outcome === "win") {
-    return { mood: "excited", activity: "celebrate", energyDelta: -2, affinityDelta: 2 };
+  if (event.type === "pet-interacted") {
+    if (event.payload?.interaction === "high-five") {
+      return { mood: "excited", activity: "celebrate", energyDelta: -1, affinityDelta: 1 };
+    }
+    if (event.payload?.interaction === "play") {
+      return { mood: "curious", activity: "pounce", energyDelta: -2, affinityDelta: 1 };
+    }
   }
-  if (event.payload?.outcome === "loss") {
-    return { mood: "calm", activity: "comfort", energyDelta: -1, affinityDelta: 1 };
+  if (event.type === "game-finished") {
+    if (event.payload?.outcome === "win") {
+      return { mood: "excited", activity: "celebrate", energyDelta: -2, affinityDelta: 2 };
+    }
+    if (event.payload?.outcome === "loss") {
+      return { mood: "calm", activity: "comfort", energyDelta: -1, affinityDelta: 1 };
+    }
   }
   return BASE_REACTIONS[event.type];
 };
@@ -121,6 +138,32 @@ const discoveryFor = (event: NovaActivityEvent) => {
   }
   if (event.type === "game-finished" && event.payload?.outcome === "win") {
     return "first-game-win";
+  }
+  return null;
+};
+
+export const petActivityFeedback = (event: NovaActivityEvent) => {
+  if (event.type === "creative-saved") {
+    return event.source === "photo"
+      ? "照片收好啦，这个光影真好看！"
+      : "新作品保存好啦，我很喜欢！";
+  }
+  if (event.type === "reading-milestone") {
+    const progress = event.payload?.progressBucket;
+    if (progress === 100) return "读完啦，合上书休息一下吧。";
+    if (progress === 75) return "已经读到四分之三啦。";
+    if (progress === 50) return "读到一半啦，我继续陪你。";
+    if (progress === 25) return "读完四分之一啦，慢慢来。";
+  }
+  if (event.type === "focus-completed") {
+    return event.payload?.durationBucket === "long"
+      ? "完成了一次长专注，辛苦啦！"
+      : "专注完成，做得很好！";
+  }
+  if (event.type === "pet-interacted") {
+    if (event.payload?.interaction === "high-five") return "啪！默契满分。";
+    if (event.payload?.interaction === "play") return "抓到啦！再来一次？";
+    return "呼噜呼噜，再摸一下也可以。";
   }
   return null;
 };
