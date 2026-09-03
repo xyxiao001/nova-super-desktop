@@ -85,4 +85,11 @@ describe("system moments", () => {
   it("uses the dedicated browser event name", () => {
     expect(NOVA_SYSTEM_MOMENT_EVENT).toBe("nova-system-moment");
   });
+
+  it("remounts the effect layer for every moment id", async () => {
+    const desktopRoot = await readWorkspaceFile("src/shell/DesktopRoot.tsx");
+    expect(desktopRoot).toContain(
+      "<DesktopMomentLayer key={systemMoment.id} moment={systemMoment}",
+    );
+  });
 });

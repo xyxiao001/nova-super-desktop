@@ -25,6 +25,7 @@ function useDesktopIconInteraction(
   position: IconPosition | undefined,
   move: ((id: string, position: IconPosition) => void) | undefined,
   onLongPress: (x: number, y: number) => void,
+  onPointerDrop?: (x: number, y: number) => void,
   desktopPointerMove = true,
 ) {
   const drag = useRef<{ x: number; y: number; origin: IconPosition } | null>(null);
@@ -102,10 +103,12 @@ function useDesktopIconInteraction(
     clearPress();
     event.currentTarget.classList.remove("dragging");
     if (!drag.current) return;
+    const dropped = moved.current && !isCompactDesktopViewport();
     drag.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    if (dropped) onPointerDrop?.(event.clientX, event.clientY);
   };
   const contextMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -141,7 +144,6 @@ type DesktopShortcutProps = {
   order: number;
   move: (id: string, position: IconPosition) => void;
   open: () => void;
-  onIconDragEnter: (id: string) => void;
   onContextMenu: (x: number, y: number) => void;
 };
 
@@ -154,7 +156,6 @@ export function DesktopShortcut({
   order,
   move,
   open,
-  onIconDragEnter,
   onContextMenu,
 }: DesktopShortcutProps) {
   const interaction = useDesktopIconInteraction(id, position, move, onContextMenu);
@@ -167,7 +168,6 @@ export function DesktopShortcut({
       onPointerMove={interaction.update}
       onPointerUp={interaction.end}
       onPointerCancel={interaction.end}
-      onDragEnter={() => onIconDragEnter(id)}
       onClick={(event) => {
         event.stopPropagation();
         if (interaction.clickAction("ignore") === "open") open();
@@ -194,10 +194,9 @@ type DesktopFileProps = {
   selected: boolean;
   cut?: boolean;
   onSelect: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  onPointerStart?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onOpen: () => void;
-  onDragStart?: (event: ReactDragEvent<HTMLButtonElement>) => void;
-  onDragEnd?: () => void;
-  onIconDragEnter?: (id: string) => void;
+  onPointerDrop?: (x: number, y: number) => void;
   onFileDrop?: (event: ReactDragEvent<HTMLButtonElement>) => void;
   onContextMenu?: (x: number, y: number) => void;
 };
@@ -210,10 +209,9 @@ export function DesktopFile({
   selected,
   cut = false,
   onSelect,
+  onPointerStart,
   onOpen,
-  onDragStart,
-  onDragEnd,
-  onIconDragEnter,
+  onPointerDrop,
   onFileDrop,
   onContextMenu,
 }: DesktopFileProps) {
@@ -222,27 +220,21 @@ export function DesktopFile({
     position,
     move,
     (x, y) => onContextMenu?.(x, y),
-    false,
+    onPointerDrop,
   );
   return (
     <button
-      draggable={!!onDragStart}
       data-desktop-icon-id={item.id}
+      data-desktop-folder-id={item.type === "folder" ? item.id : undefined}
       className={`desktop-item ${position ? "positioned" : ""} ${selected ? "selected" : ""} ${cut ? "cut" : ""}`}
       style={position ? { left: position.x, top: position.y, order } : undefined}
-      onPointerDown={interaction.start}
+      onPointerDown={(event) => {
+        onPointerStart?.(event);
+        interaction.start(event);
+      }}
       onPointerMove={interaction.update}
       onPointerUp={interaction.end}
       onPointerCancel={interaction.end}
-      onDragStart={(event) => {
-        if (isCompactDesktopViewport()) {
-          event.preventDefault();
-          return;
-        }
-        onDragStart?.(event);
-      }}
-      onDragEnd={onDragEnd}
-      onDragEnter={() => onIconDragEnter?.(item.id)}
       onDragOver={(event) => {
         if (!onFileDrop || !hasDesktopFileDrag(event.dataTransfer)) return;
         event.preventDefault();

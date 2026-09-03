@@ -12,10 +12,34 @@ export type DesktopObject = {
   kind: DesktopObjectKind;
   x: number;
   y: number;
+  width?: number;
+  height?: number;
   createdAt: number;
 };
 
 export type DesktopObjectMap = Record<string, DesktopObject>;
+
+export type DesktopObjectPosition = Pick<DesktopObject, "x" | "y">;
+export type DesktopObjectSize = { width: number; height: number };
+
+export const DESKTOP_OBJECT_DEFAULT_SIZE: Record<DesktopObjectKind, DesktopObjectSize> = {
+  "photo-card": { width: 188, height: 174 },
+  "note-card": { width: 188, height: 164 },
+};
+
+export const desktopObjectSize = (object: DesktopObject): DesktopObjectSize => ({
+  width: object.width ?? DESKTOP_OBJECT_DEFAULT_SIZE[object.kind].width,
+  height: object.height ?? DESKTOP_OBJECT_DEFAULT_SIZE[object.kind].height,
+});
+
+export const clampDesktopObjectPosition = (
+  position: DesktopObjectPosition,
+  container: { width: number; height: number },
+  object: { width: number; height: number },
+): DesktopObjectPosition => ({
+  x: Math.max(0, Math.min(container.width - object.width, position.x)),
+  y: Math.max(0, Math.min(container.height - object.height, position.y)),
+});
 
 export type VisibleDesktopObject = {
   object: DesktopObject;
@@ -70,6 +94,19 @@ export const moveDesktopObject = (
   };
 };
 
+export const resizeDesktopObject = (
+  objects: DesktopObjectMap,
+  itemId: string,
+  size: DesktopObjectSize,
+): DesktopObjectMap => {
+  const object = objects[itemId];
+  if (!object) return objects;
+  return {
+    ...objects,
+    [itemId]: { ...object, width: size.width, height: size.height },
+  };
+};
+
 export const removeDesktopObjects = (
   objects: DesktopObjectMap,
   itemIds: Iterable<string>,
@@ -109,6 +146,12 @@ const isDesktopObject = (value: unknown): value is DesktopObject => {
     && Number.isFinite(object.x)
     && typeof object.y === "number"
     && Number.isFinite(object.y)
+    && (object.width === undefined || (
+      typeof object.width === "number" && Number.isFinite(object.width)
+    ))
+    && (object.height === undefined || (
+      typeof object.height === "number" && Number.isFinite(object.height)
+    ))
     && typeof object.createdAt === "number"
     && Number.isFinite(object.createdAt)
   );

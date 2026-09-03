@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   DESKTOP_OBJECT_STORAGE_KEY,
+  clampDesktopObjectPosition,
   createDesktopObject,
+  desktopObjectSize,
   moveDesktopObject,
   parseDesktopObjects,
   readDesktopObjects,
   removeDesktopObjects,
+  resizeDesktopObject,
   saveDesktopObjects,
   visibleDesktopObjects,
   type DesktopObjectMap,
@@ -41,6 +44,19 @@ const folder: DesktopItem = {
 };
 
 describe("desktop creative objects", () => {
+  it("keeps persisted positions inside the current desktop bounds", () => {
+    expect(clampDesktopObjectPosition(
+      { x: 1200, y: 900 },
+      { width: 800, height: 600 },
+      { width: 188, height: 174 },
+    )).toEqual({ x: 612, y: 426 });
+    expect(clampDesktopObjectPosition(
+      { x: -20, y: -10 },
+      { width: 800, height: 600 },
+      { width: 188, height: 174 },
+    )).toEqual({ x: 0, y: 0 });
+  });
+
   it("creates one typed presentation record without copying file content", () => {
     const photoObjects = createDesktopObject({}, image, { x: 12, y: 24 }, 100);
     const objects = createDesktopObject(photoObjects, note, { x: 40, y: 60 }, 101);
@@ -76,6 +92,15 @@ describe("desktop creative objects", () => {
     });
     expect(removeDesktopObjects(moved, new Set([image.id]))).toEqual({});
     expect(removeDesktopObjects(moved, ["missing"])).toBe(moved);
+  });
+
+  it("uses default card sizes until a custom size is stored", () => {
+    const objects = createDesktopObject({}, image, { x: 12, y: 24 }, 100);
+    expect(desktopObjectSize(objects[image.id])).toEqual({ width: 188, height: 174 });
+
+    const resized = resizeDesktopObject(objects, image.id, { width: 320, height: 240 });
+    expect(desktopObjectSize(resized[image.id])).toEqual({ width: 320, height: 240 });
+    expect(resized[image.id]).toMatchObject({ x: 12, y: 24, width: 320, height: 240 });
   });
 
   it("keeps moved files visible, hides recycled files, and reads current content", () => {
@@ -133,11 +158,10 @@ describe("desktop creative objects", () => {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => values.set(key, value),
     };
-    const objects: DesktopObjectMap = createDesktopObject(
-      {},
-      image,
-      { x: 12, y: 24 },
-      100,
+    const objects: DesktopObjectMap = resizeDesktopObject(
+      createDesktopObject({}, image, { x: 12, y: 24 }, 100),
+      image.id,
+      { width: 320, height: 240 },
     );
 
     saveDesktopObjects(objects, storage);
