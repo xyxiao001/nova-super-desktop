@@ -17,14 +17,27 @@ export const SLOT_PATH: SlotSymbolId[] = ["orange","bell","bar","bar","bar","app
 export const SLOT_LOSS_PROTECTION_TRIGGER = 4;
 export const SLOT_MULTIPLIERS: Record<SlotSymbolId, number> = {
   bar:120,
-  seven:40,
-  star:30,
+  seven:20,
+  star:20,
   melon:20,
   bell:20,
   plum:15,
   orange:10,
   apple:5,
   wolf:0,
+};
+export const SLOT_PREMIUM_SYMBOLS: SlotSymbolId[] = ["seven", "star", "bell"];
+export const SLOT_PREMIUM_MULTIPLIERS = [20, 30, 40] as const;
+export const SLOT_CELL_MULTIPLIERS: Partial<Record<number, number>> = {
+  2:50,
+  3:120,
+  4:25,
+  8:3,
+  11:3,
+  14:3,
+  17:3,
+  20:3,
+  23:3,
 };
 
 export const totalSlotBet = (bets: Partial<Record<SlotSymbolId, number>>) =>
@@ -33,6 +46,11 @@ export const totalSlotBet = (bets: Partial<Record<SlotSymbolId, number>>) =>
 export function getSlotSpinSteps(current: number, destination: number) {
   const distance = (destination - current + SLOT_PATH.length) % SLOT_PATH.length || SLOT_PATH.length;
   return SLOT_PATH.length * 2 + distance;
+}
+
+export function getSlotRewardSpinSteps(current: number, destination: number) {
+  const distance = (destination - current + SLOT_PATH.length) % SLOT_PATH.length;
+  return SLOT_PATH.length + distance;
 }
 
 export function resolveSlotRound(
@@ -47,6 +65,9 @@ export function resolveSlotRound(
 
 const indicesOf = (symbol: SlotSymbolId) => SLOT_PATH.flatMap((item, index) => item === symbol ? [index] : []);
 const pick = (values: number[], random: () => number) => values[Math.floor(random() * values.length) % values.length];
+
+export const createSlotPremiumMultiplier = (random: () => number = Math.random) =>
+  pick([...SLOT_PREMIUM_MULTIPLIERS], random);
 
 const NORMAL_OUTCOME_WEIGHTS: Array<[SlotSymbolId, number]> = [
   ["apple", .09],
@@ -75,15 +96,15 @@ export function createSlotOutcome(random: () => number = Math.random): SlotOutco
 
 export function createTrainReward(landing: number, random: () => number = Math.random): SlotOutcome {
   const reward = random();
-  if (reward < .45) return { kind:"eaten", label:"火车被吃", detail:"狼吞掉了本轮奖金", landing, targets:[], special:true };
-  if (reward < .75) {
+  if (reward < .10) return { kind:"eaten", label:"火车被吃", detail:"狼吞掉了本轮奖金", landing, targets:[], special:true };
+  if (reward < .60) {
     const length = 4 + Math.floor(random() * 3);
     const start = Math.floor(random() * SLOT_PATH.length);
     return { kind:"train", label:"开火车", detail:`狼灯送出 · 连续 ${length} 站`, landing, targets:Array.from({length}, (_, index) => (start + index) % SLOT_PATH.length), special:true };
   }
-  if (reward < .88) return { kind:"small-three", label:"小三元", detail:"狼灯送出 · 铃铛、李子、橙子", landing, targets:[pick(indicesOf("bell"), random),pick(indicesOf("plum"), random),pick(indicesOf("orange"), random)], special:true };
-  if (reward < .95) return { kind:"big-three", label:"大三元", detail:"狼灯送出 · 77、双星、西瓜", landing, targets:[pick(indicesOf("seven"), random),pick(indicesOf("star"), random),pick(indicesOf("melon"), random)], special:true };
-  if (reward < .985) return { kind:"big-four", label:"大四喜", detail:"狼灯送出 · 四枚大苹果", landing, targets:indicesOf("apple").slice(0, 4), special:true };
+  if (reward < .80) return { kind:"small-three", label:"小三元", detail:"狼灯送出 · 铃铛、李子、橙子", landing, targets:[pick(indicesOf("bell"), random),pick(indicesOf("plum"), random),pick(indicesOf("orange"), random)], special:true };
+  if (reward < .92) return { kind:"big-three", label:"大三元", detail:"狼灯送出 · 77、双星、西瓜", landing, targets:[pick(indicesOf("seven"), random),pick(indicesOf("star"), random),pick(indicesOf("melon"), random)], special:true };
+  if (reward < .98) return { kind:"big-four", label:"大四喜", detail:"狼灯送出 · 四枚大苹果", landing, targets:indicesOf("apple").slice(0, 4), special:true };
   return { kind:"grand-slam", label:"大满贯", detail:"狼灯送出 · 全盘中奖", landing, targets:SLOT_PATH.flatMap((symbol, index) => symbol === "wolf" ? [] : [index]), special:true };
 }
 
@@ -112,9 +133,12 @@ export function settleSlotLossProtection(
 export function calculateSlotPayout(
   bets: Partial<Record<SlotSymbolId, number>>,
   targets: number[],
+  premiumMultiplier: number,
 ) {
   return targets.reduce((total, index) => {
     const symbol = SLOT_PATH[index];
-    return total + (bets[symbol] ?? 0) * SLOT_MULTIPLIERS[symbol];
+    const multiplier = SLOT_CELL_MULTIPLIERS[index]
+      ?? (SLOT_PREMIUM_SYMBOLS.includes(symbol) ? premiumMultiplier : SLOT_MULTIPLIERS[symbol]);
+    return total + (bets[symbol] ?? 0) * multiplier;
   }, 0);
 }

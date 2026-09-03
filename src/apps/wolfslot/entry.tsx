@@ -23,11 +23,15 @@ import {
 import {
   calculateSlotPayout,
   createSlotOutcome,
+  createSlotPremiumMultiplier,
   createTrainReward,
+  getSlotRewardSpinSteps,
   getSlotSpinSteps,
   resolveSlotRound,
   settleSlotLossProtection,
   SLOT_LOSS_PROTECTION_TRIGGER,
+  SLOT_CELL_MULTIPLIERS,
+  SLOT_MULTIPLIERS,
   SLOT_PATH,
   type SlotLossProtection,
   type SlotOutcome,
@@ -48,14 +52,16 @@ const SYMBOLS: { id: SymbolId; mark: string; label: string }[] = [
   { id: "bar", mark: "BAR", label: "BAR" },
   { id: "seven", mark: "7", label: "Seven" },
   { id: "star", mark: "★★", label: "双星" },
-  { id: "melon", mark: "🍉", label: "西瓜" },
   { id: "bell", mark: "🔔", label: "铃铛" },
+  { id: "melon", mark: "🍉", label: "西瓜" },
   { id: "plum", mark: "●", label: "李子" },
   { id: "orange", mark: "🍊", label: "橙子" },
   { id: "apple", mark: "🍎", label: "苹果" },
 ];
 const PATH = SLOT_PATH;
-const CELL_BADGES: Partial<Record<number, string>> = { 2:"×50", 3:"×120", 4:"×25", 8:"×3", 11:"×3", 14:"×3", 17:"×3", 20:"×3", 23:"×3" };
+const CELL_BADGES = Object.fromEntries(
+  Object.entries(SLOT_CELL_MULTIPLIERS).map(([index, multiplier]) => [index, `×${multiplier}`]),
+) as Partial<Record<number, string>>;
 const EMPTY_BETS = Object.fromEntries(SYMBOLS.map((symbol) => [symbol.id, 0])) as Record<SymbolId, number>;
 const cellPosition = (index: number) => {
   if (index < 7) return { row: 1, column: index + 1 };
@@ -87,6 +93,9 @@ export default function WolfSlotGame() {
   const [lossProtection, setLossProtection] = useState<SlotLossProtection>(
     restored?.lossProtection ?? { streak:0, accumulatedLoss:0 },
   );
+  const [premiumMultiplier, setPremiumMultiplier] = useState<number | null>(null);
+  const [premiumSelecting, setPremiumSelecting] = useState(false);
+  const [grandSlamFlash, setGrandSlamFlash] = useState(false);
   const timers = useRef<number[]>([]);
   const creditsRef = useRef(credits);
   const roomMultiplierRef = useRef(roomMultiplier);
@@ -121,6 +130,9 @@ export default function WolfSlotGame() {
     setSpecialOutcome(null);
     setTrainRunning(false);
     setLastRoll(null);
+    setPremiumMultiplier(null);
+    setPremiumSelecting(false);
+    setGrandSlamFlash(false);
     setLossProtection({ streak:0, accumulatedLoss:0 });
     setMessage("选择图案下注，再按 GO");
     touchGame("wolfslot");
@@ -191,6 +203,7 @@ export default function WolfSlotGame() {
     setWinnerIndices([]);
     setSpecialOutcome(null);
     setLastRoll(null);
+    setGrandSlamFlash(false);
     setBets((current) => ({ ...current, [id]: current[id] + wagerUnit }));
     playNovaSound("move");
   };
@@ -237,7 +250,15 @@ export default function WolfSlotGame() {
     setSpecialOutcome(null);
     setLastRoll(null);
     playNovaSound("open");
+    const roundPremiumMultiplier = createSlotPremiumMultiplier();
+    setPremiumSelecting(true);
+    const premiumTimer = window.setTimeout(() => {
+      setPremiumMultiplier(roundPremiumMultiplier);
+      setPremiumSelecting(false);
+    }, 900);
+    timers.current.push(premiumTimer);
     const outcome = createSlotOutcome();
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const destination = outcome.landing;
     const steps = getSlotSpinSteps(active, destination);
     let position = active;
@@ -253,34 +274,107 @@ export default function WolfSlotGame() {
       if (win + settlement.compensation > 0) changeCredits(win + settlement.compensation);
       setBets(EMPTY_BETS);
       setSpinning(false);
+      setTrainRunning(false);
+      setGrandSlamFlash(false);
       setMessage(protectedMessage);
       playNovaSound(win > 0 || settlement.compensation > 0 ? "success" : "error");
     };
-    const finishOutcome = (resolved: SlotOutcome) => {
-      if (resolved.kind === "eaten") {
-        setActive(resolved.landing);
-        setWinnerIndices([resolved.landing]);
-        settleRound(0, "火车被狼吃掉了，本轮奖金归零");
+    const schedule = (callback: () => void, delay: number) => {
+      const timer = window.setTimeout(callback, delay);
+      timers.current.push(timer);
+    };
+    const settleOutcome = (resolved: SlotOutcome) => {
+      const win = calculateSlotPayout(round.bets, resolved.targets, roundPremiumMultiplier);
+      const target = resolved.targets[resolved.targets.length - 1];
+      const landed = PATH[target];
+      const symbol = SYMBOLS.find((item) => item.id === landed)!;
+      settleRound(win, resolved.special
+        ? `${resolved.label}！${win ? `+${win} 积分` : "本轮未押中"}`
+        : win ? `${symbol.label} 中奖！+${win} 积分` : `${symbol.label} 未下注，再来一次`);
+    };
+    const revealNormalOutcome = (resolved: SlotOutcome) => {
+      const target = resolved.targets[0];
+      setWinnerIndices([target]);
+      settleOutcome(resolved);
+    };
+    const revealTourOutcome = (resolved: SlotOutcome, startPosition: number) => {
+      setWinnerIndices([]);
+      if (reducedMotion) {
+        setActive(resolved.targets[resolved.targets.length - 1]);
+        setWinnerIndices(resolved.targets);
+        schedule(() => settleOutcome(resolved), 600);
         return;
       }
-      setWinnerIndices([]);
-      const revealDelay = resolved.targets.length > 8 ? 75 : 230;
+      let cursor = startPosition;
+      let elapsed = 160;
       resolved.targets.forEach((target, targetIndex) => {
-        const revealTimer = window.setTimeout(() => {
-          if (resolved.special) setActive(target);
+        const travelSteps = getSlotRewardSpinSteps(cursor, target);
+        for (let travelStep = 1; travelStep <= travelSteps; travelStep += 1) {
+          const nextPosition = (cursor + travelStep) % PATH.length;
+          elapsed += travelStep > travelSteps - 5 ? 72 : 38;
+          schedule(() => {
+            setActive(nextPosition);
+            if (travelStep % 4 === 0 && travelStep !== travelSteps) playNovaSound("move");
+            if (travelStep !== travelSteps) return;
+            setWinnerIndices((current) => [...current, target]);
+            playNovaSound("success");
+            if (targetIndex === resolved.targets.length - 1) settleOutcome(resolved);
+          }, elapsed);
+        }
+        elapsed += 260;
+        cursor = target;
+      });
+    };
+    const revealTrainOutcome = (resolved: SlotOutcome, startPosition: number) => {
+      setWinnerIndices([]);
+      setTrainRunning(true);
+      if (reducedMotion) {
+        setActive(resolved.targets[resolved.targets.length - 1]);
+        setWinnerIndices(resolved.targets);
+        schedule(() => settleOutcome(resolved), 600);
+        return;
+      }
+      const [first, ...remaining] = resolved.targets;
+      const travelSteps = getSlotRewardSpinSteps(startPosition, first);
+      let elapsed = 140;
+      for (let travelStep = 1; travelStep <= travelSteps; travelStep += 1) {
+        const nextPosition = (startPosition + travelStep) % PATH.length;
+        elapsed += travelStep > travelSteps - 5 ? 64 : 36;
+        schedule(() => {
+          setActive(nextPosition);
+          if (travelStep % 4 === 0) playNovaSound("move");
+          if (travelStep === travelSteps) setWinnerIndices([first]);
+        }, elapsed);
+      }
+      remaining.forEach((target, index) => {
+        elapsed += 190;
+        schedule(() => {
+          setActive(target);
           setWinnerIndices((current) => [...current, target]);
-          if (targetIndex !== resolved.targets.length - 1) {
-            playNovaSound("move");
-            return;
-          }
-          const win = calculateSlotPayout(round.bets, resolved.targets);
-          const landed = PATH[target];
-          const symbol = SYMBOLS.find((item) => item.id === landed)!;
-          settleRound(win, resolved.special
-            ? `${resolved.label}！${win ? `+${win} 积分` : "本轮未押中"}`
-            : win ? `${symbol.label} 中奖！+${win} 积分` : `${symbol.label} 未下注，再来一次`);
-        }, targetIndex * revealDelay);
-        timers.current.push(revealTimer);
+          playNovaSound("move");
+          if (index === remaining.length - 1) settleOutcome(resolved);
+        }, elapsed);
+      });
+    };
+    const revealGrandSlam = (resolved: SlotOutcome) => {
+      setMessage("大满贯！全盘亮灯…");
+      setGrandSlamFlash(true);
+      setWinnerIndices(resolved.targets);
+      if (reducedMotion) {
+        schedule(() => settleOutcome(resolved), 600);
+        return;
+      }
+      schedule(() => {
+        setGrandSlamFlash(false);
+        setWinnerIndices([]);
+      }, 760);
+      resolved.targets.forEach((target, targetIndex) => {
+        schedule(() => {
+          setActive(target);
+          setWinnerIndices((current) => [...current, target]);
+          playNovaSound("move");
+          if (targetIndex === resolved.targets.length - 1) settleOutcome(resolved);
+        }, 900 + targetIndex * 105);
       });
     };
     const runTrain = () => {
@@ -297,7 +391,20 @@ export default function WolfSlotGame() {
           setTrainRunning(false);
           const reward = createTrainReward(outcome.landing);
           setSpecialOutcome(reward);
-          finishOutcome(reward);
+          const rewardStart = (outcome.landing + trainSteps) % PATH.length;
+          if (reward.kind === "eaten") {
+            setActive(outcome.landing);
+            setWinnerIndices([outcome.landing]);
+            settleRound(0, "火车被狼吃掉了，本轮奖金归零");
+          } else if (reward.kind === "grand-slam") {
+            revealGrandSlam(reward);
+          } else if (reward.kind === "train") {
+            setMessage(`开火车！连续 ${reward.targets.length} 站送灯…`);
+            revealTrainOutcome(reward, rewardStart);
+          } else {
+            setMessage(`${reward.label}！逐个送灯中…`);
+            revealTourOutcome(reward, rewardStart);
+          }
         }, 420 + trainStep * 68);
         timers.current.push(trainTimer);
       }
@@ -309,7 +416,7 @@ export default function WolfSlotGame() {
         setActive(position);
         if (step !== steps) return;
         if (outcome.kind === "wolf") runTrain();
-        else finishOutcome(outcome);
+        else revealNormalOutcome(outcome);
       }, delay);
       timers.current.push(timer);
     }
@@ -341,7 +448,7 @@ export default function WolfSlotGame() {
       </header>
       <div className="slot-feature-strip" aria-label="特别奖励"><span>开火车</span><span>大三元</span><span>小三元</span><span>大四喜</span><span>大满贯</span></div>
 
-      <div className={`slot-board ${trainRunning ? "train-running" : ""}`}>
+      <div className={`slot-board ${trainRunning ? "train-running" : ""} ${grandSlamFlash ? "grand-slam-flash" : ""}`}>
         {PATH.map((id, index) => {
           const symbol = id === "wolf" ? { id, mark:"", label:"狼" } : SYMBOLS.find((item) => item.id === id)!;
           const position = cellPosition(index);
@@ -367,7 +474,16 @@ export default function WolfSlotGame() {
       </div>
 
       <div className="slot-bet-panel">
-        <div className="slot-paytable"><strong>120</strong><span>40</span><span>30</span><span>20</span><span>20</span><span>15</span><span>10</span><strong>5</strong></div>
+        <div className="slot-paytable">
+          <strong>{SLOT_MULTIPLIERS.bar}</strong>
+          <div className={`slot-premium-display ${premiumSelecting ? "selecting" : ""}`} aria-label={premiumSelecting ? "倍率抽选中" : premiumMultiplier ? `本轮倍率 ${premiumMultiplier}` : "随机倍率 20、30、40"}>
+            {[20,30,40].map((multiplier) => <span key={multiplier} className={!premiumSelecting && premiumMultiplier === multiplier ? "selected" : ""}>{multiplier}</span>)}
+          </div>
+          <span>{SLOT_MULTIPLIERS.melon}</span>
+          <span>{SLOT_MULTIPLIERS.plum}</span>
+          <span>{SLOT_MULTIPLIERS.orange}</span>
+          <strong>{SLOT_MULTIPLIERS.apple}</strong>
+        </div>
         <div className="slot-bet-values">{SYMBOLS.map((symbol) => <output key={symbol.id}>{bets[symbol.id]}</output>)}</div>
         <div className="slot-bet-buttons">{SYMBOLS.map((symbol) => <button type="button" key={symbol.id} aria-label={`${symbol.label}下注 ${wagerUnit} 分`} className={`symbol-${symbol.id}`} onClick={() => addBet(symbol.id)}><span>{symbol.mark}</span></button>)}</div>
       </div>

@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   calculateSlotPayout,
   createSlotOutcome,
+  createSlotPremiumMultiplier,
   createTrainReward,
+  getSlotRewardSpinSteps,
   getSlotSpinSteps,
   resolveSlotRound,
   settleSlotLossProtection,
@@ -29,6 +31,12 @@ describe("wolf slot outcomes", () => {
     }
   });
 
+  it("takes at least one complete lap before each awarded stop", () => {
+    expect(getSlotRewardSpinSteps(5, 5)).toBe(SLOT_PATH.length);
+    expect((5 + getSlotRewardSpinSteps(5, 12)) % SLOT_PATH.length).toBe(12);
+    expect(getSlotRewardSpinSteps(5, 12)).toBeGreaterThanOrEqual(SLOT_PATH.length);
+  });
+
   it("repeats the previous complete bet when GO has no new bet", () => {
     expect(resolveSlotRound({ apple: 0 }, { apple: 5 })).toEqual({ bets: { apple: 5 }, total: 5, repeated: true });
     expect(resolveSlotRound({ bar: 1 }, { apple: 5 })).toEqual({ bets: { bar: 1 }, total: 1, repeated: false });
@@ -48,20 +56,29 @@ describe("wolf slot outcomes", () => {
   });
 
   it("can swallow the train without a reward", () => {
-    expect(createTrainReward(9, sequence(.2))).toMatchObject({kind:"eaten",landing:9,targets:[]});
+    expect(createTrainReward(9, sequence(.099))).toMatchObject({kind:"eaten",landing:9,targets:[]});
+    expect(createTrainReward(9, sequence(.1, 0, 0))).toMatchObject({kind:"train",landing:9});
   });
 
   it("creates a 4-6 stop consecutive train after the animation", () => {
-    const outcome = createTrainReward(9, sequence(.7, .99, .9));
+    const outcome = createTrainReward(9, sequence(.5, .99, .9));
     expect(outcome.kind).toBe("train");
     expect(outcome.targets).toHaveLength(6);
     expect(outcome.targets.every((value, index) => index === 0 || value === (outcome.targets[index - 1] + 1) % SLOT_PATH.length)).toBe(true);
   });
 
   it("creates the classic big-three symbols", () => {
-    const outcome = createTrainReward(21, sequence(.94, 0, 0, 0));
+    const outcome = createTrainReward(21, sequence(.9, 0, 0, 0));
     expect(outcome.kind).toBe("big-three");
     expect(outcome.targets.map((index) => SLOT_PATH[index])).toEqual(["seven", "star", "melon"]);
+  });
+
+  it("uses the rebalanced train reward boundaries after the ten percent eaten chance", () => {
+    expect(createTrainReward(9, sequence(.599, 0, 0)).kind).toBe("train");
+    expect(createTrainReward(9, sequence(.6, 0, 0, 0)).kind).toBe("small-three");
+    expect(createTrainReward(9, sequence(.8, 0, 0, 0)).kind).toBe("big-three");
+    expect(createTrainReward(9, sequence(.92)).kind).toBe("big-four");
+    expect(createTrainReward(9, sequence(.98)).kind).toBe("grand-slam");
   });
 
   it("keeps non-wolf stops as a normal single result", () => {
@@ -71,7 +88,19 @@ describe("wolf slot outcomes", () => {
 
   it("adds every lit target to a special payout", () => {
     const appleTargets = SLOT_PATH.flatMap((symbol, index) => symbol === "apple" ? [index] : []).slice(0, 4);
-    expect(calculateSlotPayout(bets({apple:3}), appleTargets)).toBe(60);
+    expect(calculateSlotPayout(bets({apple:3}), appleTargets, 20)).toBe(60);
+  });
+
+  it("uses the multiplier printed on a specific lamp instead of multiplying it by the symbol payout", () => {
+    expect(calculateSlotPayout(bets({seven:3}), [14], 40)).toBe(9);
+    expect(calculateSlotPayout(bets({bar:2}), [2], 20)).toBe(100);
+  });
+
+  it("shares one random 20, 30, or 40 multiplier across seven, star, and bell each round", () => {
+    expect(createSlotPremiumMultiplier(sequence(0))).toBe(20);
+    expect(createSlotPremiumMultiplier(sequence(.34))).toBe(30);
+    expect(createSlotPremiumMultiplier(sequence(.99))).toBe(40);
+    expect(calculateSlotPayout(bets({seven:1,star:1,bell:1}), [15,19,1], 30)).toBe(90);
   });
 
   it("refunds half of accumulated net losses on the fourth losing round", () => {
