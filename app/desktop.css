@@ -49,6 +49,39 @@
 .windows-wallpaper i:nth-child(2) { width:48vw; height:18vh; left:-15vw; bottom:5vh; clip-path:polygon(0 28%,86% 0,100% 72%,12% 100%); background:var(--wallpaper-accent); }
 .windows-wallpaper i:nth-child(3) { width:42vw; height:24vh; right:-10vw; bottom:-6vh; clip-path:polygon(15% 0,100% 20%,100% 100%,0 100%); background:#ffffff24; }
 
+.windows-desktop.wallpaper-starport .windows-wallpaper { background:radial-gradient(circle at 72% 30%,#684b9d70,transparent 26%),radial-gradient(circle at 18% 78%,#176d8f8c,transparent 34%),linear-gradient(145deg,#030817,#071b38 54%,#171538); }
+.windows-desktop.wallpaper-starport .windows-wallpaper::before { width:auto; height:auto; inset:-26%; clip-path:none; border-radius:45%; background:conic-gradient(from 35deg,#693d9f00,#7b4db054,#25a7c344,#693d9f00 58%); filter:blur(48px); box-shadow:none; animation:wallpaperNebula 34s ease-in-out infinite alternate; }
+.windows-desktop.wallpaper-starport .windows-wallpaper::after { inset:-12%; background:radial-gradient(circle,#fff 0 1px,transparent 1.5px) 0 0/74px 74px,radial-gradient(circle,#82d9ff 0 1px,transparent 1.6px) 21px 32px/113px 113px,radial-gradient(circle,#ffe7a8 0 1.2px,transparent 1.8px) 62px 15px/151px 151px; mask-image:linear-gradient(#fff,#ffffffa6); animation:wallpaperStarDrift 46s linear infinite; }
+.windows-desktop.wallpaper-starport .windows-wallpaper i:nth-child(1) { width:48vw; height:48vw; left:auto; right:-19vw; top:auto; bottom:-29vw; border:1px solid #9fe5ff4f; border-radius:50%; background:radial-gradient(circle at 35% 24%,#7de8ffb5,#245b8b 24%,#111937 62%,#060916); box-shadow:0 0 90px #4eb9e84f,inset 24px 12px 55px #c9f7ff21; transform:none; }
+.windows-desktop.wallpaper-starport .windows-wallpaper i:nth-child(2) { width:58vw; height:18vw; left:auto; right:-24vw; bottom:-2vw; border:1px solid #b9efff54; border-radius:50%; clip-path:none; background:transparent; box-shadow:0 0 18px #79d6ff32,inset 0 0 18px #895fd935; transform:rotate(-12deg); animation:wallpaperOrbit 24s ease-in-out infinite alternate; }
+.windows-desktop.wallpaper-starport .windows-wallpaper i:nth-child(3) { width:26vw; height:2px; right:auto; left:-32vw; top:20%; bottom:auto; clip-path:none; background:linear-gradient(90deg,transparent,#b7efff,#fff); box-shadow:0 0 9px #8ce6ff; opacity:0; transform:rotate(-18deg); animation:wallpaperMeteor 19s ease-in infinite; }
+
+.windows-desktop.wallpaper-rain .windows-wallpaper { background:radial-gradient(circle at 24% 38%,#d33e8652,transparent 22%),radial-gradient(circle at 78% 46%,#28c7df47,transparent 24%),linear-gradient(#08101d,#10192a 55%,#15131e); }
+.windows-desktop.wallpaper-rain .windows-wallpaper::before { width:auto; height:44%; inset:auto -4% 0; clip-path:polygon(0 42%,5% 42%,5% 18%,9% 18%,9% 54%,14% 54%,14% 26%,18% 26%,18% 62%,23% 62%,23% 8%,28% 8%,28% 48%,34% 48%,34% 29%,39% 29%,39% 65%,44% 65%,44% 16%,49% 16%,49% 53%,55% 53%,55% 34%,61% 34%,61% 68%,67% 68%,67% 21%,73% 21%,73% 51%,79% 51%,79% 12%,85% 12%,85% 58%,91% 58%,91% 31%,96% 31%,96% 48%,100% 48%,100% 100%,0 100%); background:repeating-linear-gradient(90deg,#080b12 0 13px,#f6bf5538 14px 16px,#0a0d16 17px 31px),linear-gradient(#121521,#05070c); box-shadow:0 -24px 80px #226ea43d; transform:none; }
+.windows-desktop.wallpaper-rain .windows-wallpaper::after { inset:-30% -10%; background:repeating-linear-gradient(105deg,transparent 0 39px,#d8f5ff30 40px 41px,transparent 42px 78px); mask-image:linear-gradient(90deg,#fff8,#fff,#fff7); animation:wallpaperRain 1.15s linear infinite; }
+.windows-desktop.wallpaper-rain .windows-wallpaper i:nth-child(1) { width:52vw; height:34vh; left:-8vw; top:25vh; border-radius:50%; background:radial-gradient(ellipse,#f34b9b3d,transparent 67%); filter:blur(16px); transform:none; animation:wallpaperNeon 8s ease-in-out infinite alternate; }
+.windows-desktop.wallpaper-rain .windows-wallpaper i:nth-child(2) { width:48vw; height:38vh; left:auto; right:-4vw; bottom:4vh; clip-path:none; border-radius:50%; background:radial-gradient(ellipse,#35e2f136,transparent 68%); filter:blur(18px); transform:none; animation:wallpaperNeon 11s ease-in-out -4s infinite alternate; }
+.windows-desktop.wallpaper-rain .windows-wallpaper i:nth-child(3) { width:100%; height:100%; inset:0; clip-path:none; background:#d7efff; opacity:0; animation:wallpaperLightning 17s linear infinite; }
+
+.windows-desktop.wallpaper-abyss .windows-wallpaper { background:radial-gradient(ellipse at 50% -10%,#3db7ca9e,transparent 42%),linear-gradient(#0b6174 0,#063b52 38%,#031927 78%,#020b14); }
+.windows-desktop.wallpaper-abyss .windows-wallpaper::before { width:auto; height:auto; inset:-35% -20% 28%; clip-path:none; background:repeating-conic-gradient(from 80deg at 50% 0,#b7f8ef00 0 8deg,#b7f8ef24 10deg 14deg,#b7f8ef00 17deg 31deg); filter:blur(10px); box-shadow:none; transform-origin:50% 0; animation:wallpaperCaustics 18s ease-in-out infinite alternate; }
+.windows-desktop.wallpaper-abyss .windows-wallpaper::after { inset:-12% 0; background:radial-gradient(circle,#baf7ee9c 0 1px,transparent 2px) 14% 10%/93px 121px,radial-gradient(circle,#7bd6d99c 0 1.5px,transparent 2.4px) 70% 30%/137px 163px,radial-gradient(circle,#d8fff399 0 1px,transparent 1.8px) 44% 80%/71px 109px; mask-image:linear-gradient(transparent,#fff 18%,#fff); animation:wallpaperBubbles 19s linear infinite; }
+.windows-desktop.wallpaper-abyss .windows-wallpaper i:nth-child(1) { width:120%; height:29%; left:-10%; top:auto; bottom:-8%; border-radius:50% 50% 0 0; background:radial-gradient(ellipse at 28% 0,#276a615c,transparent 22%),radial-gradient(ellipse at 68% 0,#1d59575c,transparent 20%),linear-gradient(#09252d,#020a10); transform:none; }
+.windows-desktop.wallpaper-abyss .windows-wallpaper i:nth-child(2) { width:28vw; height:120vh; left:54%; top:-18vh; bottom:auto; clip-path:polygon(22% 0,58% 0,100% 100%,0 100%); background:linear-gradient(90deg,transparent,#9aeee324,transparent); filter:blur(7px); transform:rotate(7deg); animation:wallpaperRay 13s ease-in-out infinite alternate; }
+.windows-desktop.wallpaper-abyss .windows-wallpaper i:nth-child(3) { width:18vw; height:5.4vw; right:-22vw; bottom:auto; top:46%; clip-path:polygon(0 48%,16% 6%,19% 34%,72% 20%,100% 48%,72% 76%,19% 62%,16% 94%); border-radius:50%; background:#03152299; box-shadow:0 0 28px #51b9c326; transform:none; animation:wallpaperCreature 31s ease-in-out infinite; }
+
+@keyframes wallpaperNebula { from{transform:translate3d(-3%,-2%,0) rotate(-8deg) scale(.96)} to{transform:translate3d(4%,3%,0) rotate(10deg) scale(1.08)} }
+@keyframes wallpaperStarDrift { to{transform:translate3d(74px,74px,0)} }
+@keyframes wallpaperOrbit { from{transform:rotate(-14deg) scale(.96)} to{transform:rotate(-9deg) scale(1.04)} }
+@keyframes wallpaperMeteor { 0%,68%{opacity:0;transform:translate3d(0,0,0) rotate(-18deg)} 70%{opacity:1} 76%{opacity:0;transform:translate3d(150vw,48vh,0) rotate(-18deg)} 100%{opacity:0} }
+@keyframes wallpaperRain { to{transform:translate3d(-39px,78px,0)} }
+@keyframes wallpaperNeon { from{opacity:.55;transform:scale(.92)} to{opacity:1;transform:scale(1.08)} }
+@keyframes wallpaperLightning { 0%,72%,74%,76%,100%{opacity:0} 72.4%,74.5%{opacity:.13} }
+@keyframes wallpaperCaustics { from{transform:rotate(-3deg) scaleX(.94)} to{transform:rotate(4deg) scaleX(1.08)} }
+@keyframes wallpaperBubbles { to{transform:translateY(-109px)} }
+@keyframes wallpaperRay { from{opacity:.35;transform:rotate(4deg) translateX(-4vw)} to{opacity:.7;transform:rotate(9deg) translateX(5vw)} }
+@keyframes wallpaperCreature { 0%,8%{opacity:0;transform:translateX(0) scale(.82)} 16%{opacity:.5} 78%{opacity:.34} 88%,100%{opacity:0;transform:translateX(-145vw) scale(1.08)} }
+
 .desktop-files {
   position: absolute;
   z-index: 2;
@@ -682,6 +715,15 @@
 @keyframes mobileSearchDrop { from { opacity:0; transform:translateY(-28px); } to { opacity:1; transform:none; } }
 
 @media (prefers-reduced-motion: reduce) {
+  .windows-desktop.wallpaper-starport .windows-wallpaper::before,
+  .windows-desktop.wallpaper-starport .windows-wallpaper::after,
+  .windows-desktop.wallpaper-starport .windows-wallpaper i,
+  .windows-desktop.wallpaper-rain .windows-wallpaper::before,
+  .windows-desktop.wallpaper-rain .windows-wallpaper::after,
+  .windows-desktop.wallpaper-rain .windows-wallpaper i,
+  .windows-desktop.wallpaper-abyss .windows-wallpaper::before,
+  .windows-desktop.wallpaper-abyss .windows-wallpaper::after,
+  .windows-desktop.wallpaper-abyss .windows-wallpaper i { animation:none; }
   .windows-desktop .desktop-window,
   .start-menu,
   .start-menu-scrim,

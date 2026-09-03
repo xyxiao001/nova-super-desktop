@@ -1,5 +1,5 @@
 export type NovaTheme = "system"|"light"|"dark";
-export type NovaWallpaper = "nova"|"harbor"|"dawn"|"grove"|"dusk"|"graphite";
+export type NovaWallpaper = "nova"|"harbor"|"dawn"|"grove"|"dusk"|"graphite"|"starport"|"rain"|"abyss";
 export type NovaSettings = { theme:NovaTheme; wallpaper:NovaWallpaper; sound:boolean; volume:number };
 export type NovaSound = "open"|"close"|"move"|"success"|"error";
 

@@ -87,6 +87,12 @@ describe("application style loading", () => {
     expect(desktop).toContain(".desktop-menu { position:fixed");
     expect(desktop).toContain(".windows-desktop.wallpaper-harbor");
     expect(desktop).toContain(".windows-desktop.wallpaper-graphite");
+    expect(desktop).toContain(".windows-desktop.wallpaper-starport");
+    expect(desktop).toContain(".windows-desktop.wallpaper-rain");
+    expect(desktop).toContain(".windows-desktop.wallpaper-abyss");
+    expect(desktop).toContain("@keyframes wallpaperMeteor");
+    expect(desktop).toContain("@keyframes wallpaperRain");
+    expect(desktop).toContain("@keyframes wallpaperCreature");
     expect(desktop).toContain(".windows-taskbar,.taskbar-reveal-zone { display:none!important; }");
     expect(desktop).toContain("@keyframes mobileSearchDrop");
     expect(viewer).toContain(".photo-stage { position:relative; min-width:0; min-height:0; overflow:hidden; background:#0c0e0f; touch-action:none; }");

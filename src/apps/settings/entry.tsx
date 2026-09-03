@@ -40,6 +40,9 @@ const WALLPAPERS:{id:NovaWallpaper;label:string;detail:string}[]=[
   {id:"grove",label:"青屿",detail:"林木与日光"},
   {id:"dusk",label:"暮色",detail:"深蓝与晚霞"},
   {id:"graphite",label:"石墨",detail:"克制的中性色"},
+  {id:"starport",label:"星港观测站",detail:"星云、轨道与远行流星"},
+  {id:"rain",label:"玻璃雨夜",detail:"霓虹城市与窗上细雨"},
+  {id:"abyss",label:"深海舷窗",detail:"水下光束与漂浮生物"},
 ];
 const SETTINGS_PANES=[
   {id:"appearance",label:"外观",detail:"主题与桌面壁纸",icon:"◫"},
