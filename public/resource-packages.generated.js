@@ -18,6 +18,24 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
+    "id": "wolf-slot",
+    "pathPrefixes": [
+      "/assets/games/wolf-slot/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
+    "id": "frontline",
+    "pathPrefixes": [
+      "/assets/games/frontline/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
     "id": "chess-engine",
     "pathPrefixes": [
       "/stockfish/"

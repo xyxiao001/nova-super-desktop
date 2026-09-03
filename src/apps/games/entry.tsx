@@ -14,6 +14,7 @@ export const GAME_CATALOG = [
   {id:"tower",label:"魔塔",category:"角色扮演",meta:"77 层 · 完整剧情",artwork:"/assets/game-covers/tower.jpg"},
   {id:"youtd2",label:"YouTD 2",category:"塔防",meta:"200+ 防御塔 · 300+ 物品",artwork:"/assets/game-covers/youtd2.jpg"},
   {id:"wolfslot",label:"童年老虎机",category:"街机",meta:"开火车 · 大三元 · 猜大小",artwork:"/assets/games/wolf-slot/wolf-slot-icon-v2.png"},
+  {id:"frontline",label:"王国大作战：前线",category:"塔防",meta:"6 波守卫 · 本地单机",artwork:"/assets/games/frontline/world-map.png"},
 ] as const;
 
 export type GameAppId = GameId;

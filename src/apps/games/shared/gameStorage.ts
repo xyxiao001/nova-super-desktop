@@ -1,4 +1,4 @@
-export type GameId = "mines"|"chess"|"gomoku"|"tower"|"youtd2"|"wolfslot";
+export type GameId = "mines"|"chess"|"gomoku"|"tower"|"youtd2"|"wolfslot"|"frontline";
 export type GameResult = "win"|"loss"|"draw";
 export type GameRecord = {
   played:number;
@@ -16,7 +16,7 @@ const PROGRESS_PREFIX="nova-game-progress:";
 const CHANGE_EVENT="nova-game-records-change";
 const RESET_EVENT="nova-game-reset";
 const GAME_AUXILIARY_KEYS=["nova-mines-difficulty","nova-mines-best","nova-game-coins"];
-const GAME_IDS:GameId[]=["mines","chess","gomoku","tower","youtd2","wolfslot"];
+const GAME_IDS:GameId[]=["mines","chess","gomoku","tower","youtd2","wolfslot","frontline"];
 const emptyRecord=():GameRecord=>({played:0,wins:0,losses:0,draws:0,lastPlayed:null,lastResult:null,hasProgress:false});
 
 export const readGameRecords=():GameRecords=>{
