@@ -118,3 +118,52 @@ export async function clearPetData(): Promise<void> {
     clearPetConversations(),
   ]);
 }
+
+type PetRuntimeStorageOperations = {
+  saveRuntime: typeof savePetRuntime;
+  replaceData: (data: PetData) => Promise<void>;
+};
+
+const replacePetData = async (data: PetData) => {
+  await clearPetData();
+  await savePetData(data);
+};
+
+export function createPetRuntimeStorageQueue(
+  operations: PetRuntimeStorageOperations = {
+    saveRuntime: savePetRuntime,
+    replaceData: replacePetData,
+  },
+) {
+  let generation = 0;
+  let pendingResets = 0;
+  let writeQueue: Promise<void> = Promise.resolve();
+
+  const enqueue = (write: () => Promise<void>) => {
+    const operation = writeQueue.catch(() => undefined).then(write);
+    writeQueue = operation.catch(() => undefined);
+    return operation;
+  };
+
+  return {
+    saveRuntime(state: PetState, memory: PetMemory) {
+      if (pendingResets > 0) return Promise.resolve();
+      const writeGeneration = generation;
+      return enqueue(async () => {
+        if (pendingResets > 0 || writeGeneration !== generation) return;
+        await operations.saveRuntime(state, memory);
+      });
+    },
+    reset(data: PetData) {
+      generation += 1;
+      pendingResets += 1;
+      return enqueue(async () => {
+        try {
+          await operations.replaceData(data);
+        } finally {
+          pendingResets -= 1;
+        }
+      });
+    },
+  };
+}

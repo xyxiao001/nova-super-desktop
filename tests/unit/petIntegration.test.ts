@@ -52,6 +52,31 @@ describe("desktop pet integration", () => {
     expect(petSettings).toContain("不会删除 AI 连接配置");
   });
 
+  it("[defect-probing] isolates stale runtime writes before resetting the companion", async () => {
+    const runtime = await readWorkspaceFile("src/platform/pet/PetRuntime.tsx");
+    const resetStart = runtime.indexOf("const resetPet = useCallback");
+    const resetEnd = runtime.indexOf("const value = useMemo", resetStart);
+    const resetImplementation = runtime.slice(resetStart, resetEnd);
+
+    expect(resetImplementation).toContain("resettingRef.current = true");
+    expect(resetImplementation).toContain("dataRef.current = null");
+    expect(resetImplementation.indexOf("dataRef.current = null")).toBeLessThan(
+      resetImplementation.indexOf("await storageQueueRef.current?.reset(next)"),
+    );
+    expect(runtime).toContain("if (resettingRef.current) return");
+    expect(runtime).toContain("createPetRuntimeStorageQueue");
+  });
+
+  it("[defect-probing] focuses the desktop when its background receives pointer input", async () => {
+    const root = await readWorkspaceFile("src/shell/DesktopRoot.tsx");
+    const mainStart = root.indexOf("<main");
+    const pointerUp = root.indexOf(" onPointerUp=", mainStart);
+    const mainPointerDown = root.slice(mainStart, pointerUp);
+
+    expect(mainPointerDown).toContain("focusDesktop()");
+    expect(mainPointerDown).toContain("shouldFocusDesktopFromTarget(target)");
+  });
+
   it("runs proactive local moments only while the desktop is active and visible", async () => {
     const [layer, ambient, styles] = await Promise.all([
       readWorkspaceFile("src/shell/DesktopPetLayer.tsx"),

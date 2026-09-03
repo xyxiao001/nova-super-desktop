@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   COMPACT_DESKTOP_QUERY,
@@ -7,6 +7,7 @@ import {
   isMobileSearchPull,
   movedBeyondLongPressTolerance,
   reorderDesktopIconIds,
+  shouldFocusDesktopFromTarget,
 } from "../../app/desktopIconInteraction";
 
 describe("desktop icon interaction", () => {
@@ -32,6 +33,17 @@ describe("desktop icon interaction", () => {
     expect(isMobileSearchPull({ x: 100, y: 120 }, { x: 108, y: 190 })).toBe(true);
     expect(isMobileSearchPull({ x: 100, y: 120 }, { x: 150, y: 170 })).toBe(false);
     expect(isMobileSearchPull({ x: 100, y: 120 }, { x: 104, y: 165 })).toBe(false);
+  });
+
+  it("focuses desktop surfaces without stealing focus from interactive layers", () => {
+    const desktopClosest = vi.fn(() => null);
+    const interactiveClosest = vi.fn(() => ({}) as Element);
+
+    expect(shouldFocusDesktopFromTarget({ closest: desktopClosest })).toBe(true);
+    expect(shouldFocusDesktopFromTarget({ closest: interactiveClosest })).toBe(false);
+    expect(desktopClosest).toHaveBeenCalledWith(expect.stringContaining(".desktop-window"));
+    expect(desktopClosest).toHaveBeenCalledWith(expect.stringContaining(".windows-taskbar"));
+    expect(desktopClosest).toHaveBeenCalledWith(expect.stringContaining(".desktop-pet-layer"));
   });
 
   it("pushes neighboring desktop icons aside when one changes slots", () => {

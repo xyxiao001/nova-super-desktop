@@ -10,6 +10,7 @@ import {
 import {
   PET_DATABASE_NAME,
   clearPetData,
+  createPetRuntimeStorageQueue,
   loadPetData,
   savePetData,
   savePetPreferences,
@@ -82,6 +83,66 @@ describe("pet storage", () => {
     await savePetPreferences(preferences);
 
     expect((await loadPetData())?.preferences).toEqual(preferences);
+  });
+
+  it("discards stale queued runtime writes before resetting pet data", async () => {
+    const first = createPetData({
+      name: "Old",
+      personality: "quiet",
+      id: "old-pet",
+      now: 100,
+    });
+    const replacement = createPetData({
+      name: "Nova",
+      personality: "curious",
+      id: "new-pet",
+      now: 500,
+    });
+    const calls: string[] = [];
+    let releaseFirstWrite = () => {};
+    let notifyFirstWriteStarted = () => {};
+    const firstWriteStarted = new Promise<void>((resolve) => {
+      notifyFirstWriteStarted = resolve;
+    });
+    const firstWriteBlocked = new Promise<void>((resolve) => {
+      releaseFirstWrite = resolve;
+    });
+    const queue = createPetRuntimeStorageQueue({
+      saveRuntime: async (state) => {
+        calls.push(`runtime:${state.lastActiveAt}:start`);
+        if (state.lastActiveAt === 100) {
+          notifyFirstWriteStarted();
+          await firstWriteBlocked;
+        }
+        calls.push(`runtime:${state.lastActiveAt}:end`);
+      },
+      replaceData: async (data) => {
+        calls.push(`reset:${data.profile.id}`);
+      },
+    });
+
+    const activeWrite = queue.saveRuntime(first.state, first.memory);
+    await firstWriteStarted;
+    const staleQueuedWrite = queue.saveRuntime(
+      { ...first.state, lastActiveAt: 200 },
+      first.memory,
+    );
+    const reset = queue.reset(replacement);
+    const writeDuringReset = queue.saveRuntime(
+      { ...first.state, lastActiveAt: 300 },
+      first.memory,
+    );
+    releaseFirstWrite();
+
+    await Promise.all([activeWrite, staleQueuedWrite, reset, writeDuringReset]);
+    expect(calls).toEqual([
+      "runtime:100:start",
+      "runtime:100:end",
+      "reset:new-pet",
+    ]);
+
+    await queue.saveRuntime(replacement.state, replacement.memory);
+    expect(calls.at(-1)).toBe(`runtime:${replacement.state.lastActiveAt}:end`);
   });
 
   it("deletes only the pet database", async () => {

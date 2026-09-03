@@ -2,6 +2,18 @@ export const COMPACT_DESKTOP_QUERY = "(max-width: 680px), (max-width: 932px) and
 export const DESKTOP_ICON_LONG_PRESS_MS = 500;
 export const DESKTOP_ICON_MOVE_TOLERANCE = 10;
 export const MOBILE_SEARCH_PULL_DISTANCE = 64;
+const DESKTOP_FOCUS_BLOCKING_SELECTOR = [
+  ".desktop-window",
+  ".windows-taskbar",
+  ".start-menu",
+  ".taskbar-window-menu",
+  ".system-panel",
+  ".desktop-menu",
+  ".desktop-pet-layer",
+  ".rename-dialog",
+  ".file-operation-dialog",
+  ".window-switcher",
+].join(",");
 
 export type PointerPoint = {
   x: number;
@@ -10,6 +22,12 @@ export type PointerPoint = {
 
 export function isCompactDesktopViewport() {
   return window.matchMedia(COMPACT_DESKTOP_QUERY).matches;
+}
+
+export function shouldFocusDesktopFromTarget(
+  target: { closest: (selectors: string) => Element | null },
+) {
+  return !target.closest(DESKTOP_FOCUS_BLOCKING_SELECTOR);
 }
 
 export function movedBeyondLongPressTolerance(

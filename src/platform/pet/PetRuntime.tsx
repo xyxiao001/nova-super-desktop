@@ -27,11 +27,10 @@ import {
   type PetProfile,
 } from "../../../app/petModel";
 import {
-  clearPetData,
+  createPetRuntimeStorageQueue,
   loadPetData,
   savePetData,
   savePetPreferences,
-  savePetRuntime,
 } from "../../../app/petStorage";
 
 export type PetRuntimeValue = {
@@ -52,8 +51,11 @@ const PetRuntimeContext = createContext<PetRuntimeValue | null>(null);
 export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<PetData | null>(null);
   const dataRef = useRef<PetData | null>(null);
+  const resettingRef = useRef(false);
+  const storageQueueRef = useRef<ReturnType<typeof createPetRuntimeStorageQueue> | null>(null);
   const [latestActivity, setLatestActivity] = useState<NovaActivityEvent | null>(null);
   const [status, setStatus] = useState<PetRuntimeValue["status"]>("loading");
+  storageQueueRef.current ??= createPetRuntimeStorageQueue();
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +78,9 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
         dataRef.current = restored;
         setData(restored);
         setStatus("ready");
-        if (restored !== stored) await savePetRuntime(restored.state, restored.memory);
+        if (restored !== stored) {
+          await storageQueueRef.current?.saveRuntime(restored.state, restored.memory);
+        }
       })
       .catch(() => {
         if (!cancelled) setStatus("error");
@@ -87,6 +91,7 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => subscribeNovaActivityEvents((event) => {
+    if (resettingRef.current) return;
     const current = dataRef.current;
     if (!current?.preferences.enabled) return;
     const next = reducePetData(current, event);
@@ -98,7 +103,9 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
     ) {
       setLatestActivity(event);
     }
-    void savePetRuntime(next.state, next.memory).catch(() => setStatus("error"));
+    void storageQueueRef.current
+      ?.saveRuntime(next.state, next.memory)
+      .catch(() => setStatus("error"));
   }), []);
 
   useEffect(() => {
@@ -148,7 +155,7 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   const setPosition = useCallback(async (x: number, y: number) => {
     if (!data) return;
     const state = { ...data.state, x, y, lastActiveAt: Date.now() };
-    await savePetRuntime(state, data.memory);
+    await storageQueueRef.current?.saveRuntime(state, data.memory);
     const next = { ...data, state };
     dataRef.current = next;
     setData(next);
@@ -162,7 +169,7 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
       hidden: false,
       lastActiveAt: Date.now(),
     };
-    await savePetRuntime(state, data.memory);
+    await storageQueueRef.current?.saveRuntime(state, data.memory);
     const next = { ...data, state };
     dataRef.current = next;
     setData(next);
@@ -171,20 +178,29 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
   const setHidden = useCallback(async (hidden: boolean) => {
     if (!data) return;
     const state = { ...data.state, hidden, lastActiveAt: Date.now() };
-    await savePetRuntime(state, data.memory);
+    await storageQueueRef.current?.saveRuntime(state, data.memory);
     const next = { ...data, state };
     dataRef.current = next;
     setData(next);
   }, [data]);
 
   const resetPet = useCallback(async () => {
-    await clearPetData();
+    const previous = dataRef.current;
     const next = createDefaultPetData();
-    await savePetData(next);
-    dataRef.current = next;
-    setData(next);
-    setLatestActivity(null);
-    setStatus("ready");
+    resettingRef.current = true;
+    dataRef.current = null;
+    try {
+      await storageQueueRef.current?.reset(next);
+      dataRef.current = next;
+      setData(next);
+      setLatestActivity(null);
+      setStatus("ready");
+    } catch (error) {
+      dataRef.current = previous;
+      throw error;
+    } finally {
+      resettingRef.current = false;
+    }
   }, []);
 
   const value = useMemo<PetRuntimeValue>(() => ({
