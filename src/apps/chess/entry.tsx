@@ -7,6 +7,7 @@ import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
 import GameResultDialog from "../games/shared/GameResultDialog";
 import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subscribeGameReset, touchGame } from "../games/shared/gameStorage";
 import { playNovaSound } from "../../../app/novaSettings";
+import { publishNovaSystemMoment } from "../../../app/systemMoments";
 
 type ClockPreset = "none" | "blitz" | "rapid" | "classic";
 type ClockState = Record<Color,number>;
@@ -129,7 +130,7 @@ export default function ChessGame(){
   const status=timedOut?`${colorName(timedOut==="w"?"b":"w")}胜 · ${colorName(timedOut)}超时`:game.isCheckmate()?`${colorName(turn)}被将死`:game.isDraw()?"和棋":aiThinking?"Stockfish 正在思考":!engineReady&&mode==="ai"?"正在加载 Stockfish":paused?`${colorName(turn)}走 · 已暂停`:`${colorName(turn)}走${game.isCheck()?" · 将军":""}`;
   const winnerColor:Color|null=timedOut?(timedOut==="w"?"b":"w"):game.isCheckmate()?(turn==="w"?"b":"w"):null;
   useEffect(()=>{if(history.length&&!finished)saveGameProgress<ChessProgress>("chess",{pgn:game.pgn(),mode,humanColor,engineLevel,orientation,clockPreset,timeLeft})},[clockPreset,engineLevel,finished,game,humanColor,history.length,mode,orientation,timeLeft]);
-  useEffect(()=>{if(!finished)return;const key=`${game.fen()}:${timedOut??""}`;if(resultRef.current===key)return;resultRef.current=key;const result=winnerColor===null?"draw":mode==="local"||winnerColor===humanColor?"win":"loss";finishGame("chess",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move")},[finished,game,humanColor,mode,timedOut,winnerColor]);
+  useEffect(()=>{if(!finished)return;const key=`${game.fen()}:${timedOut??""}`;if(resultRef.current===key)return;resultRef.current=key;const result=winnerColor===null?"draw":mode==="local"||winnerColor===humanColor?"win":"loss";finishGame("chess",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move");if(result==="win")publishNovaSystemMoment("game-win","chess")},[finished,game,humanColor,mode,timedOut,winnerColor]);
   useEffect(()=>subscribeGameReset("chess",()=>restart(mode,humanColor)),[humanColor,mode]);
 
   return <main className="chess-game">

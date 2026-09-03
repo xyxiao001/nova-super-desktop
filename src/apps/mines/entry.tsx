@@ -14,6 +14,7 @@ import {
   touchGame,
 } from "../games/shared/gameStorage";
 import { playNovaSound } from "../../../app/novaSettings";
+import { publishNovaSystemMoment } from "../../../app/systemMoments";
 import {
   DESKTOP_ICON_LONG_PRESS_MS,
   isCompactDesktopViewport,
@@ -128,6 +129,7 @@ export default function MinesweeperGame() {
       const best = bestTimes[difficulty];
       finishGame("mines", "win");
       playNovaSound("success");
+      publishNovaSystemMoment("game-win", "mines");
       setElapsed(time);
       setStartedAt(null);
       setStatus("won");

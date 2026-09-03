@@ -8,6 +8,7 @@ import { clearGameProgress, finishGame, loadGameProgress, saveGameProgress, subs
 import GomokuWorker from "./gomoku.worker?worker";
 import { GOMOKU_DIFFICULTIES, gomokuDifficultyDetails, type GomokuDifficulty } from "./gomokuDifficulty";
 import { playNovaSound } from "../../../app/novaSettings";
+import { publishNovaSystemMoment } from "../../../app/systemMoments";
 
 type Stone = 0|1|2;
 type Side = "black"|"white";
@@ -87,7 +88,7 @@ export default function GomokuGame(){
   },[aiStone,difficulty,moves,thinking,turn,winner]);
   useEffect(()=>{touchGame("gomoku")},[]);
   useEffect(()=>{if(moves.length&&!winner)saveGameProgress<GomokuProgress>("gomoku",{moves,humanSide})},[humanSide,moves,winner]);
-  useEffect(()=>{if(!winner)return;const key=`${winner}:${moves.length}`;if(resultRef.current===key)return;resultRef.current=key;const result=winner==="draw"?"draw":winner===humanStone?"win":"loss";finishGame("gomoku",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move")},[humanStone,moves.length,winner]);
+  useEffect(()=>{if(!winner)return;const key=`${winner}:${moves.length}`;if(resultRef.current===key)return;resultRef.current=key;const result=winner==="draw"?"draw":winner===humanStone?"win":"loss";finishGame("gomoku",result);playNovaSound(result==="win"?"success":result==="loss"?"error":"move");if(result==="win")publishNovaSystemMoment("game-win","gomoku")},[humanStone,moves.length,winner]);
   useEffect(()=>subscribeGameReset("gomoku",()=>restart(humanSide)),[difficulty,humanSide]);
 
   const play=(index:number)=>{

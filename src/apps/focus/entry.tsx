@@ -14,6 +14,7 @@ import {
   type FocusSession,
 } from "./focusClock";
 import { playNovaSound } from "../../../app/novaSettings";
+import { publishNovaSystemMoment } from "../../../app/systemMoments";
 
 type ClockView = "focus" | "timer" | "stopwatch";
 type FocusPreset = "focus" | "short" | "long";
@@ -131,7 +132,10 @@ export default function FocusClockApp() {
       completionRef.current = true;
       setRunning(false);
       setEndAt(null);
-      if (view === "focus" && preset === "focus") saveSession(total);
+      if (view === "focus" && preset === "focus") {
+        saveSession(total);
+        publishNovaSystemMoment("focus-complete", "focus");
+      }
       playNovaSound("success");
     };
     tick();

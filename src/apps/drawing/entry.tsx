@@ -3,6 +3,8 @@
 import "./drawing.css";
 
 import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { playNovaSound } from "../../../app/novaSettings";
+import { publishNovaSystemMoment } from "../../../app/systemMoments";
 import { useWorkspaceRuntime } from "../../platform/workspace/WorkspaceRuntime";
 
 type DrawingTool = "pen" | "eraser";
@@ -64,7 +66,7 @@ export default function DrawingApp(){
   const continueDrawing=(event:ReactPointerEvent<HTMLCanvasElement>)=>{const stroke=activeStroke.current;if(!stroke||!event.currentTarget.hasPointerCapture(event.pointerId))return;const point=pointFromEvent(event),previous=stroke.points[stroke.points.length-1];stroke.points.push(point);const context=event.currentTarget.getContext("2d"),rect=event.currentTarget.getBoundingClientRect();if(context)drawStroke(context,{...stroke,points:[previous,point]},rect.width,rect.height)};
   const finishDrawing=(event:ReactPointerEvent<HTMLCanvasElement>)=>{const stroke=activeStroke.current;if(!stroke)return;activeStroke.current=null;if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);setHistory((current)=>[...current.slice(0,historyIndex+1),[...current[historyIndex],stroke]]);setHistoryIndex((current)=>current+1)};
   const clear=()=>{if(!strokes.length)return;setHistory((current)=>[...current.slice(0,historyIndex+1),[]]);setHistoryIndex((current)=>current+1)};
-  const save=()=>{const canvas=canvasRef.current;if(!canvas)return;const output=document.createElement("canvas");output.width=canvas.width;output.height=canvas.height;const context=output.getContext("2d");if(!context)return;context.fillStyle="#ffffff";context.fillRect(0,0,output.width,output.height);context.drawImage(canvas,0,0);onSave("NOVA 画板.png",output.toDataURL("image/png"))};
+  const save=()=>{const canvas=canvasRef.current;if(!canvas)return;const output=document.createElement("canvas");output.width=canvas.width;output.height=canvas.height;const context=output.getContext("2d");if(!context)return;context.fillStyle="#ffffff";context.fillRect(0,0,output.width,output.height);context.drawImage(canvas,0,0);onSave("NOVA 画板.png",output.toDataURL("image/png"));playNovaSound("success");publishNovaSystemMoment("creative-save","drawing")};
 
   return <main className="drawing-app">
     <header className="drawing-toolbar">

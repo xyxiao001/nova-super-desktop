@@ -84,8 +84,10 @@ describe("storage providers", () => {
     ]);
   });
 
-  it("keeps the calendar almanac choice with local settings", () => {
+  it("keeps desktop presentation and calendar choices with local settings", () => {
     expect(localStorageCategory("nova-calendar-almanac-enabled")).toBe("settings");
+    expect(localStorageCategory("nova-desktop-positions")).toBe("settings");
+    expect(localStorageCategory("nova-desktop-objects")).toBe("settings");
   });
 
   it("reads a Magic Tower database upgraded by localForage", async () => {
