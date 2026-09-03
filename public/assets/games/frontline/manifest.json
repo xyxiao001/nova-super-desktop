@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "scope": "iteration-1-animation-feasibility",
+  "sourceVersion": "412f11e3c27d645ddeafcf921f558d57",
+  "unityVersion": "2022.3.48t7",
+  "generator": {
+    "name": "scripts/frontline/extract_assets.py",
+    "unityPy": "1.25.3"
+  },
+  "bundles": [
+    {
+      "file": "char_monster_01_xiyi_456d6772844976e47545a4d7fc110d56",
+      "bytes": 228306,
+      "sha256": "2b179728b8ffff220b7090daeba7c678585852304482e7f2bbcb27636dc31b0f"
+    },
+    {
+      "file": "fx_monster_common_af0b200688dc9813201a4c5a5fb05442",
+      "bytes": 397902,
+      "sha256": "f18dff609f540c73b3160b9e145ec5ecb910c04135cfe4ed7b8e4323727abfed"
+    }
+  ],
+  "spineActors": [
+    {
+      "id": "monster-01-xiyi",
+      "sourceBundle": "char_monster_01_xiyi_456d6772844976e47545a4d7fc110d56",
+      "sourceObjects": {
+        "atlas": "monster_01_xiyi.atlas",
+        "skeleton": "monster_01_xiyi.skel",
+        "texture": "monster_01_xiyi"
+      },
+      "runtime": {
+        "package": "@esotericsoftware/spine-webgl",
+        "version": "4.2.120",
+        "pipeline": "binary"
+      },
+      "scale": 0.009999999776482582,
+      "defaultSkin": "default",
+      "gpuFrameReference": [
+        {
+          "name": "attack_1",
+          "fps": 20,
+          "frames": 14
+        },
+        {
+          "name": "dead",
+          "fps": 20,
+          "frames": 2
+        },
+        {
+          "name": "run",
+          "fps": 20,
+          "frames": 15
+        },
+        {
+          "name": "stand",
+          "fps": 20,
+          "frames": 15
+        }
+      ],
+      "files": {
+        "atlas": {
+          "path": "spine/monster_01_xiyi/skeleton.atlas",
+          "bytes": 362,
+          "sha256": "70d49e294be85586536254d67ce01d48a334d57bdadadce20f5c2ed88ded5485"
+        },
+        "skeleton": {
+          "path": "spine/monster_01_xiyi/skeleton.skel",
+          "bytes": 31528,
+          "sha256": "f8537726e80029b403c5e0d67009bb953b67ac19cdc344fdc7d83ce79e773082"
+        },
+        "texture": {
+          "path": "spine/monster_01_xiyi/texture.png",
+          "bytes": 20577,
+          "sha256": "cf388fc873f05b6d374c5eedd0318c3c6549998a71fd8328770e4f83008b98a5"
+        }
+      },
+      "binaryVersion": "4.2.33",
+      "bounds": {
+        "x": -19.866832733154297,
+        "y": -12.709105491638184,
+        "width": 56.33884811401367,
+        "height": 57.43842315673828
+      },
+      "skins": [
+        "default"
+      ],
+      "animations": [
+        {
+          "name": "attack_1",
+          "duration": 0.46666669845581055,
+          "events": []
+        },
+        {
+          "name": "dead",
+          "duration": 0.06666667014360428,
+          "events": []
+        },
+        {
+          "name": "run",
+          "duration": 0.5,
+          "events": []
+        },
+        {
+          "name": "stand",
+          "duration": 0.5,
+          "events": []
+        }
+      ],
+      "lifecycleAudit": {
+        "required": [
+          "stand",
+          "run",
+          "attack_1",
+          "hurt",
+          "dead"
+        ],
+        "missing": [
+          "hurt"
+        ]
+      }
+    }
+  ],
+  "effects": [
+    {
+      "id": "monster-fireball",
+      "kind": "unity-particle-flipbook",
+      "sourceBundle": "fx_monster_common_af0b200688dc9813201a4c5a5fb05442",
+      "files": {
+        "texture": {
+          "path": "effects/monster-fireball/texture.png",
+          "bytes": 596359,
+          "sha256": "336d0a7949a8410176cf89ec94cd1ca703e5358115ab903f41bb531fa6d72d2a"
+        },
+        "config": {
+          "path": "effects/monster-fireball/particle.json",
+          "bytes": 1202,
+          "sha256": "e8b56d623c9a2db3c616864ebd5da3321f717d84300be9d51593f8fc652a5358"
+        }
+      }
+    }
+  ]
+}

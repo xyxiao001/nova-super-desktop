@@ -1,0 +1,525 @@
+{
+  "sourceVersion": "412f11e3c27d645ddeafcf921f558d57",
+  "sourceContainer": {
+    "file": "Boot_412f11e3c27d645ddeafcf921f558d57.zip",
+    "sha256": "e57d37860136a649a521f007c2ec1d1f28e656013dc035a082a9abfc133d1688",
+    "nestedEntry": "BinaryAssets/CSV.zip",
+    "nestedSha256": "326acbd88696cc48944568df816fd6865ff5fa1e88eada2b709589470f6ed555",
+    "tables": [
+      {
+        "name": "EctypeWave.csv",
+        "sha256": "3fed4f2b996680f6f6afe0630080521475617e72a84ec3b37b840ebc88011266"
+      },
+      {
+        "name": "ectype_spawn_monster_info_c.csv",
+        "sha256": "4fc55ed7906480d0b826da2e3b679f24e5de241d362e5a2a98a47896d3ec8722"
+      },
+      {
+        "name": "Monster.csv",
+        "sha256": "095f17597424940ee48c1b13c632ac8eb11ff4b1f32fa68f844f23ff49ef8499"
+      },
+      {
+        "name": "Skill.csv",
+        "sha256": "aef551e9e1051a13b3e2606388d18b871023a5fed63cc7e50f8e7cbe89d1f128"
+      },
+      {
+        "name": "hero_c.csv",
+        "sha256": "e273f3f8e2c2a0a5ec2e6fb933c9b317ee1b1f9b2cc5ce038a2d31887d7b04d2"
+      },
+      {
+        "name": "HeroPropBase.csv",
+        "sha256": "dedb6959e3a829048c10759eae73e802aacd50b95cfcfb97f8995164b1a32f45"
+      },
+      {
+        "name": "PetSkill.csv",
+        "sha256": "3a5058777ebe48ef8f2df8f59124023df06f7a7388afc23efa12261c09f7859a"
+      },
+      {
+        "name": "Freeze.csv",
+        "sha256": "1a782edb82f8d0f40513c3a80761dfac7eaa4d53a392398494fecac0908ff16e"
+      }
+    ]
+  },
+  "rktFormat": {
+    "magic": "rkt\\0",
+    "headerBytes": 8,
+    "privatePrefixBytes": 8,
+    "encryptedPrefixBytes": 16384,
+    "tailOffsetBytes": 16392,
+    "tailTransform": "xor-repeat",
+    "tailXorKeyHex": "8a7ba4d2"
+  },
+  "dbcFormat": {
+    "magic": "DBC\\n1000",
+    "headerBytes": 108,
+    "rowLayout": "fixed-width",
+    "dictionaryValues": "indexed",
+    "stringLengths": "7-bit-encoded"
+  },
+  "heroes": [
+    {
+      "id": "hero-01-fashi",
+      "sourceId": 10001,
+      "name": "魔法师",
+      "normalSkillId": 1230,
+      "baseAttack": 40,
+      "damageCoefficient": 88,
+      "cooldownMs": 1600,
+      "rangeValue": 15,
+      "animation": "attack_1",
+      "hitTimeSeconds": 0.133333
+    },
+    {
+      "id": "hero-04-sheshou",
+      "sourceId": 10002,
+      "name": "游侠",
+      "normalSkillId": 1310,
+      "baseAttack": 40,
+      "damageCoefficient": 40,
+      "cooldownMs": 800,
+      "rangeValue": 8,
+      "animation": "attack_1",
+      "hitTimeSeconds": null
+    },
+    {
+      "id": "hero-03-qishi",
+      "sourceId": 10003,
+      "name": "骑士",
+      "normalSkillId": 1330,
+      "baseAttack": 40,
+      "damageCoefficient": 100,
+      "cooldownMs": 9000,
+      "rangeValue": 9,
+      "animation": "attack_1",
+      "hitTimeSeconds": null
+    },
+    {
+      "id": "hero-02-paoshou",
+      "sourceId": 10004,
+      "name": "矮人炮手",
+      "normalSkillId": 1410,
+      "baseAttack": 40,
+      "damageCoefficient": 53,
+      "cooldownMs": 2400,
+      "rangeValue": 20,
+      "animation": "attack_1",
+      "hitTimeSeconds": 0.033333
+    }
+  ],
+  "waves": [
+    {
+      "wave": 1,
+      "totalWaves": 6,
+      "waitTimeMs": 0,
+      "leftMonsterNextWave": 4,
+      "violentLeftMonsterNextWave": 4,
+      "notWaitWaveAllSpawn": false,
+      "bossEffect": 0,
+      "totalMonsterCount": 8,
+      "spawnGroups": [
+        {
+          "id": 253,
+          "spawnPointId": 1,
+          "subKey": 0,
+          "waitTimeMs": 0,
+          "intervalMs": 1250,
+          "durationMs": 10000,
+          "count": 8,
+          "pathOffsetType": 2,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "totalWaves": 6,
+      "waitTimeMs": 20000,
+      "leftMonsterNextWave": 5,
+      "violentLeftMonsterNextWave": 5,
+      "notWaitWaveAllSpawn": false,
+      "bossEffect": 0,
+      "totalMonsterCount": 12,
+      "spawnGroups": [
+        {
+          "id": 254,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 0,
+          "intervalMs": 3750,
+          "durationMs": 15000,
+          "count": 4,
+          "pathOffsetType": 0,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 255,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 1000,
+          "intervalMs": 3750,
+          "durationMs": 15000,
+          "count": 4,
+          "pathOffsetType": -1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 256,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 1000,
+          "intervalMs": 3750,
+          "durationMs": 15000,
+          "count": 4,
+          "pathOffsetType": 1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "totalWaves": 6,
+      "waitTimeMs": 25000,
+      "leftMonsterNextWave": 5,
+      "violentLeftMonsterNextWave": 5,
+      "notWaitWaveAllSpawn": false,
+      "bossEffect": 0,
+      "totalMonsterCount": 12,
+      "spawnGroups": [
+        {
+          "id": 257,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 0,
+          "intervalMs": 2000,
+          "durationMs": 8000,
+          "count": 4,
+          "pathOffsetType": -1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 258,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 0,
+          "intervalMs": 2000,
+          "durationMs": 8000,
+          "count": 4,
+          "pathOffsetType": 1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 259,
+          "spawnPointId": 1,
+          "subKey": 2,
+          "waitTimeMs": 1000,
+          "intervalMs": 2000,
+          "durationMs": 4000,
+          "count": 2,
+          "pathOffsetType": -1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 260,
+          "spawnPointId": 1,
+          "subKey": 2,
+          "waitTimeMs": 1000,
+          "intervalMs": 2000,
+          "durationMs": 4000,
+          "count": 2,
+          "pathOffsetType": 1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        }
+      ]
+    },
+    {
+      "wave": 4,
+      "totalWaves": 6,
+      "waitTimeMs": 30000,
+      "leftMonsterNextWave": 5,
+      "violentLeftMonsterNextWave": 5,
+      "notWaitWaveAllSpawn": false,
+      "bossEffect": 0,
+      "totalMonsterCount": 20,
+      "spawnGroups": [
+        {
+          "id": 261,
+          "spawnPointId": 1,
+          "subKey": 0,
+          "waitTimeMs": 0,
+          "intervalMs": 1000,
+          "durationMs": 10000,
+          "count": 10,
+          "pathOffsetType": 2,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1002,
+            "name": "野狗",
+            "resourceId": 1002,
+            "moveSpeed": 600,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 262,
+          "spawnPointId": 1,
+          "subKey": 0,
+          "waitTimeMs": 3000,
+          "intervalMs": 1000,
+          "durationMs": 10000,
+          "count": 10,
+          "pathOffsetType": 2,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1002,
+            "name": "野狗",
+            "resourceId": 1002,
+            "moveSpeed": 600,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        }
+      ]
+    },
+    {
+      "wave": 5,
+      "totalWaves": 6,
+      "waitTimeMs": 40000,
+      "leftMonsterNextWave": 6,
+      "violentLeftMonsterNextWave": 6,
+      "notWaitWaveAllSpawn": false,
+      "bossEffect": 2,
+      "totalMonsterCount": 21,
+      "spawnGroups": [
+        {
+          "id": 263,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 0,
+          "intervalMs": 0,
+          "durationMs": 0,
+          "count": 1,
+          "pathOffsetType": 0,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 3001,
+            "name": "沙漠蜥蜴精英",
+            "resourceId": 3001,
+            "moveSpeed": 320,
+            "hpScale": 5,
+            "crystalDamage": 6
+          }
+        },
+        {
+          "id": 264,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 2000,
+          "intervalMs": 3000,
+          "durationMs": 30000,
+          "count": 10,
+          "pathOffsetType": -1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 265,
+          "spawnPointId": 1,
+          "subKey": 1,
+          "waitTimeMs": 2000,
+          "intervalMs": 3000,
+          "durationMs": 30000,
+          "count": 10,
+          "pathOffsetType": 1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        }
+      ]
+    },
+    {
+      "wave": 6,
+      "totalWaves": 6,
+      "waitTimeMs": 40000,
+      "leftMonsterNextWave": 6,
+      "violentLeftMonsterNextWave": 6,
+      "notWaitWaveAllSpawn": false,
+      "bossEffect": 0,
+      "totalMonsterCount": 56,
+      "spawnGroups": [
+        {
+          "id": 266,
+          "spawnPointId": 1,
+          "subKey": 2,
+          "waitTimeMs": 5000,
+          "intervalMs": 2500,
+          "durationMs": 30000,
+          "count": 12,
+          "pathOffsetType": 0,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 267,
+          "spawnPointId": 1,
+          "subKey": 2,
+          "waitTimeMs": 6000,
+          "intervalMs": 2500,
+          "durationMs": 30000,
+          "count": 12,
+          "pathOffsetType": -1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 268,
+          "spawnPointId": 1,
+          "subKey": 2,
+          "waitTimeMs": 6000,
+          "intervalMs": 2500,
+          "durationMs": 30000,
+          "count": 12,
+          "pathOffsetType": 1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1001,
+            "name": "沙漠蜥蜴",
+            "resourceId": 1001,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 269,
+          "spawnPointId": 1,
+          "subKey": 3,
+          "waitTimeMs": 2000,
+          "intervalMs": 2000,
+          "durationMs": 20000,
+          "count": 10,
+          "pathOffsetType": -1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        },
+        {
+          "id": 270,
+          "spawnPointId": 1,
+          "subKey": 3,
+          "waitTimeMs": 2000,
+          "intervalMs": 2000,
+          "durationMs": 20000,
+          "count": 10,
+          "pathOffsetType": 1,
+          "monsterLevel": 1,
+          "monster": {
+            "id": 1003,
+            "name": "沙甲虫",
+            "resourceId": 1003,
+            "moveSpeed": 400,
+            "hpScale": 1,
+            "crystalDamage": 1
+          }
+        }
+      ]
+    }
+  ]
+}

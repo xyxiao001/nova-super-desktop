@@ -1,0 +1,114 @@
+.frontline-resource-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  container-type: size;
+  background: #101412;
+  color: #f6ecd1;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.frontline-preview-stage {
+  position: relative;
+  width: min(100cqw, 56.25cqh);
+  height: min(100cqh, 177.7778cqw);
+  overflow: hidden;
+  border: 1px solid #697067;
+  background: #09100c;
+}
+
+.frontline-preview-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.frontline-preview-stage header {
+  position: absolute;
+  inset: 24px 24px auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid #87917c;
+  background: #111813e8;
+}
+
+.frontline-preview-stage header strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 15px;
+}
+
+.frontline-preview-stage header span,
+.frontline-preview-stage output {
+  color: #c4cfb5;
+  font-size: 12px;
+}
+
+.frontline-preview-stage nav {
+  position: absolute;
+  right: 24px;
+  bottom: 52px;
+  left: 24px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid #87917c;
+  background: #111813ed;
+}
+
+.frontline-preview-stage nav button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 0;
+  border-right: 1px solid #596154;
+  background: transparent;
+  color: #e9e4d5;
+  font: 700 13px/1.2 inherit;
+  cursor: pointer;
+}
+
+.frontline-preview-stage nav button:last-child {
+  border-right: 0;
+}
+
+.frontline-preview-stage nav button[aria-pressed="true"] {
+  background: #d8bb63;
+  color: #171a15;
+}
+
+.frontline-preview-stage nav button:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.frontline-preview-stage output {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+@media (max-width: 540px) {
+  .frontline-preview-stage header {
+    inset: 12px 12px auto;
+  }
+
+  .frontline-preview-stage nav {
+    right: 12px;
+    bottom: 42px;
+    left: 12px;
+  }
+
+  .frontline-preview-stage nav button {
+    font-size: 11px;
+  }
+
+  .frontline-preview-stage output {
+    bottom: 14px;
+    left: 12px;
+  }
+}

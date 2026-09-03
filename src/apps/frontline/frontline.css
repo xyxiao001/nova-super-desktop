@@ -1,0 +1,375 @@
+.frontline {
+  --ink: #231a13;
+  --panel: rgba(34, 31, 27, 0.9);
+  --line: #8f7048;
+  --gold: #f5cb62;
+  --paper: #f7e7bd;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #111714;
+  color: #fff;
+  font-family: "Songti SC", "STSong", serif;
+  container-type: size;
+}
+
+.frontline *,
+.frontline *::before,
+.frontline *::after {
+  box-sizing: border-box;
+}
+
+.frontline button {
+  font: inherit;
+}
+
+.frontline-stage {
+  position: relative;
+  width: min(100cqw, 56.25cqh);
+  height: 100cqh;
+  min-height: 0;
+  overflow: hidden;
+  background: #9d7146;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.55);
+  isolation: isolate;
+}
+
+.world-map {
+  background: url("/assets/games/frontline/world-map.png") center / cover no-repeat;
+}
+
+.world-map::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background: linear-gradient(
+    180deg,
+    rgba(20, 29, 30, 0.7) 0,
+    transparent 22%,
+    transparent 72%,
+    rgba(19, 20, 18, 0.76) 100%
+  );
+}
+
+.frontline-map-header {
+  position: absolute;
+  top: 3%;
+  left: 4%;
+  right: 4%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid rgba(246, 221, 164, 0.42);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.frontline-map-header div {
+  display: grid;
+  gap: 2px;
+}
+
+.frontline-map-header small,
+.battle-hud small,
+.battle-status span {
+  color: #d9c59c;
+  font-size: 12px;
+}
+
+.frontline-map-header strong {
+  color: var(--paper);
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.frontline-map-header output {
+  min-width: 54px;
+  color: var(--gold);
+  font: 700 22px/1 Georgia, serif;
+  text-align: right;
+}
+
+.frontline-map-header output span {
+  color: #c8b996;
+  font-size: 12px;
+}
+
+.frontline-level-node {
+  position: absolute;
+  left: 48%;
+  top: 69%;
+  width: 82px;
+  height: 82px;
+  translate: -50% -50%;
+  border: 2px solid #6d4727;
+  border-radius: 50%;
+  background: #e6b74c;
+  color: #4c2b16;
+  box-shadow:
+    inset 0 0 0 6px #f7dc83,
+    0 6px 14px rgba(34, 20, 10, 0.55);
+  cursor: pointer;
+}
+
+.frontline-level-node b,
+.frontline-level-node span {
+  display: block;
+}
+
+.frontline-level-node b {
+  font: 700 24px/1 Georgia, serif;
+}
+
+.frontline-level-node span {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  width: 150px;
+  translate: -50% 0;
+  color: #fff0c2;
+  font-size: 14px;
+  text-shadow: 0 2px 3px #28170d;
+}
+
+.frontline-map-command {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 3%;
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid rgba(246, 221, 164, 0.42);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.frontline-map-command div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.frontline-map-command strong {
+  color: var(--paper);
+  font-size: 17px;
+}
+
+.frontline-map-command span {
+  color: #c9b992;
+  font-size: 12px;
+}
+
+.frontline-map-command button,
+.frontline-dialog button {
+  min-width: 96px;
+  min-height: 44px;
+  margin-left: auto;
+  border: 1px solid #8d5e24;
+  border-radius: 6px;
+  background: #efba45;
+  color: #3d2715;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.battle-field {
+  background: #6d593c;
+}
+
+.battle-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url("/assets/games/frontline/maps/desert-1.png") center / 100% 100% no-repeat;
+}
+
+.battle-pedestals {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.battle-pedestals img {
+  position: absolute;
+  width: 13.45%;
+  height: auto;
+  translate: -48% -46%;
+}
+
+.battle-pedestals img.locked {
+  width: 11.55%;
+  translate: -50% -50%;
+}
+
+.battle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.battle-canvas canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.battle-canvas canvas:last-child {
+  z-index: 2;
+}
+
+.battle-hud {
+  position: absolute;
+  z-index: 10;
+  top: 2%;
+  left: 3%;
+  right: 3%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 12px;
+  border: 1px solid rgba(234, 205, 146, 0.46);
+  border-radius: 6px;
+  background: rgba(30, 28, 25, 0.9);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.36);
+}
+
+.battle-hud div,
+.battle-hud output,
+.battle-status div {
+  display: grid;
+  gap: 2px;
+}
+
+.battle-hud strong {
+  color: #f8e5b5;
+  font-size: 17px;
+}
+
+.battle-hud output {
+  min-width: 48px;
+  color: #d9c59c;
+  font-size: 11px;
+  text-align: center;
+}
+
+.battle-hud output b {
+  color: #fff;
+  font: 700 16px/1 Georgia, serif;
+}
+
+.battle-actions {
+  position: absolute;
+  z-index: 11;
+  top: 11%;
+  left: 3%;
+  display: flex;
+  gap: 7px;
+}
+
+.battle-actions button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #9c805a;
+  border-radius: 6px;
+  background: rgba(33, 31, 27, 0.9);
+  color: #f8e5b5;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.battle-status {
+  position: absolute;
+  z-index: 10;
+  right: 3%;
+  bottom: 2%;
+  left: 3%;
+  min-height: 52px;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid rgba(234, 205, 146, 0.38);
+  border-radius: 6px;
+  background: rgba(29, 27, 24, 0.88);
+}
+
+.battle-status div:last-child {
+  text-align: right;
+}
+
+.battle-status strong {
+  color: #f8e5b5;
+  font: 700 16px/1.1 Georgia, serif;
+}
+
+.frontline-loading,
+.frontline-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 32px;
+  background: rgba(20, 18, 15, 0.86);
+  text-align: center;
+}
+
+.frontline-loading span {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: frontline-spin 0.8s linear infinite;
+}
+
+.frontline-loading strong,
+.frontline-dialog strong {
+  color: #f8e5b5;
+  font-size: 22px;
+}
+
+.frontline-dialog span {
+  max-width: 320px;
+  color: #d8c9aa;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.frontline-dialog button {
+  margin-left: 0;
+}
+
+@keyframes frontline-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .frontline-stage {
+    width: 100cqw;
+    max-width: 56.25cqh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontline-loading span {
+    animation: none;
+  }
+}

@@ -1,0 +1,2973 @@
+{
+  "schemaVersion": 1,
+  "scope": "frontline-level-asset-manifest",
+  "level": {
+    "id": "desert-1",
+    "sourceId": 100101,
+    "chapter": 1,
+    "order": 1,
+    "name": "烈日沙漠1",
+    "auditStatus": "blocked-by-behavior-config"
+  },
+  "sourceVersion": "412f11e3c27d645ddeafcf921f558d57",
+  "unityVersion": "2022.3.48t7",
+  "generator": {
+    "name": "scripts/frontline/audit_level_01.py",
+    "unityPy": "1.25.3",
+    "spineRuntime": "4.2.120"
+  },
+  "evidence": [
+    {
+      "id": "level-config",
+      "type": "bundle-object",
+      "source": "firstlv_6566684a9d702f3f858b5d06a932f6ef:TextAsset/100101",
+      "facts": [
+        "map path is Assets/AssetFolder/MapData/Background/map_01_01.jpg",
+        "one non-empty route with 12 points",
+        "12 tower positions",
+        "player and crystal anchors are explicit"
+      ]
+    },
+    {
+      "id": "challenge-roster",
+      "type": "live-observation",
+      "source": "reference client 1-1 challenge panel",
+      "facts": [
+        "four fixed hero cards",
+        "monsters: 沙甲虫, 沙漠蜥蜴, 野狗",
+        "no boss card is shown"
+      ]
+    },
+    {
+      "id": "battle-layout",
+      "type": "live-observation",
+      "source": "reference client 1-1 battle",
+      "facts": [
+        "six waves",
+        "three-star target is 220 seconds",
+        "seven deployable platforms and five locked platforms",
+        "blue crystal is centered near the bottom",
+        "pause, speed, statistics, skills, enhance and summon controls are visible",
+        "the player unit is account-loadout driven rather than fixed by firstlv"
+      ]
+    },
+    {
+      "id": "wave-config",
+      "type": "rkt-config",
+      "source": "Boot_412f11e3c27d645ddeafcf921f558d57.zip:BinaryAssets/CSV.zip",
+      "facts": [
+        "RKT tail transform and nested archive structure are verified",
+        "EctypeWave contains six records for source level 100101",
+        "ectype_spawn_monster_info_c contains 18 spawn groups for source level 100101",
+        "Monster identifies four configured monster variants"
+      ]
+    }
+  ],
+  "bundles": [
+    {
+      "id": "level",
+      "file": "firstlv_6566684a9d702f3f858b5d06a932f6ef",
+      "bytes": 3256494,
+      "sha256": "84b219faad69326b074e44ebf557d8172d3421e90b39f551d9a80e18f8c6db09",
+      "evidence": "direct-level-config-and-fixed-heroes",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "AudioClip": 1,
+        "CanvasRenderer": 4,
+        "GameObject": 84,
+        "Material": 9,
+        "Mesh": 28,
+        "MeshFilter": 28,
+        "MeshRenderer": 28,
+        "MonoBehaviour": 68,
+        "MonoScript": 5,
+        "RectTransform": 4,
+        "Shader": 7,
+        "SortingGroup": 41,
+        "SpriteRenderer": 3,
+        "TextAsset": 11,
+        "Texture2D": 4,
+        "Transform": 80
+      }
+    },
+    {
+      "id": "map",
+      "file": "map_bg_01_01_0ca484b9fa2aca65583bc497497ad86b",
+      "bytes": 284699,
+      "sha256": "f591949db37cc75dab1b1a6fdbf40efd40ec2f7670c49a9bd5a151b4e21a7b91",
+      "evidence": "direct-level-config-background-reference",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "Sprite": 1,
+        "Texture2D": 1
+      }
+    },
+    {
+      "id": "mapSprites",
+      "file": "map_sprite_5bde9e378cf440be6bfac5cfe3abed49",
+      "bytes": 411658,
+      "sha256": "20f87a86273d730a1acb622f681420594e1b3b1119f57acda0b8e28d69230983",
+      "evidence": "config-and-live-layout-match",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "GameObject": 1,
+        "Material": 1,
+        "Shader": 1,
+        "Sprite": 83,
+        "SpriteAtlas": 1,
+        "SpriteRenderer": 1,
+        "Texture2D": 3,
+        "Transform": 1
+      }
+    },
+    {
+      "id": "monsterJiachong",
+      "file": "char_monster_01_jiachong_eb6889266afecfac3f012cdc193ee3bd",
+      "bytes": 204748,
+      "sha256": "98377ac1feca79b71282847a9eac4fd38a866b35a143fae0417303fb9257c696",
+      "evidence": "live-challenge-roster",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "CanvasRenderer": 1,
+        "GameObject": 6,
+        "Material": 6,
+        "Mesh": 2,
+        "MeshFilter": 2,
+        "MeshRenderer": 2,
+        "MonoBehaviour": 8,
+        "MonoScript": 8,
+        "RectTransform": 1,
+        "Shader": 7,
+        "SortingGroup": 1,
+        "Sprite": 44,
+        "SpriteAtlas": 1,
+        "TextAsset": 2,
+        "Texture2D": 5,
+        "Transform": 5
+      }
+    },
+    {
+      "id": "monsterXiyi",
+      "file": "char_monster_01_xiyi_456d6772844976e47545a4d7fc110d56",
+      "bytes": 228306,
+      "sha256": "2b179728b8ffff220b7090daeba7c678585852304482e7f2bbcb27636dc31b0f",
+      "evidence": "live-challenge-roster-and-battle",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "CanvasRenderer": 1,
+        "GameObject": 6,
+        "Material": 6,
+        "Mesh": 2,
+        "MeshFilter": 2,
+        "MeshRenderer": 2,
+        "MonoBehaviour": 8,
+        "MonoScript": 8,
+        "RectTransform": 1,
+        "Shader": 6,
+        "SortingGroup": 1,
+        "Sprite": 46,
+        "SpriteAtlas": 1,
+        "TextAsset": 2,
+        "Texture2D": 3,
+        "Transform": 5
+      }
+    },
+    {
+      "id": "monsterZongquan",
+      "file": "char_monster_01_zongquan_58c3c2c43f9548700d6a329d2f6fcd2a",
+      "bytes": 211308,
+      "sha256": "5a893a72794bd9b902f82d80ef3db3df76e649f5c97e23333a8013f5d5aba595",
+      "evidence": "live-challenge-roster-and-battle",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "CanvasRenderer": 1,
+        "GameObject": 6,
+        "Material": 6,
+        "Mesh": 2,
+        "MeshFilter": 2,
+        "MeshRenderer": 2,
+        "MonoBehaviour": 8,
+        "MonoScript": 8,
+        "RectTransform": 1,
+        "Shader": 6,
+        "SortingGroup": 1,
+        "Sprite": 47,
+        "SpriteAtlas": 1,
+        "TextAsset": 2,
+        "Texture2D": 3,
+        "Transform": 5
+      }
+    },
+    {
+      "id": "fightUi",
+      "file": "gui_fight_d913352ead4336b6b4e34cbb023b66ad",
+      "bytes": 377460,
+      "sha256": "17f34f8f4b5a520340a3839cb789bd857e7ee8fa4b9c65ac8b217da4bc69dbfa",
+      "evidence": "live-battle-controls-and-prefab-object-names",
+      "objectTypes": {
+        "Animation": 7,
+        "Animator": 1,
+        "AssetBundle": 1,
+        "Canvas": 24,
+        "CanvasGroup": 39,
+        "CanvasRenderer": 561,
+        "GameObject": 760,
+        "Material": 26,
+        "MonoBehaviour": 979,
+        "MonoScript": 41,
+        "ParticleSystem": 24,
+        "ParticleSystemRenderer": 24,
+        "RectTransform": 753,
+        "Shader": 4,
+        "Sprite": 3,
+        "TextAsset": 2,
+        "Texture2D": 10,
+        "Transform": 7
+      }
+    },
+    {
+      "id": "fightUiTextures",
+      "file": "gui_tex_fight_d1a8ba972cd7aeab5ddf8c8aab1dda61",
+      "bytes": 747558,
+      "sha256": "cfe52964990f3c2dbba943d092e3bbe9f0964c3411f3b830a6f44b46e26d06b3",
+      "evidence": "live-battle-controls-and-source-sprite-names",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "Sprite": 183,
+        "SpriteAtlas": 5,
+        "Texture2D": 8
+      }
+    }
+  ],
+  "scene": {
+    "sourceConfig": {
+      "path": "levels/desert-1/source-100101.json",
+      "bytes": 9525,
+      "sha256": "1a028d8b4e5cbcd511f9f71ea3304c099a6dc0357712fcfbf87d5d672005c365"
+    },
+    "sourceBackgroundPath": "Assets/AssetFolder/MapData/Background/map_01_01.jpg",
+    "mapType": 0,
+    "camera": {
+      "orthographicSize": 8,
+      "worldBounds": {
+        "left": -4.5,
+        "right": 4.5,
+        "bottom": -8,
+        "top": 8
+      }
+    },
+    "projection": {
+      "logicalWidth": 900,
+      "logicalHeight": 1600,
+      "pixelsPerWorldUnit": 100,
+      "logicalOrigin": {
+        "x": 450,
+        "y": 800
+      },
+      "worldYAxis": "up",
+      "logicalYAxis": "down"
+    },
+    "paths": [
+      {
+        "index": 0,
+        "points": [
+          {
+            "world": {
+              "x": -0.200000002980232,
+              "y": 5.06
+            },
+            "logical": {
+              "x": 430,
+              "y": 294
+            }
+          },
+          {
+            "world": {
+              "x": -0.65,
+              "y": 4.09999990463257
+            },
+            "logical": {
+              "x": 385,
+              "y": 390
+            }
+          },
+          {
+            "world": {
+              "x": -1.37,
+              "y": 3.29999995231628
+            },
+            "logical": {
+              "x": 313,
+              "y": 470
+            }
+          },
+          {
+            "world": {
+              "x": -1.08,
+              "y": 2.40000009536743
+            },
+            "logical": {
+              "x": 342,
+              "y": 560
+            }
+          },
+          {
+            "world": {
+              "x": -0.2,
+              "y": 1.70000004768372
+            },
+            "logical": {
+              "x": 430,
+              "y": 630
+            }
+          },
+          {
+            "world": {
+              "x": 2.24,
+              "y": -0.100000001490116
+            },
+            "logical": {
+              "x": 674,
+              "y": 810
+            }
+          },
+          {
+            "world": {
+              "x": 2.46,
+              "y": -1.15
+            },
+            "logical": {
+              "x": 696,
+              "y": 915
+            }
+          },
+          {
+            "world": {
+              "x": 1.70000004768372,
+              "y": -2.09999990463257
+            },
+            "logical": {
+              "x": 620,
+              "y": 1010
+            }
+          },
+          {
+            "world": {
+              "x": -0.699999988079071,
+              "y": -3.20000004768372
+            },
+            "logical": {
+              "x": 380,
+              "y": 1120
+            }
+          },
+          {
+            "world": {
+              "x": -1.39999997615814,
+              "y": -4.30000019073486
+            },
+            "logical": {
+              "x": 310,
+              "y": 1230
+            }
+          },
+          {
+            "world": {
+              "x": 0.300000011920929,
+              "y": -6
+            },
+            "logical": {
+              "x": 480,
+              "y": 1400
+            }
+          },
+          {
+            "world": {
+              "x": 0.400000005960464,
+              "y": -6.5
+            },
+            "logical": {
+              "x": 490,
+              "y": 1450
+            }
+          }
+        ]
+      }
+    ],
+    "spawnTips": [
+      {
+        "world": {
+          "x": -0.362431019544601,
+          "y": 4.64088344573975
+        },
+        "logical": {
+          "x": 413.757,
+          "y": 335.912
+        }
+      },
+      {
+        "world": {
+          "x": 1.44088387489319,
+          "y": 7.04530429840088
+        },
+        "logical": {
+          "x": 594.088,
+          "y": 95.47
+        }
+      }
+    ],
+    "towerPositions": [
+      {
+        "index": 0,
+        "towerType": 1,
+        "state": "locked",
+        "priority": 5,
+        "world": {
+          "x": -1.880765,
+          "y": -2.384702
+        },
+        "logical": {
+          "x": 261.923,
+          "y": 1038.47
+        }
+      },
+      {
+        "index": 1,
+        "towerType": 1,
+        "state": "locked",
+        "priority": 6,
+        "world": {
+          "x": -2.510497,
+          "y": 2.3779
+        },
+        "logical": {
+          "x": 198.95,
+          "y": 562.21
+        }
+      },
+      {
+        "index": 2,
+        "towerType": 1,
+        "state": "locked",
+        "priority": 6,
+        "world": {
+          "x": -2.528177,
+          "y": -3.845304
+        },
+        "logical": {
+          "x": 197.182,
+          "y": 1184.53
+        }
+      },
+      {
+        "index": 3,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 3,
+        "world": {
+          "x": -0.05303864,
+          "y": -1.493923
+        },
+        "logical": {
+          "x": 444.696,
+          "y": 949.392
+        }
+      },
+      {
+        "index": 4,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 0,
+        "world": {
+          "x": 1.237569,
+          "y": -0.8220997
+        },
+        "logical": {
+          "x": 573.757,
+          "y": 882.21
+        }
+      },
+      {
+        "index": 5,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 1,
+        "world": {
+          "x": -0.7602208,
+          "y": 0.4331484
+        },
+        "logical": {
+          "x": 373.978,
+          "y": 756.685
+        }
+      },
+      {
+        "index": 6,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 2,
+        "world": {
+          "x": 1.874033,
+          "y": 1.759116
+        },
+        "logical": {
+          "x": 637.403,
+          "y": 624.088
+        }
+      },
+      {
+        "index": 7,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 4,
+        "world": {
+          "x": -0.03535924,
+          "y": 3.244199
+        },
+        "logical": {
+          "x": 446.464,
+          "y": 475.58
+        }
+      },
+      {
+        "index": 8,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 5,
+        "world": {
+          "x": 1.485083,
+          "y": -3.438674
+        },
+        "logical": {
+          "x": 598.508,
+          "y": 1143.867
+        }
+      },
+      {
+        "index": 9,
+        "towerType": 2,
+        "state": "deployable",
+        "priority": 6,
+        "world": {
+          "x": -0.05303864,
+          "y": -4.198895
+        },
+        "logical": {
+          "x": 444.696,
+          "y": 1219.889
+        }
+      },
+      {
+        "index": 10,
+        "towerType": 1,
+        "state": "locked",
+        "priority": 5,
+        "world": {
+          "x": 3.023204,
+          "y": -2.448619
+        },
+        "logical": {
+          "x": 752.32,
+          "y": 1044.862
+        }
+      },
+      {
+        "index": 11,
+        "towerType": 1,
+        "state": "locked",
+        "priority": 6,
+        "world": {
+          "x": -2.316022,
+          "y": -5.241989
+        },
+        "logical": {
+          "x": 218.398,
+          "y": 1324.199
+        }
+      }
+    ],
+    "playerSlot": {
+      "binding": "runtime-player-loadout",
+      "world": {
+        "x": -1.10000002384186,
+        "y": -5
+      },
+      "logical": {
+        "x": 340,
+        "y": 1300
+      }
+    },
+    "crystal": {
+      "world": {
+        "x": 0.124137781560421,
+        "y": -6.2355432510376
+      },
+      "logical": {
+        "x": 462.414,
+        "y": 1423.554
+      }
+    },
+    "grid": {
+      "cellCount": 800,
+      "nonZeroCellCount": 426
+    },
+    "background": {
+      "sourceObject": "map_01_01",
+      "width": 900,
+      "height": 1600,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 900,
+        "height": 1600
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pixelsPerUnit": 100,
+      "file": {
+        "path": "maps/desert-1.png",
+        "bytes": 1262268,
+        "sha256": "1e7c58f1d852cce5c72fc7847369699c75b6566981e6072ea52fc2b7fc705c3c"
+      }
+    },
+    "mapSprites": [
+      {
+        "name": "map_00_dizuo_1",
+        "purpose": "deployable",
+        "exportedSize": {
+          "width": 121,
+          "height": 80
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 151,
+          "height": 125
+        },
+        "pivot": {
+          "x": 0.4793933928012848,
+          "y": 0.46000000834465027
+        },
+        "border": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "pixelsPerUnit": 100,
+        "file": {
+          "path": "sprites/map-common/map_00_dizuo_1.png",
+          "bytes": 9486,
+          "sha256": "135c144115557d0ad2c01ef7617c93d2b229f9795c2d159d4168e1c22642d572"
+        }
+      },
+      {
+        "name": "map_00_dizuo_2",
+        "purpose": "locked",
+        "exportedSize": {
+          "width": 104,
+          "height": 100
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 151,
+          "height": 125
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "border": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "pixelsPerUnit": 100,
+        "file": {
+          "path": "sprites/map-common/map_00_dizuo_2.png",
+          "bytes": 12020,
+          "sha256": "5a5ffba156764e52ae950ba7f181650fa032f7911bf38f8b39a0c44270f74b21"
+        }
+      },
+      {
+        "name": "map_00_dizuo_3",
+        "purpose": "occupied-variant",
+        "exportedSize": {
+          "width": 121,
+          "height": 80
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 151,
+          "height": 125
+        },
+        "pivot": {
+          "x": 0.4793934226036072,
+          "y": 0.46000000834465027
+        },
+        "border": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "pixelsPerUnit": 100,
+        "file": {
+          "path": "sprites/map-common/map_00_dizuo_3.png",
+          "bytes": 9925,
+          "sha256": "7891efc11deda715117419085b0d1f285d6a183ecd0a3646919cad4195dd444b"
+        }
+      },
+      {
+        "name": "Fight_juese_xuanzhong",
+        "purpose": "selection-ring",
+        "exportedSize": {
+          "width": 119,
+          "height": 67
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 68
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "border": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "pixelsPerUnit": 100,
+        "file": {
+          "path": "sprites/map-common/Fight_juese_xuanzhong.png",
+          "bytes": 4982,
+          "sha256": "c5c572c2f5ea1bc6f4954ebdcc6bb194e43506c97274af4863a808471946c30b"
+        }
+      },
+      {
+        "name": "Fight_juese_xuanzhong_lv",
+        "purpose": "selection-ring-green",
+        "exportedSize": {
+          "width": 119,
+          "height": 67
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 68
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "border": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "pixelsPerUnit": 100,
+        "file": {
+          "path": "sprites/map-common/Fight_juese_xuanzhong_lv.png",
+          "bytes": 4927,
+          "sha256": "9ae6f8450b7da921c995f0eafb480baa84bccc48cc62f32a09fa0db17a80a906"
+        }
+      },
+      {
+        "name": "Fight_jiantou",
+        "purpose": "placement-arrow",
+        "exportedSize": {
+          "width": 55,
+          "height": 71
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 55,
+          "height": 71
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "border": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "pixelsPerUnit": 72,
+        "file": {
+          "path": "sprites/map-common/Fight_jiantou.png",
+          "bytes": 4627,
+          "sha256": "313a5a6908554e7991cdaf042967944d6c9cca8715367e7fc5d40cf753c304dc"
+        }
+      }
+    ]
+  },
+  "battleProfile": {
+    "waveCount": 6,
+    "threeStarTimeSeconds": 220,
+    "fixedHeroCount": 4,
+    "enemyRosterCount": 3,
+    "waveConfig": {
+      "sourceVersion": "412f11e3c27d645ddeafcf921f558d57",
+      "sourceContainer": {
+        "file": "Boot_412f11e3c27d645ddeafcf921f558d57.zip",
+        "sha256": "e57d37860136a649a521f007c2ec1d1f28e656013dc035a082a9abfc133d1688",
+        "nestedEntry": "BinaryAssets/CSV.zip",
+        "nestedSha256": "326acbd88696cc48944568df816fd6865ff5fa1e88eada2b709589470f6ed555",
+        "tables": [
+          {
+            "name": "EctypeWave.csv",
+            "sha256": "3fed4f2b996680f6f6afe0630080521475617e72a84ec3b37b840ebc88011266"
+          },
+          {
+            "name": "ectype_spawn_monster_info_c.csv",
+            "sha256": "4fc55ed7906480d0b826da2e3b679f24e5de241d362e5a2a98a47896d3ec8722"
+          },
+          {
+            "name": "Monster.csv",
+            "sha256": "095f17597424940ee48c1b13c632ac8eb11ff4b1f32fa68f844f23ff49ef8499"
+          },
+          {
+            "name": "Skill.csv",
+            "sha256": "aef551e9e1051a13b3e2606388d18b871023a5fed63cc7e50f8e7cbe89d1f128"
+          },
+          {
+            "name": "hero_c.csv",
+            "sha256": "e273f3f8e2c2a0a5ec2e6fb933c9b317ee1b1f9b2cc5ce038a2d31887d7b04d2"
+          },
+          {
+            "name": "HeroPropBase.csv",
+            "sha256": "dedb6959e3a829048c10759eae73e802aacd50b95cfcfb97f8995164b1a32f45"
+          },
+          {
+            "name": "PetSkill.csv",
+            "sha256": "3a5058777ebe48ef8f2df8f59124023df06f7a7388afc23efa12261c09f7859a"
+          },
+          {
+            "name": "Freeze.csv",
+            "sha256": "1a782edb82f8d0f40513c3a80761dfac7eaa4d53a392398494fecac0908ff16e"
+          }
+        ]
+      },
+      "rktFormat": {
+        "magic": "rkt\\0",
+        "headerBytes": 8,
+        "privatePrefixBytes": 8,
+        "encryptedPrefixBytes": 16384,
+        "tailOffsetBytes": 16392,
+        "tailTransform": "xor-repeat",
+        "tailXorKeyHex": "8a7ba4d2"
+      },
+      "dbcFormat": {
+        "magic": "DBC\\n1000",
+        "headerBytes": 108,
+        "rowLayout": "fixed-width",
+        "dictionaryValues": "indexed",
+        "stringLengths": "7-bit-encoded"
+      },
+      "heroes": [
+        {
+          "id": "hero-01-fashi",
+          "sourceId": 10001,
+          "name": "魔法师",
+          "normalSkillId": 1230,
+          "baseAttack": 40,
+          "damageCoefficient": 88,
+          "cooldownMs": 1600,
+          "rangeValue": 15,
+          "animation": "attack_1",
+          "hitTimeSeconds": 0.133333
+        },
+        {
+          "id": "hero-04-sheshou",
+          "sourceId": 10002,
+          "name": "游侠",
+          "normalSkillId": 1310,
+          "baseAttack": 40,
+          "damageCoefficient": 40,
+          "cooldownMs": 800,
+          "rangeValue": 8,
+          "animation": "attack_1",
+          "hitTimeSeconds": null
+        },
+        {
+          "id": "hero-03-qishi",
+          "sourceId": 10003,
+          "name": "骑士",
+          "normalSkillId": 1330,
+          "baseAttack": 40,
+          "damageCoefficient": 100,
+          "cooldownMs": 9000,
+          "rangeValue": 9,
+          "animation": "attack_1",
+          "hitTimeSeconds": null
+        },
+        {
+          "id": "hero-02-paoshou",
+          "sourceId": 10004,
+          "name": "矮人炮手",
+          "normalSkillId": 1410,
+          "baseAttack": 40,
+          "damageCoefficient": 53,
+          "cooldownMs": 2400,
+          "rangeValue": 20,
+          "animation": "attack_1",
+          "hitTimeSeconds": 0.033333
+        }
+      ],
+      "waves": [
+        {
+          "wave": 1,
+          "totalWaves": 6,
+          "waitTimeMs": 0,
+          "leftMonsterNextWave": 4,
+          "violentLeftMonsterNextWave": 4,
+          "notWaitWaveAllSpawn": false,
+          "bossEffect": 0,
+          "totalMonsterCount": 8,
+          "spawnGroups": [
+            {
+              "id": 253,
+              "spawnPointId": 1,
+              "subKey": 0,
+              "waitTimeMs": 0,
+              "intervalMs": 1250,
+              "durationMs": 10000,
+              "count": 8,
+              "pathOffsetType": 2,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            }
+          ]
+        },
+        {
+          "wave": 2,
+          "totalWaves": 6,
+          "waitTimeMs": 20000,
+          "leftMonsterNextWave": 5,
+          "violentLeftMonsterNextWave": 5,
+          "notWaitWaveAllSpawn": false,
+          "bossEffect": 0,
+          "totalMonsterCount": 12,
+          "spawnGroups": [
+            {
+              "id": 254,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 0,
+              "intervalMs": 3750,
+              "durationMs": 15000,
+              "count": 4,
+              "pathOffsetType": 0,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 255,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 1000,
+              "intervalMs": 3750,
+              "durationMs": 15000,
+              "count": 4,
+              "pathOffsetType": -1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 256,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 1000,
+              "intervalMs": 3750,
+              "durationMs": 15000,
+              "count": 4,
+              "pathOffsetType": 1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            }
+          ]
+        },
+        {
+          "wave": 3,
+          "totalWaves": 6,
+          "waitTimeMs": 25000,
+          "leftMonsterNextWave": 5,
+          "violentLeftMonsterNextWave": 5,
+          "notWaitWaveAllSpawn": false,
+          "bossEffect": 0,
+          "totalMonsterCount": 12,
+          "spawnGroups": [
+            {
+              "id": 257,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 0,
+              "intervalMs": 2000,
+              "durationMs": 8000,
+              "count": 4,
+              "pathOffsetType": -1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 258,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 0,
+              "intervalMs": 2000,
+              "durationMs": 8000,
+              "count": 4,
+              "pathOffsetType": 1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 259,
+              "spawnPointId": 1,
+              "subKey": 2,
+              "waitTimeMs": 1000,
+              "intervalMs": 2000,
+              "durationMs": 4000,
+              "count": 2,
+              "pathOffsetType": -1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 260,
+              "spawnPointId": 1,
+              "subKey": 2,
+              "waitTimeMs": 1000,
+              "intervalMs": 2000,
+              "durationMs": 4000,
+              "count": 2,
+              "pathOffsetType": 1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            }
+          ]
+        },
+        {
+          "wave": 4,
+          "totalWaves": 6,
+          "waitTimeMs": 30000,
+          "leftMonsterNextWave": 5,
+          "violentLeftMonsterNextWave": 5,
+          "notWaitWaveAllSpawn": false,
+          "bossEffect": 0,
+          "totalMonsterCount": 20,
+          "spawnGroups": [
+            {
+              "id": 261,
+              "spawnPointId": 1,
+              "subKey": 0,
+              "waitTimeMs": 0,
+              "intervalMs": 1000,
+              "durationMs": 10000,
+              "count": 10,
+              "pathOffsetType": 2,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1002,
+                "name": "野狗",
+                "resourceId": 1002,
+                "moveSpeed": 600,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 262,
+              "spawnPointId": 1,
+              "subKey": 0,
+              "waitTimeMs": 3000,
+              "intervalMs": 1000,
+              "durationMs": 10000,
+              "count": 10,
+              "pathOffsetType": 2,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1002,
+                "name": "野狗",
+                "resourceId": 1002,
+                "moveSpeed": 600,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            }
+          ]
+        },
+        {
+          "wave": 5,
+          "totalWaves": 6,
+          "waitTimeMs": 40000,
+          "leftMonsterNextWave": 6,
+          "violentLeftMonsterNextWave": 6,
+          "notWaitWaveAllSpawn": false,
+          "bossEffect": 2,
+          "totalMonsterCount": 21,
+          "spawnGroups": [
+            {
+              "id": 263,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 0,
+              "intervalMs": 0,
+              "durationMs": 0,
+              "count": 1,
+              "pathOffsetType": 0,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 3001,
+                "name": "沙漠蜥蜴精英",
+                "resourceId": 3001,
+                "moveSpeed": 320,
+                "hpScale": 5,
+                "crystalDamage": 6
+              }
+            },
+            {
+              "id": 264,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 2000,
+              "intervalMs": 3000,
+              "durationMs": 30000,
+              "count": 10,
+              "pathOffsetType": -1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 265,
+              "spawnPointId": 1,
+              "subKey": 1,
+              "waitTimeMs": 2000,
+              "intervalMs": 3000,
+              "durationMs": 30000,
+              "count": 10,
+              "pathOffsetType": 1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            }
+          ]
+        },
+        {
+          "wave": 6,
+          "totalWaves": 6,
+          "waitTimeMs": 40000,
+          "leftMonsterNextWave": 6,
+          "violentLeftMonsterNextWave": 6,
+          "notWaitWaveAllSpawn": false,
+          "bossEffect": 0,
+          "totalMonsterCount": 56,
+          "spawnGroups": [
+            {
+              "id": 266,
+              "spawnPointId": 1,
+              "subKey": 2,
+              "waitTimeMs": 5000,
+              "intervalMs": 2500,
+              "durationMs": 30000,
+              "count": 12,
+              "pathOffsetType": 0,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 267,
+              "spawnPointId": 1,
+              "subKey": 2,
+              "waitTimeMs": 6000,
+              "intervalMs": 2500,
+              "durationMs": 30000,
+              "count": 12,
+              "pathOffsetType": -1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 268,
+              "spawnPointId": 1,
+              "subKey": 2,
+              "waitTimeMs": 6000,
+              "intervalMs": 2500,
+              "durationMs": 30000,
+              "count": 12,
+              "pathOffsetType": 1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1001,
+                "name": "沙漠蜥蜴",
+                "resourceId": 1001,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 269,
+              "spawnPointId": 1,
+              "subKey": 3,
+              "waitTimeMs": 2000,
+              "intervalMs": 2000,
+              "durationMs": 20000,
+              "count": 10,
+              "pathOffsetType": -1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            },
+            {
+              "id": 270,
+              "spawnPointId": 1,
+              "subKey": 3,
+              "waitTimeMs": 2000,
+              "intervalMs": 2000,
+              "durationMs": 20000,
+              "count": 10,
+              "pathOffsetType": 1,
+              "monsterLevel": 1,
+              "monster": {
+                "id": 1003,
+                "name": "沙甲虫",
+                "resourceId": 1003,
+                "moveSpeed": 400,
+                "hpScale": 1,
+                "crystalDamage": 1
+              }
+            }
+          ]
+        }
+      ],
+      "file": {
+        "path": "levels/desert-1/wave-config.json",
+        "bytes": 13300,
+        "sha256": "73e8b14d27ff4f44ca1f4c81c8c3960db92fa13bf0e84d9ad6fd103419349bbf"
+      }
+    },
+    "boss": {
+      "status": "not-observed",
+      "challengePanelHasBossCard": false
+    },
+    "evidence": [
+      "challenge-roster",
+      "battle-layout"
+    ]
+  },
+  "actors": {
+    "heroes": [
+      {
+        "id": "hero-01-fashi",
+        "sourceBundle": "firstlv_6566684a9d702f3f858b5d06a932f6ef",
+        "sourceObjects": {
+          "atlas": "hero_01_fashi.atlas",
+          "skeleton": "hero_01_fashi.skel",
+          "texture": "hero_01_fashi"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [],
+        "files": {
+          "atlas": {
+            "path": "spine/hero_01_fashi/skeleton.atlas",
+            "bytes": 1003,
+            "sha256": "801f6e32eebe26922f2ce86eeb4ed51f34e968758d252d329ff40dd992e200f1"
+          },
+          "skeleton": {
+            "path": "spine/hero_01_fashi/skeleton.skel",
+            "bytes": 55243,
+            "sha256": "6260c7bc5cec05933d2c10266b8641d29dcf75db51c5ef86edff078bb5a61cb8"
+          },
+          "texture": {
+            "path": "spine/hero_01_fashi/texture.png",
+            "bytes": 486458,
+            "sha256": "e0e532c390a5e8d749c7db0efe1c9b3081f9374577ff589e71f18ffc47641704"
+          }
+        },
+        "role": "fixed-first-level-hero",
+        "sourceName": "hero_01_fashi",
+        "displayName": null,
+        "evidence": [
+          "bundle-object:firstlv",
+          "live-observation:challenge-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1"
+        ],
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -32.487648010253906,
+          "y": -9,
+          "width": 99.05335235595703,
+          "height": 92.86836242675781
+        },
+        "skins": [
+          "default",
+          "01",
+          "04"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "attack_2",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "rest",
+            "duration": 2,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "skill_1",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "Sleep",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1"
+          ],
+          "missing": []
+        }
+      },
+      {
+        "id": "hero-02-paoshou",
+        "sourceBundle": "firstlv_6566684a9d702f3f858b5d06a932f6ef",
+        "sourceObjects": {
+          "atlas": "hero_02_paoshou.atlas",
+          "skeleton": "hero_02_paoshou.skel",
+          "texture": "hero_02_paoshou"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [],
+        "files": {
+          "atlas": {
+            "path": "spine/hero_02_paoshou/skeleton.atlas",
+            "bytes": 395,
+            "sha256": "f0e28031d22554a50ea92071516e1b28be162e80ff13f056236cb8696039021d"
+          },
+          "skeleton": {
+            "path": "spine/hero_02_paoshou/skeleton.skel",
+            "bytes": 29197,
+            "sha256": "8b03ef03f9ceb3a78f9f23bc2a168118558ca36ee975d9d26fcb7a5d03ac4497"
+          },
+          "texture": {
+            "path": "spine/hero_02_paoshou/texture.png",
+            "bytes": 239725,
+            "sha256": "0dfdf0c5f1b6ae02e124d290bc558e96264be365e16423c4c6cad1bac7876805"
+          }
+        },
+        "role": "fixed-first-level-hero",
+        "sourceName": "hero_02_paoshou",
+        "displayName": null,
+        "evidence": [
+          "bundle-object:firstlv",
+          "live-observation:challenge-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1"
+        ],
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -32.5163459777832,
+          "y": -9,
+          "width": 76.28683471679688,
+          "height": 76.80458068847656
+        },
+        "skins": [
+          "default",
+          "01",
+          "04"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "rest",
+            "duration": 1.433333396911621,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "Sleep",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1"
+          ],
+          "missing": []
+        }
+      },
+      {
+        "id": "hero-03-qishi",
+        "sourceBundle": "firstlv_6566684a9d702f3f858b5d06a932f6ef",
+        "sourceObjects": {
+          "atlas": "hero_03_qishi.atlas",
+          "skeleton": "hero_03_qishi.skel",
+          "texture": "hero_03_qishi"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [],
+        "files": {
+          "atlas": {
+            "path": "spine/hero_03_qishi/skeleton.atlas",
+            "bytes": 770,
+            "sha256": "b7841f5cc797e2258bc0063fdaf5bc1d45defbaebf0cf75c1a09398cc46f39d4"
+          },
+          "skeleton": {
+            "path": "spine/hero_03_qishi/skeleton.skel",
+            "bytes": 16217,
+            "sha256": "254745fb2b25b6f815ef6248f9da4f40a380a5caef5b77835a174e258f52eb27"
+          },
+          "texture": {
+            "path": "spine/hero_03_qishi/texture.png",
+            "bytes": 403877,
+            "sha256": "cdb462e2f28ac55ccfd5f0bd18af104f7a9d4e13c7866f89fcd62dc549c8ee91"
+          }
+        },
+        "role": "fixed-first-level-hero",
+        "sourceName": "hero_03_qishi",
+        "displayName": null,
+        "evidence": [
+          "bundle-object:firstlv",
+          "live-observation:challenge-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1"
+        ],
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -38.97145080566406,
+          "y": -8.761932373046875,
+          "width": 88.35000610351562,
+          "height": 72.41317749023438
+        },
+        "skins": [
+          "default",
+          "01",
+          "04"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "rest",
+            "duration": 1.2000000476837158,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "Sleep",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1"
+          ],
+          "missing": []
+        }
+      },
+      {
+        "id": "hero-04-sheshou",
+        "sourceBundle": "firstlv_6566684a9d702f3f858b5d06a932f6ef",
+        "sourceObjects": {
+          "atlas": "hero_04_sheshou.atlas",
+          "skeleton": "hero_04_sheshou.skel",
+          "texture": "hero_04_sheshou"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [],
+        "files": {
+          "atlas": {
+            "path": "spine/hero_04_sheshou/skeleton.atlas",
+            "bytes": 1035,
+            "sha256": "321dc00f08af1bd2328fdd3fdc7557bdb478871e8d30398060854cd99433ff1b"
+          },
+          "skeleton": {
+            "path": "spine/hero_04_sheshou/skeleton.skel",
+            "bytes": 24892,
+            "sha256": "ab4d1f5d2b05d4945aac98f5fc0cd1a628dd513533e1a7ddf3e1e1419cc3d950"
+          },
+          "texture": {
+            "path": "spine/hero_04_sheshou/texture.png",
+            "bytes": 301193,
+            "sha256": "90c435593842f684fa6e1cf112ef659a133b907d5d0d35ecb8d63bdd430d9d70"
+          }
+        },
+        "role": "fixed-first-level-hero",
+        "sourceName": "hero_04_sheshou",
+        "displayName": null,
+        "evidence": [
+          "bundle-object:firstlv",
+          "live-observation:challenge-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1"
+        ],
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -30.450918197631836,
+          "y": -9,
+          "width": 71.41049194335938,
+          "height": 86.91337585449219
+        },
+        "skins": [
+          "default",
+          "01",
+          "04"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "rest",
+            "duration": 2.3333334922790527,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "Sleep",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1"
+          ],
+          "missing": []
+        }
+      }
+    ],
+    "enemies": [
+      {
+        "id": "monster-01-jiachong",
+        "sourceBundle": "char_monster_01_jiachong_eb6889266afecfac3f012cdc193ee3bd",
+        "sourceObjects": {
+          "atlas": "monster_01_jiachong.atlas",
+          "skeleton": "monster_01_jiachong.skel",
+          "texture": "monster_01_jiachong"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [
+          {
+            "name": "attack_1",
+            "fps": 20,
+            "frames": 15
+          },
+          {
+            "name": "dead",
+            "fps": 20,
+            "frames": 2
+          },
+          {
+            "name": "run",
+            "fps": 20,
+            "frames": 12
+          },
+          {
+            "name": "stand",
+            "fps": 20,
+            "frames": 15
+          }
+        ],
+        "files": {
+          "atlas": {
+            "path": "spine/monster_01_jiachong/skeleton.atlas",
+            "bytes": 371,
+            "sha256": "f50a345dc5597ae7ceab58a1d9e87779ead2db21308768e40ca255449b580631"
+          },
+          "skeleton": {
+            "path": "spine/monster_01_jiachong/skeleton.skel",
+            "bytes": 24273,
+            "sha256": "e2be5cd55ace22ca5a18cb9eb613503010a3837d4a2ebedc0f3388645c812195"
+          },
+          "texture": {
+            "path": "spine/monster_01_jiachong/texture.png",
+            "bytes": 19381,
+            "sha256": "d2128d3a5e18c9ba05e9705346abfc0107ac0307e8e16d4da6eca10c349365e1"
+          }
+        },
+        "role": "enemy",
+        "sourceName": "monster_01_jiachong",
+        "displayName": "沙甲虫",
+        "evidence": [
+          "bundle-object:monsterJiachong",
+          "live-observation:challenge-monster-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1",
+          "dead"
+        ],
+        "hurtVisual": {
+          "kind": "external-unresolved",
+          "spineAnimationPresent": false
+        },
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -27.05963134765625,
+          "y": -22.817340850830078,
+          "width": 56.30313491821289,
+          "height": 55.2205696105957
+        },
+        "skins": [
+          "default"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "dead",
+            "duration": 0.06666667014360428,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1",
+            "dead"
+          ],
+          "missing": []
+        }
+      },
+      {
+        "id": "monster-01-xiyi",
+        "sourceBundle": "char_monster_01_xiyi_456d6772844976e47545a4d7fc110d56",
+        "sourceObjects": {
+          "atlas": "monster_01_xiyi.atlas",
+          "skeleton": "monster_01_xiyi.skel",
+          "texture": "monster_01_xiyi"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [
+          {
+            "name": "attack_1",
+            "fps": 20,
+            "frames": 14
+          },
+          {
+            "name": "dead",
+            "fps": 20,
+            "frames": 2
+          },
+          {
+            "name": "run",
+            "fps": 20,
+            "frames": 15
+          },
+          {
+            "name": "stand",
+            "fps": 20,
+            "frames": 15
+          }
+        ],
+        "files": {
+          "atlas": {
+            "path": "spine/monster_01_xiyi/skeleton.atlas",
+            "bytes": 362,
+            "sha256": "70d49e294be85586536254d67ce01d48a334d57bdadadce20f5c2ed88ded5485"
+          },
+          "skeleton": {
+            "path": "spine/monster_01_xiyi/skeleton.skel",
+            "bytes": 31528,
+            "sha256": "f8537726e80029b403c5e0d67009bb953b67ac19cdc344fdc7d83ce79e773082"
+          },
+          "texture": {
+            "path": "spine/monster_01_xiyi/texture.png",
+            "bytes": 20577,
+            "sha256": "cf388fc873f05b6d374c5eedd0318c3c6549998a71fd8328770e4f83008b98a5"
+          }
+        },
+        "role": "enemy",
+        "sourceName": "monster_01_xiyi",
+        "displayName": "沙漠蜥蜴",
+        "evidence": [
+          "bundle-object:monsterXiyi",
+          "live-observation:challenge-monster-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1",
+          "dead"
+        ],
+        "hurtVisual": {
+          "kind": "external-unresolved",
+          "spineAnimationPresent": false
+        },
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -19.866832733154297,
+          "y": -12.709105491638184,
+          "width": 56.33884811401367,
+          "height": 57.43842315673828
+        },
+        "skins": [
+          "default"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.46666669845581055,
+            "events": []
+          },
+          {
+            "name": "dead",
+            "duration": 0.06666667014360428,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1",
+            "dead"
+          ],
+          "missing": []
+        }
+      },
+      {
+        "id": "monster-01-zongquan",
+        "sourceBundle": "char_monster_01_zongquan_58c3c2c43f9548700d6a329d2f6fcd2a",
+        "sourceObjects": {
+          "atlas": "monster_01_zongquan.atlas",
+          "skeleton": "monster_01_zongquan.skel",
+          "texture": "monster_01_zongquan"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [
+          {
+            "name": "attack_1",
+            "fps": 20,
+            "frames": 17
+          },
+          {
+            "name": "dead",
+            "fps": 20,
+            "frames": 2
+          },
+          {
+            "name": "run",
+            "fps": 20,
+            "frames": 12
+          },
+          {
+            "name": "stand",
+            "fps": 20,
+            "frames": 16
+          }
+        ],
+        "files": {
+          "atlas": {
+            "path": "spine/monster_01_zongquan/skeleton.atlas",
+            "bytes": 395,
+            "sha256": "9ba4866a6ca77e338e1e6fd29fb0ca0335f115bf33d575b7d017d56c5f1c1551"
+          },
+          "skeleton": {
+            "path": "spine/monster_01_zongquan/skeleton.skel",
+            "bytes": 35381,
+            "sha256": "019af0ecad31a4b55429008a6fafcfe3e2681ccd108dfb17d1df51ad847afcd8"
+          },
+          "texture": {
+            "path": "spine/monster_01_zongquan/texture.png",
+            "bytes": 39263,
+            "sha256": "16696db693c12d7c01b353d05a0ee28fe9f808c08fa0ad53ca067f5d8a544162"
+          }
+        },
+        "role": "enemy",
+        "sourceName": "monster_01_zongquan",
+        "displayName": "野狗",
+        "evidence": [
+          "bundle-object:monsterZongquan",
+          "live-observation:challenge-monster-roster"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1",
+          "dead"
+        ],
+        "hurtVisual": {
+          "kind": "external-unresolved",
+          "spineAnimationPresent": false
+        },
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -17.51618194580078,
+          "y": -20.61357879638672,
+          "width": 45.12001037597656,
+          "height": 58.534934997558594
+        },
+        "skins": [
+          "default"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.5666667222976685,
+            "events": []
+          },
+          {
+            "name": "dead",
+            "duration": 0.06666667014360428,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5333333611488342,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1",
+            "dead"
+          ],
+          "missing": []
+        }
+      }
+    ],
+    "playerSlot": {
+      "binding": "runtime-player-loadout",
+      "fixedActor": null,
+      "evidence": [
+        "level-config:heroPos",
+        "live-observation:battle-layout"
+      ]
+    }
+  },
+  "audio": {
+    "backgroundMusic": {
+      "sourceObject": "MainBgm_desert",
+      "durationSeconds": 111.9248275756836,
+      "frequency": 44100,
+      "channels": 2,
+      "file": {
+        "path": "audio/main-bgm-desert.m4a",
+        "bytes": 2773740,
+        "sha256": "db9391b53cb1fda4da05b7444390a31418cb6ae4d579f7ec03bc47b3ed1e7760"
+      }
+    },
+    "combatAndUi": {
+      "status": "unresolved",
+      "reason": "Per-action clips require runtime/config attribution."
+    }
+  },
+  "combatEventData": [
+    {
+      "owner": "hero-01-fashi",
+      "sourceObject": "hero_01_fashi",
+      "assetReferences": [
+        "Assets/IGSoft_Resources/Projects/Audio/heroAudio/Audio_Soldier_Wounded_1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/anyingsheshou/eff_Heros_anyingsheshou_skill_wuya_baozha.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa01_huxian.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa01_huxian_1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa01_pugong.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa02_qianghua.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa02_qianghua_1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa02_qianghua_2.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa03_skill1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/eff_Heros_mushi_SJ.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_dandao.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_shouji.prefab"
+      ],
+      "formatVersion": 2,
+      "nominalFrameRate": 30,
+      "records": [
+        {
+          "variantId": 100,
+          "animation": "attack_1",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa01_pugong.prefab",
+            "effectIdList": "0|0",
+            "initSpeed": "10",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "fixAngle": "False",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/eff_Heros_mushi_SJ.prefab",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "isParabola": "False",
+            "ParabolaHeight": "0",
+            "scaleDuration": "66",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "False",
+            "collisionAudio": "Assets/IGSoft_Resources/Projects/Audio/heroAudio/Audio_Soldier_Wounded_1.prefab",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "EmitPosition": "0,0",
+            "SkillOffset": "0.4,0.4",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "stand",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_2",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "effectIdList": "0",
+            "initSpeed": "11",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "isParabola": "False",
+            "ParabolaHeight": "0",
+            "fixAngle": "False",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "scaleDuration": "66",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "True",
+            "SkillOffset": "0.4,0.4",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "EmitPosition": "0,0",
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa01_huxian.prefab",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_2",
+          "triggerFrame": 6,
+          "triggerTimeSeconds": 0.2,
+          "eventSourceType": 1,
+          "eventType": 23,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_dandao.prefab",
+            "effectIdList": "0",
+            "initSpeed": "11",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "isParabola": "False",
+            "ParabolaHeight": "0",
+            "fixAngle": "False",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_shouji.prefab",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "scaleDuration": "66",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "True",
+            "collisionAudio": "",
+            "hitEmitePath": "",
+            "destroryEmitePath": "",
+            "SkillOffset": "0,0",
+            "hitEmiteTrackerPath": "",
+            "desEmiteTrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "attack_2",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa02_qianghua.prefab",
+            "effectIdList": "0|0",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.3,0.5",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "skill_1",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.4,0.6",
+            "EmitPosition": "0,0",
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa03_skill1.prefab",
+            "effectIdList": "0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "skill_1",
+          "triggerFrame": 5,
+          "triggerTimeSeconds": 0.166667,
+          "eventSourceType": 2,
+          "eventType": 3,
+          "soundId": 0,
+          "parameters": {
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HitShake": "False",
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/anyingsheshou/eff_Heros_anyingsheshou_skill_wuya_baozha.prefab",
+            "effectIdList": "",
+            "HurtAnimArray": "",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "AffectCount": "0",
+            "AlignWithCaster": "False"
+          }
+        },
+        {
+          "variantId": 102,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 1,
+          "triggerTimeSeconds": 0.033333,
+          "eventSourceType": 2,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa01_huxian_1.prefab",
+            "effectIdList": "0",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPath": "",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.2,0.3",
+            "EmitPosition": "0,0"
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "attack_2",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 2,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa02_qianghua_1.prefab",
+            "effectIdList": "0",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.3,0.5",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 102,
+          "animation": "attack_2",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 3,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/mushi/Emiter_hero_eject_guangfa02_qianghua_2.prefab",
+            "effectIdList": "0",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.3,0.5",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        }
+      ],
+      "file": {
+        "path": "levels/desert-1/combat-events/hero_01_fashi.bytes",
+        "bytes": 4212,
+        "sha256": "83c4d1b5bf1bb22626c65c2c41fbf2f4e41bce157513e7078976b2645dbe459f"
+      }
+    },
+    {
+      "owner": "hero-02-paoshou",
+      "sourceObject": "Heros_paoshou",
+      "assetReferences": [
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_big.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_fenlie.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_fenlie_gaoji.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_gaoji.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_huoyan.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_rongyan.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_rongyan_1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_sj.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_sj_mini.prefab"
+      ],
+      "formatVersion": 2,
+      "nominalFrameRate": 30,
+      "records": [
+        {
+          "variantId": 100,
+          "animation": "stand",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_attack_3",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_2",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_attack_3",
+          "triggerFrame": 1,
+          "triggerTimeSeconds": 0.033333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_big.prefab",
+            "effectIdList": "0|0",
+            "initSpeed": "5",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "isParabola": "True",
+            "ParabolaHeight": "3",
+            "fixAngle": "False",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "scaleDuration": "66",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "False",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_sj.prefab",
+            "SkillOffset": "0.2,0.4",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_2",
+          "triggerFrame": 1,
+          "triggerTimeSeconds": 0.033333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_fenlie.prefab",
+            "effectIdList": "0",
+            "initSpeed": "1.15",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "isParabola": "True",
+            "ParabolaHeight": "2",
+            "fixAngle": "False",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_sj_mini.prefab",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "scaleDuration": "0",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "True",
+            "SkillOffset": "0.2,0.4",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_attack_2",
+          "triggerFrame": 6,
+          "triggerTimeSeconds": 0.2,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_attack_2",
+          "triggerFrame": 1,
+          "triggerTimeSeconds": 0.033333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "initSpeed": "3",
+            "maxFlyDis": "100",
+            "maxFlyTime": "3000",
+            "freeFlyTime": "0",
+            "lockTarget": "False",
+            "scaleDuration": "0",
+            "isParabola": "True",
+            "ParabolaHeight": "2",
+            "fixAngle": "False",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao.prefab",
+            "effectIdList": "0",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_sj.prefab",
+            "SkillOffset": "0.2,0.4",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "普攻1",
+          "triggerFrame": 6,
+          "triggerTimeSeconds": 0.2,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 102,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_3",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 103,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_rongyan.prefab",
+            "AnimEndNotify": "False",
+            "HoldTime": "5",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False",
+            "effectIdList": ""
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_3",
+          "triggerFrame": 1,
+          "triggerTimeSeconds": 0.033333,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_huoyan.prefab",
+            "effectIdList": "0",
+            "initSpeed": "5",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "freeFlyTime": "0",
+            "lockTarget": "False",
+            "scaleDuration": "0",
+            "isParabola": "True",
+            "ParabolaHeight": "2",
+            "fixAngle": "False",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_sj.prefab",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "SkillOffset": "0.2,0.4",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_attack_100",
+          "triggerFrame": 484,
+          "triggerTimeSeconds": 16.133333,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_attack_100",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 23,
+          "soundId": 0,
+          "parameters": {
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "AffectCount": "0",
+            "AlignWithCaster": "False",
+            "initSpeed": "0",
+            "maxFlyDis": "0",
+            "maxFlyTime": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "False",
+            "scaleDuration": "0",
+            "isParabola": "False",
+            "ParabolaHeight": "0",
+            "fixAngle": "False",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "SkillOffset": "0,0",
+            "EffectPrefabArray": "",
+            "effectIdList": "",
+            "collisionEffect": "",
+            "collisionAudio": "",
+            "hitEmitePath": "",
+            "destroryEmitePath": "",
+            "hitEmiteTrackerPath": "",
+            "desEmiteTrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_4",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_4",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/eff_Heros_haidao_rongyan_1.prefab",
+            "AnimEndNotify": "False",
+            "HoldTime": "5",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False",
+            "effectIdList": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_5",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_5",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.2,0.4",
+            "EmitPosition": "0,0",
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_huoyan.prefab",
+            "effectIdList": "0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_6",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_6",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_gaoji.prefab",
+            "effectIdList": "0",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.2,0.4",
+            "EmitPosition": "0,0",
+            "TrackerPath": ""
+          }
+        },
+        {
+          "variantId": 102,
+          "animation": "virtual_skill_3",
+          "triggerFrame": 1,
+          "triggerTimeSeconds": 0.033333,
+          "eventSourceType": 2,
+          "eventType": 27,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/haidao/Emiter_hero_eject_haidao_fenlie_gaoji.prefab",
+            "effectIdList": "0|0",
+            "EmiteType": "0",
+            "Wave": "0",
+            "BulletPerWave": "0",
+            "AngleInterval": "0",
+            "AngleDelta": "0",
+            "TrackerPath": "",
+            "TrackerPathID": "0",
+            "EmitInterval": "0",
+            "EmitDirection": "0",
+            "EmitPosType": "0",
+            "SkillOffset": "0.2,0.4",
+            "EmitPosition": "0,0"
+          }
+        }
+      ],
+      "file": {
+        "path": "levels/desert-1/combat-events/Heros_paoshou.bytes",
+        "bytes": 5446,
+        "sha256": "1cf93e580cbca40295c3d68a1a34c46a1bae75fea55a407dfae219b227eb0389"
+      }
+    }
+  ],
+  "ui": {
+    "prefabBundle": "gui_fight_d913352ead4336b6b4e34cbb023b66ad",
+    "textureBundle": "gui_tex_fight_d1a8ba972cd7aeab5ddf8c8aab1dda61",
+    "verifiedPrefabObjects": [
+      "BtnPause",
+      "SpeedUp",
+      "SpeedImg",
+      "BtnStatistic",
+      "WaveInfo",
+      "WaveText",
+      "NextWaveProgress",
+      "StarTimeParent",
+      "StarTimeText",
+      "BtnSkill",
+      "SkillIcon",
+      "Boss",
+      "BossHead"
+    ],
+    "verifiedSprites": [
+      "Fight_zanting_fgx",
+      "Fight_zanting_zhezhao",
+      "Fight_zhandou_gongneng_01",
+      "Fight_zhandou_gongneng_02",
+      "Fight_zhandou_gongneng_03",
+      "Fight_icon_gn_qianghua",
+      "Fight_icon_gn_zhaohuan",
+      "Fight_boci_di",
+      "Fight_icon_xing",
+      "Fight_icon_boss_xuetiao"
+    ]
+  },
+  "unresolved": [
+    {
+      "id": "animation-hit-times",
+      "blocking": true,
+      "reason": "Mage and cannon event frames are decoded, but knight and archer timing is not present in the two exported event assets.",
+      "requiredEvidence": "remaining combat event config or frame-by-frame battle sampling"
+    },
+    {
+      "id": "hero-projectile-and-hit-effects",
+      "blocking": true,
+      "reason": "Two binary combat-event assets are decoded, but referenced projectile and hit-effect Bundle ownership is not resolved.",
+      "requiredEvidence": "matching effect Bundle objects"
+    },
+    {
+      "id": "hurt-feedback",
+      "blocking": true,
+      "reason": "Enemy skeletons have no hurt animation; original material/effect mapping is not yet attributed.",
+      "requiredEvidence": "reference-frame sampling plus material/effect object match"
+    },
+    {
+      "id": "account-loadout",
+      "blocking": false,
+      "reason": "The mobile lord and active skills depend on the current account loadout rather than the level asset bundle.",
+      "requiredEvidence": "lock a reference loadout before first-level implementation"
+    }
+  ]
+}
