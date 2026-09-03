@@ -15,6 +15,7 @@ import { COMPACT_DESKTOP_QUERY } from "../../app/desktopIconInteraction";
 import { publishNovaActivityEvent } from "../../app/activityEvents";
 import {
   getActiveAiConnection,
+  getProactiveAiConnection,
   readAiConnectionState,
 } from "../../app/aiConnectionStorage";
 import {
@@ -37,6 +38,15 @@ import {
   type StoredPetConversation,
   type StoredPetConversationMessage,
 } from "../../app/petConversationStorage";
+import {
+  PET_AMBIENT_IDLE_MS,
+  createPetAmbientMoment,
+  type PetAmbientMoment,
+} from "../../app/petAmbient";
+import {
+  canRequestProactiveAi,
+  requestPetProactiveAiLine,
+} from "../../app/petProactiveAi";
 import {
   petActivityFeedback,
   type PetMood,
@@ -94,12 +104,20 @@ const clamp = (value: number, min: number, max: number) => (
   Math.min(max, Math.max(min, value))
 );
 
-const TRANSIENT_PET_ACTIVITIES = new Set(["draw", "celebrate", "nuzzle", "pounce"]);
+const TRANSIENT_PET_ACTIVITIES = new Set([
+  "walk",
+  "draw",
+  "celebrate",
+  "nuzzle",
+  "pounce",
+]);
 
 export default function DesktopPetLayer({
+  desktopActive,
   maximizedWindow,
   windowOpen,
 }: {
+  desktopActive: boolean;
   maximizedWindow: boolean;
   windowOpen: boolean;
 }) {
@@ -120,6 +138,7 @@ export default function DesktopPetLayer({
   const [compactViewport, setCompactViewport] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [activityFeedback, setActivityFeedback] = useState("");
+  const [ambientMoment, setAmbientMoment] = useState<PetAmbientMoment | null>(null);
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState<StoredPetConversationMessage[]>([]);
   const [storedConversations, setStoredConversations] = useState<StoredPetConversation[]>([]);
@@ -134,6 +153,14 @@ export default function DesktopPetLayer({
   const chatLogRef = useRef<HTMLDivElement>(null);
   const clickTimerRef = useRef<number | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
+  const ambientClearTimerRef = useRef<number | null>(null);
+  const ambientAiAbortRef = useRef<AbortController | null>(null);
+  const ambientMomentTokenRef = useRef(0);
+  const ambientMomentVisibleRef = useRef(false);
+  const ambientSequenceRef = useRef(0);
+  const proactiveAiRequestCountRef = useRef(0);
+  const proactiveAiLastRequestAtRef = useRef<number | null>(null);
+  const lastDesktopInputAtRef = useRef(0);
   const requestAbortRef = useRef<AbortController | null>(null);
   const suppressClickRef = useRef(false);
   const messageIdRef = useRef(0);
@@ -225,11 +252,25 @@ export default function DesktopPetLayer({
   }, []);
 
   const compacted = maximizedWindow || (compactViewport && windowOpen);
+  const ambientFrequency = data?.preferences.bubbleFrequency;
+  const petPersonality = data?.profile.personality;
+  const petName = data?.profile.name;
+  const petMood = data?.state.mood;
   const canWander = !!data
     && !data.state.hidden
     && !compacted
     && !reducedMotion
     && data.preferences.motion !== "static";
+  const canAmbient = !!data
+    && data.preferences.enabled
+    && !data.state.hidden
+    && data.state.activity !== "focus"
+    && data.state.activity !== "sleep"
+    && !compacted
+    && desktopActive
+    && !panelOpen
+    && !introVisible
+    && !activityFeedback;
 
   useEffect(() => {
     if (!canWander) return;
@@ -243,13 +284,35 @@ export default function DesktopPetLayer({
         return Math.random() > 0.5 ? 18 : -18;
       });
     };
-    const timer = window.setInterval(wander, interval);
-    return () => window.clearInterval(timer);
+    let timer: number | null = null;
+    const stopTimer = () => {
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+    };
+    const startTimer = () => {
+      if (document.visibilityState !== "visible" || timer !== null) return;
+      timer = window.setInterval(wander, interval);
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") startTimer();
+      else stopTimer();
+    };
+    startTimer();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      stopTimer();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [canWander, data?.preferences.motion, data?.state.x, profileId]);
 
   useEffect(() => {
     if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
     const feedback = latestActivity ? petActivityFeedback(latestActivity) : null;
+    ambientMomentTokenRef.current += 1;
+    ambientMomentVisibleRef.current = false;
+    ambientAiAbortRef.current?.abort();
+    ambientAiAbortRef.current = null;
+    setAmbientMoment(null);
     setActivityFeedback(feedback ?? "");
     if (!feedback) return;
     setPulse((current) => current + 1);
@@ -259,9 +322,148 @@ export default function DesktopPetLayer({
     }, 4_000);
   }, [latestActivity]);
 
+  useEffect(() => {
+    if (!canAmbient || !ambientFrequency || !petPersonality || !petName || !petMood) return;
+    const frame = window.requestAnimationFrame(() => {
+      ambientMomentVisibleRef.current = false;
+      setAmbientMoment(null);
+    });
+    lastDesktopInputAtRef.current = Date.now();
+    const markInput = () => {
+      lastDesktopInputAtRef.current = Date.now();
+      if (!ambientMomentVisibleRef.current && !ambientAiAbortRef.current) return;
+      ambientMomentTokenRef.current += 1;
+      ambientMomentVisibleRef.current = false;
+      ambientAiAbortRef.current?.abort();
+      ambientAiAbortRef.current = null;
+      if (ambientClearTimerRef.current) {
+        window.clearTimeout(ambientClearTimerRef.current);
+        ambientClearTimerRef.current = null;
+      }
+      setAmbientMoment(null);
+    };
+    const showMoment = () => {
+      if (
+        document.visibilityState !== "visible"
+        || dragRef.current
+        || Date.now() - lastDesktopInputAtRef.current
+          < PET_AMBIENT_IDLE_MS[ambientFrequency]
+      ) return;
+      const moment = createPetAmbientMoment({
+        sequence: ambientSequenceRef.current++,
+        personality: petPersonality,
+        visibleItemCount: visibleItems.length,
+        hour: new Date().getHours(),
+      });
+      const momentToken = ++ambientMomentTokenRef.current;
+      ambientMomentVisibleRef.current = true;
+      setAmbientMoment(moment);
+      setPulse((current) => current + 1);
+      lastDesktopInputAtRef.current = Date.now();
+      if (ambientClearTimerRef.current) {
+        window.clearTimeout(ambientClearTimerRef.current);
+      }
+      ambientClearTimerRef.current = window.setTimeout(() => {
+        ambientMomentTokenRef.current += 1;
+        ambientMomentVisibleRef.current = false;
+        ambientAiAbortRef.current?.abort();
+        ambientAiAbortRef.current = null;
+        setAmbientMoment(null);
+        ambientClearTimerRef.current = null;
+      }, 6_500);
+      if (!canRequestProactiveAi({
+        requestCount: proactiveAiRequestCountRef.current,
+        lastRequestAt: proactiveAiLastRequestAtRef.current,
+        now: Date.now(),
+      }) || !navigator.onLine) return;
+      const requestController = new AbortController();
+      ambientAiAbortRef.current?.abort();
+      ambientAiAbortRef.current = requestController;
+      void (async () => {
+        const profile = await getProactiveAiConnection();
+        if (!profile || requestController.signal.aborted) return;
+        proactiveAiRequestCountRef.current += 1;
+        proactiveAiLastRequestAtRef.current = Date.now();
+        const text = await requestPetProactiveAiLine(profile, {
+          petName,
+          personality: petPersonality,
+          mood: petMood,
+          activity: moment.activity,
+        }, {
+          signal: requestController.signal,
+        });
+        if (
+          !text
+          || requestController.signal.aborted
+          || ambientMomentTokenRef.current !== momentToken
+          || document.visibilityState !== "visible"
+        ) return;
+        setAmbientMoment({ ...moment, text });
+      })().catch(() => {
+        // Local ambient dialogue remains visible; proactive AI never retries.
+      }).finally(() => {
+        if (ambientAiAbortRef.current === requestController) {
+          ambientAiAbortRef.current = null;
+        }
+      });
+    };
+    let timer: number | null = null;
+    const stopTimer = () => {
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+    };
+    const startTimer = () => {
+      if (document.visibilityState !== "visible" || timer !== null) return;
+      timer = window.setInterval(showMoment, 2_000);
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        lastDesktopInputAtRef.current = Date.now();
+        startTimer();
+      } else {
+        stopTimer();
+        markInput();
+      }
+    };
+    startTimer();
+    window.addEventListener("pointermove", markInput, { passive: true });
+    window.addEventListener("pointerdown", markInput, { passive: true });
+    window.addEventListener("keydown", markInput);
+    window.addEventListener("wheel", markInput, { passive: true });
+    window.addEventListener("touchstart", markInput, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      stopTimer();
+      ambientMomentTokenRef.current += 1;
+      ambientMomentVisibleRef.current = false;
+      ambientAiAbortRef.current?.abort();
+      ambientAiAbortRef.current = null;
+      if (ambientClearTimerRef.current) {
+        window.clearTimeout(ambientClearTimerRef.current);
+        ambientClearTimerRef.current = null;
+      }
+      window.removeEventListener("pointermove", markInput);
+      window.removeEventListener("pointerdown", markInput);
+      window.removeEventListener("keydown", markInput);
+      window.removeEventListener("wheel", markInput);
+      window.removeEventListener("touchstart", markInput);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [
+    canAmbient,
+    ambientFrequency,
+    petMood,
+    petName,
+    petPersonality,
+    visibleItems.length,
+  ]);
+
   useEffect(() => () => {
     if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
     if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    if (ambientClearTimerRef.current) window.clearTimeout(ambientClearTimerRef.current);
+    ambientAiAbortRef.current?.abort();
     requestAbortRef.current?.abort();
   }, []);
 
@@ -283,10 +485,15 @@ export default function DesktopPetLayer({
   const activeConversation = storedConversations.find(
     ({ id }) => id === activeConversationId,
   );
+  const visibleAmbient = canAmbient ? ambientMoment : null;
+  const visibleFeedback = activityFeedback || visibleAmbient?.text || "";
   const visualActivity = activityFeedback
-    || !TRANSIENT_PET_ACTIVITIES.has(data.state.activity)
     ? data.state.activity
-    : "idle";
+    : visibleAmbient && !reducedMotion && data.preferences.motion !== "static"
+      ? visibleAmbient.activity
+      : !TRANSIENT_PET_ACTIVITIES.has(data.state.activity)
+        ? data.state.activity
+        : "idle";
   const style: PetStyle = {
     "--pet-x": `${position.x * 100}%`,
     "--pet-y": `${position.y * 100}%`,
@@ -727,7 +934,7 @@ export default function DesktopPetLayer({
   if (data.state.hidden || compacted) {
     return <div className="desktop-pet-layer compact" aria-live="polite">
       {compacted && panelOpen && interactionPanel("compact-panel")}
-      {activityFeedback && !panelOpen && <span className="pet-activity-feedback" role="status">{activityFeedback}</span>}
+      {visibleFeedback && !panelOpen && <span className="pet-activity-feedback" role="status">{visibleFeedback}</span>}
       <button
         className="desktop-pet-status"
         aria-label={data.state.hidden ? `显示桌面伙伴${data.profile.name}` : `${data.profile.name}当前心情：${MOOD_LABELS[data.state.mood]}`}
@@ -745,7 +952,7 @@ export default function DesktopPetLayer({
   return <div ref={rootRef} className={`desktop-pet-layer ${draftPosition ? "dragging" : ""}`} style={style}>
     <div className={`desktop-pet-anchor motion-${data.preferences.motion}`}>
       {(introVisible || panelOpen) && interactionPanel(panelBelow ? "below" : "")}
-      {activityFeedback && !panelOpen && <span className="pet-activity-feedback" role="status">{activityFeedback}</span>}
+      {visibleFeedback && !panelOpen && <span className="pet-activity-feedback" role="status">{visibleFeedback}</span>}
       <button
         key={pulse}
         className={`desktop-pet pet-${visualActivity} mood-${data.state.mood}`}

@@ -29,6 +29,7 @@ export type NovaAiContextPermissions = {
 
 export type NovaAiSettings = {
   enabled: boolean;
+  proactiveCompanion: boolean;
   activeConnectionId: string | null;
   contextPermissions: NovaAiContextPermissions;
 };
@@ -50,6 +51,7 @@ interface AiConnectionDatabase extends DBSchema {
 
 export const DEFAULT_AI_SETTINGS: NovaAiSettings = {
   enabled: false,
+  proactiveCompanion: false,
   activeConnectionId: null,
   contextPermissions: {
     activitySummary: true,
@@ -123,6 +125,7 @@ export async function readAiConnectionState(): Promise<{
       settings: settings
         ? {
             enabled: settings.enabled,
+            proactiveCompanion: settings.proactiveCompanion ?? false,
             activeConnectionId: settings.activeConnectionId,
             contextPermissions: { ...settings.contextPermissions },
           }
@@ -183,6 +186,7 @@ export async function deleteAiConnection(id: string): Promise<void> {
     if (settings?.activeConnectionId === id) {
       await transaction.objectStore(SETTINGS_STORE).put(toStoredSettings({
         enabled: settings.enabled,
+        proactiveCompanion: false,
         activeConnectionId: null,
         contextPermissions: settings.contextPermissions,
       }));
@@ -206,6 +210,9 @@ export async function setActiveAiConnection(id: string | null): Promise<void> {
     const current = await transaction.objectStore(SETTINGS_STORE).get(SETTINGS_KEY);
     await transaction.objectStore(SETTINGS_STORE).put(toStoredSettings({
       enabled: current?.enabled ?? DEFAULT_AI_SETTINGS.enabled,
+      proactiveCompanion: id
+        ? current?.proactiveCompanion ?? DEFAULT_AI_SETTINGS.proactiveCompanion
+        : false,
       activeConnectionId: id,
       contextPermissions: current?.contextPermissions
         ?? { ...DEFAULT_AI_SETTINGS.contextPermissions },
@@ -222,8 +229,16 @@ export async function updateAiSettings(
   const database = await openAiConnectionDatabase();
   try {
     const current = await database.get(SETTINGS_STORE, SETTINGS_KEY);
+    const enabled = patch.enabled
+      ?? current?.enabled
+      ?? DEFAULT_AI_SETTINGS.enabled;
     await database.put(SETTINGS_STORE, toStoredSettings({
-      enabled: patch.enabled ?? current?.enabled ?? DEFAULT_AI_SETTINGS.enabled,
+      enabled,
+      proactiveCompanion: enabled
+        ? patch.proactiveCompanion
+          ?? current?.proactiveCompanion
+          ?? DEFAULT_AI_SETTINGS.proactiveCompanion
+        : false,
       activeConnectionId: current?.activeConnectionId ?? null,
       contextPermissions: {
         ...(current?.contextPermissions ?? DEFAULT_AI_SETTINGS.contextPermissions),
@@ -240,6 +255,21 @@ export async function getActiveAiConnection(): Promise<NovaAiConnectionProfile |
   try {
     const settings = await database.get(SETTINGS_STORE, SETTINGS_KEY);
     if (!settings?.activeConnectionId) return null;
+    return await database.get(PROFILE_STORE, settings.activeConnectionId) ?? null;
+  } finally {
+    database.close();
+  }
+}
+
+export async function getProactiveAiConnection(): Promise<NovaAiConnectionProfile | null> {
+  const database = await openAiConnectionDatabase();
+  try {
+    const settings = await database.get(SETTINGS_STORE, SETTINGS_KEY);
+    if (
+      !settings?.enabled
+      || !settings.proactiveCompanion
+      || !settings.activeConnectionId
+    ) return null;
     return await database.get(PROFILE_STORE, settings.activeConnectionId) ?? null;
   } finally {
     database.close();

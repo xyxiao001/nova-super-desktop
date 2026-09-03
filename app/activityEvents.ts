@@ -21,7 +21,7 @@ export type NovaActivityEventType =
 export type NovaActivityEventPayload = {
   outcome?: "win" | "loss" | "draw";
   itemType?: "folder" | "text" | "image";
-  operation?: "move" | "copy" | "delete" | "restore";
+  operation?: "move" | "copy" | "trash" | "delete" | "restore" | "arrange";
   count?: number;
   progressBucket?: 25 | 50 | 75 | 100;
   durationBucket?: "short" | "medium" | "long";

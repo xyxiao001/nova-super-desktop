@@ -10,6 +10,7 @@ import {
 import {
   PET_IDLE_RESET_MS,
   PET_REACTION_COOLDOWN_MS,
+  createDefaultPetData,
   createPetData,
   petActivityFeedback,
   reducePetData,
@@ -66,6 +67,23 @@ describe("NOVA activity events", () => {
 });
 
 describe("pet state model", () => {
+  it("creates the same visible default companion for an empty profile", () => {
+    expect(createDefaultPetData({ id: "default-pet", now: 100 })).toMatchObject({
+      profile: {
+        id: "default-pet",
+        name: "Nova",
+        personality: "curious",
+        createdAt: 100,
+      },
+      state: {
+        hidden: false,
+      },
+      preferences: {
+        enabled: true,
+      },
+    });
+  });
+
   it("creates a local-first default pet without AI state", () => {
     expect(createPetData({
       name: "Nova",
@@ -293,6 +311,34 @@ describe("pet state model", () => {
 
     expect(petActivityFeedback(photo)).toBe("照片收好啦，这个光影真好看！");
     expect(petActivityFeedback(drawing)).toBe("新作品保存好啦，我很喜欢！");
+  });
+
+  it("provides content-free system operation feedback", () => {
+    const trashed = createNovaActivityEvent(
+      "files-organized",
+      "desktop",
+      { operation: "trash", count: 2 },
+      "trash-1",
+      1_000,
+    );
+    const deleted = createNovaActivityEvent(
+      "files-organized",
+      "desktop",
+      { operation: "delete", count: 2 },
+      "delete-1",
+      2_000,
+    );
+    const settings = createNovaActivityEvent(
+      "app-activated",
+      "settings",
+      undefined,
+      "settings-1",
+      3_000,
+    );
+
+    expect(petActivityFeedback(trashed)).toContain("还能找回来");
+    expect(petActivityFeedback(deleted)).toContain("彻底清理");
+    expect(petActivityFeedback(settings)).toContain("伙伴页");
   });
 
   it("restores calm without reducing affinity after a long absence", () => {

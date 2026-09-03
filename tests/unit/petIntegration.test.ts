@@ -10,7 +10,7 @@ describe("desktop pet integration", () => {
     const root = await readWorkspaceFile("src/shell/DesktopRoot.tsx");
 
     expect(root).toContain("<PetRuntimeProvider>");
-    expect(root).toContain("<DesktopPetLayer maximizedWindow={taskbarAutoHide} windowOpen={mobileWindowOpen}/>");
+    expect(root).toContain('<DesktopPetLayer desktopActive={focused==="desktop"} maximizedWindow={taskbarAutoHide} windowOpen={mobileWindowOpen}/>');
     expect(root.indexOf("<DesktopPetLayer")).toBeLessThan(root.indexOf("allWindowInstances(windowInstances).map"));
     expect(root).toContain(".desktop-pet-layer");
   });
@@ -33,19 +33,72 @@ describe("desktop pet integration", () => {
     expect(layer).toContain("&& !reducedMotion");
   });
 
-  it("exposes creation and local controls through the settings app", async () => {
-    const [settings, petSettings] = await Promise.all([
+  it("creates a default companion and exposes reset and local controls", async () => {
+    const [settings, petSettings, runtime] = await Promise.all([
       readWorkspaceFile("src/apps/settings/entry.tsx"),
       readWorkspaceFile("src/apps/settings/PetSettings.tsx"),
+      readWorkspaceFile("src/platform/pet/PetRuntime.tsx"),
     ]);
 
     expect(settings).toContain('{id:"pet",label:"伙伴"');
     expect(settings).toContain('activePane==="pet"&&<PetSettings/>');
     expect(settings).toContain("clearPetData()");
-    expect(petSettings).toContain("创建伙伴");
+    expect(runtime).toContain("const created = createDefaultPetData()");
+    expect(runtime).toContain("await savePetData(created)");
+    expect(runtime).toContain("const next = createDefaultPetData()");
+    expect(petSettings).toContain("重置桌面伙伴");
     expect(petSettings).toContain("启用桌面伙伴");
     expect(petSettings).toContain("回到默认位置");
-    expect(petSettings).toContain("不影响 AI 配置");
+    expect(petSettings).toContain("不会删除 AI 连接配置");
+  });
+
+  it("runs proactive local moments only while the desktop is active and visible", async () => {
+    const [layer, ambient, styles] = await Promise.all([
+      readWorkspaceFile("src/shell/DesktopPetLayer.tsx"),
+      readWorkspaceFile("app/petAmbient.ts"),
+      readWorkspaceFile("src/shell/desktopPet.css"),
+    ]);
+
+    expect(layer).toContain("desktopActive");
+    expect(layer).toContain('document.visibilityState !== "visible"');
+    expect(layer).toContain('document.addEventListener("visibilitychange", handleVisibility)');
+    expect(layer).toContain("PET_AMBIENT_IDLE_MS[ambientFrequency]");
+    expect(layer).toContain("createPetAmbientMoment");
+    expect(ambient).not.toContain("requestOpenAiCompletion");
+    expect(styles).toContain(".desktop-pet.pet-rest");
+    expect(styles).toContain(".desktop-pet.pet-groom");
+    expect(styles).toContain(".desktop-pet.pet-bathe");
+    expect(styles).toContain(".desktop-pet.pet-stretch");
+  });
+
+  it("gates AI-enhanced ambient lines behind consent and fixed budgets", async () => {
+    const [layer, settings, proactive] = await Promise.all([
+      readWorkspaceFile("src/shell/DesktopPetLayer.tsx"),
+      readWorkspaceFile("src/apps/settings/AiConnectionSettings.tsx"),
+      readWorkspaceFile("app/petProactiveAi.ts"),
+    ]);
+
+    expect(settings).toContain("AI 主动陪伴");
+    expect(settings).toContain("每次最多 48 tokens");
+    expect(layer).toContain("getProactiveAiConnection");
+    expect(layer).toContain("canRequestProactiveAi");
+    expect(layer).toContain("ambientAiAbortRef.current?.abort()");
+    expect(proactive).toContain("PROACTIVE_AI_MAX_REQUESTS_PER_SESSION = 2");
+    expect(proactive).toContain("PROACTIVE_AI_COOLDOWN_MS = 30 * 60_000");
+    expect(proactive).toContain("allowWebSearch: false");
+    expect(proactive).not.toContain("activitySummary");
+    expect(proactive).not.toContain("resourceNames");
+  });
+
+  it("publishes content-free file operation events from successful shell actions", async () => {
+    const root = await readWorkspaceFile("src/shell/DesktopRoot.tsx");
+
+    expect(root).toContain('publishNovaActivityEvent("file-created","desktop",{itemType:"folder",count:1})');
+    expect(root).toContain('publishNovaActivityEvent("note-created","notes",{itemType:"text",count:1})');
+    expect(root).toContain('publishNovaActivityEvent("excerpt-created","reader",{itemType:"text",count:1})');
+    expect(root).toContain('publishNovaActivityEvent("files-organized","desktop",{operation:"trash"');
+    expect(root).toContain('publishNovaActivityEvent("files-organized","desktop",{operation:mode');
+    expect(root).not.toContain('publishNovaActivityEvent("file-created","desktop",{content');
   });
 
   it("keeps suggested actions behind buttons and routes them through WindowRuntime", async () => {

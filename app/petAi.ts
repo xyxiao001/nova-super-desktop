@@ -14,6 +14,7 @@ export type NovaAiCompletion = {
 };
 
 export type NovaAiRequestOptions = {
+  allowWebSearch?: boolean;
   fetcher?: typeof fetch;
   maxTokens?: number;
   onUpdate?: (content: string) => void;
@@ -185,7 +186,9 @@ export async function requestOpenAiCompletion(
           ? {
             model: profile.model,
             stream: streaming,
-            tools: [{ type: "web_search", max_keyword: 3 }],
+            ...(options.allowWebSearch === false
+              ? {}
+              : { tools: [{ type: "web_search", max_keyword: 3 }] }),
             input: messages.map((message) => message.role === "assistant"
               ? {
                   type: "message",

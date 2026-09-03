@@ -225,15 +225,31 @@ export default function AiConnectionSettings() {
 
       <div className="settings-control-list">
         <div className="settings-control-row">
-          <span><strong>启用 AI 对话</strong><small>仅在你主动发起对话时使用当前连接</small></span>
+          <span><strong>启用 AI 对话</strong><small>用于主动对话；主动陪伴需要单独开启</small></span>
           <button
             className="settings-switch"
             role="switch"
             aria-label="启用 AI 对话"
             aria-checked={settings?.enabled ?? false}
             disabled={!settings || busy}
-            onClick={() => void changeSettings({ enabled: !settings?.enabled })}
+            onClick={() => void changeSettings({
+              enabled: !settings?.enabled,
+              ...(settings?.enabled ? { proactiveCompanion: false } : {}),
+            })}
           ><i/><span>{settings?.enabled ? "开启" : "关闭"}</span></button>
+        </div>
+        <div className="settings-control-row">
+          <span><strong>AI 主动陪伴</strong><small>每次最多 48 tokens，每会话最多 2 次，至少间隔 30 分钟</small></span>
+          <button
+            className="settings-switch"
+            role="switch"
+            aria-label="AI 主动陪伴"
+            aria-checked={settings?.proactiveCompanion ?? false}
+            disabled={!settings?.enabled || !settings?.activeConnectionId || busy}
+            onClick={() => void changeSettings({
+              proactiveCompanion: !settings?.proactiveCompanion,
+            })}
+          ><i/><span>{settings?.proactiveCompanion ? "开启" : "关闭"}</span></button>
         </div>
         <label className="settings-control-row ai-current-connection">
           <span><strong>当前连接</strong><small>地址、模型和 API Key 将整体切换</small></span>

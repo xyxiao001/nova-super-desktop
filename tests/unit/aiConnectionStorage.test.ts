@@ -10,6 +10,7 @@ import {
   createAiConnection,
   deleteAiConnection,
   getActiveAiConnection,
+  getProactiveAiConnection,
   readAiConnectionState,
   setActiveAiConnection,
   updateAiConnection,
@@ -34,6 +35,7 @@ describe("AI connection storage", () => {
       profiles: [],
       settings: {
         enabled: false,
+        proactiveCompanion: false,
         activeConnectionId: null,
         contextPermissions: {
           activitySummary: true,
@@ -116,6 +118,7 @@ describe("AI connection storage", () => {
     await setActiveAiConnection(profile.id);
     await updateAiSettings({
       enabled: true,
+      proactiveCompanion: true,
       contextPermissions: {
         activitySummary: false,
         resourceNames: true,
@@ -125,6 +128,7 @@ describe("AI connection storage", () => {
 
     expect((await readAiConnectionState()).settings).toEqual({
       enabled: true,
+      proactiveCompanion: true,
       activeConnectionId: profile.id,
       contextPermissions: {
         activitySummary: false,
@@ -138,6 +142,7 @@ describe("AI connection storage", () => {
       profiles: [],
       settings: {
         enabled: false,
+        proactiveCompanion: false,
         activeConnectionId: null,
         contextPermissions: {
           activitySummary: true,
@@ -146,6 +151,27 @@ describe("AI connection storage", () => {
         },
       },
     });
+  });
+
+  it("requires separate proactive consent and clears it with the active connection", async () => {
+    const profile = await createAiConnection(connection("alpha", "secret-alpha"));
+    await setActiveAiConnection(profile.id);
+    await updateAiSettings({ enabled: true });
+
+    await expect(getProactiveAiConnection()).resolves.toBeNull();
+
+    await updateAiSettings({ proactiveCompanion: true });
+    await expect(getProactiveAiConnection()).resolves.toMatchObject({
+      id: profile.id,
+      model: "alpha",
+    });
+
+    await updateAiSettings({ enabled: false });
+    expect((await readAiConnectionState()).settings.proactiveCompanion).toBe(false);
+    await updateAiSettings({ enabled: true, proactiveCompanion: true });
+    await setActiveAiConnection(null);
+    expect((await readAiConnectionState()).settings.proactiveCompanion).toBe(false);
+    await expect(getProactiveAiConnection()).resolves.toBeNull();
   });
 
   it("does not use localStorage, backup providers, or Service Worker caches", async () => {

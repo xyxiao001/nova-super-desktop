@@ -36,7 +36,7 @@ export default function PetSettings() {
     updateProfile,
     updatePreferences,
     resetPosition,
-    clearPet,
+    resetPet,
   } = usePetRuntime();
   const [name, setName] = useState("Nova");
   const [personality, setPersonality] = useState<PetPersonality>("curious");
@@ -104,17 +104,17 @@ export default function PetSettings() {
     }
   };
 
-  const confirmClear = async () => {
+  const confirmReset = async () => {
     setBusy(true);
     setMessage("");
     try {
-      await clearPet();
+      await resetPet();
       setClearOpen(false);
       setName("Nova");
       setPersonality("curious");
-      setMessage("桌面伙伴数据已清除");
+      setMessage("桌面伙伴已重置");
     } catch {
-      setMessage("桌面伙伴数据清除失败");
+      setMessage("桌面伙伴重置失败");
     } finally {
       setBusy(false);
     }
@@ -175,8 +175,8 @@ export default function PetSettings() {
         </div>
 
         <div className="settings-reset-panel">
-          <span><strong>清除宠物数据</strong><small>删除档案、状态、本地记忆和对话记录，不影响 AI 配置</small></span>
-          <button disabled={busy} onClick={() => setClearOpen(true)}>清除数据</button>
+          <span><strong>重置桌面伙伴</strong><small>清除当前档案、状态、本地记忆和对话，并重新领养默认伙伴</small></span>
+          <button disabled={busy} onClick={() => setClearOpen(true)}>重置伙伴</button>
         </div>
       </>}
 
@@ -186,11 +186,11 @@ export default function PetSettings() {
 
     {portalRoot && clearOpen && createPortal(
       <div className="settings-restore-layer">
-        <section role="dialog" aria-modal="true" aria-label="确认清除桌面伙伴数据">
-          <strong>清除桌面伙伴数据？</strong>
-          <p>将删除 {data?.profile.name} 的档案、状态、位置、本地记忆和对话记录。</p>
+        <section role="dialog" aria-modal="true" aria-label="确认重置桌面伙伴">
+          <strong>重置桌面伙伴？</strong>
+          <p>将删除 {data?.profile.name} 的档案、状态、位置、本地记忆和对话记录，并重新创建默认伙伴。</p>
           <small>此操作无法撤销，但不会删除 AI 连接配置或其他应用数据。</small>
-          <footer><button disabled={busy} onClick={() => setClearOpen(false)}>取消</button><button className="danger" disabled={busy} onClick={() => void confirmClear()}>{busy ? "正在清除" : "确认清除"}</button></footer>
+          <footer><button disabled={busy} onClick={() => setClearOpen(false)}>取消</button><button className="danger" disabled={busy} onClick={() => void confirmReset()}>{busy ? "正在重置" : "确认重置"}</button></footer>
         </section>
       </div>,
       portalRoot,

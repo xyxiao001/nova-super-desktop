@@ -17,6 +17,7 @@ import {
 } from "../../../app/activityEvents";
 import {
   DEFAULT_PET_POSITION,
+  createDefaultPetData,
   createPetData,
   reducePetData,
   restorePetState,
@@ -43,7 +44,7 @@ export type PetRuntimeValue = {
   setPosition: (x: number, y: number) => Promise<void>;
   resetPosition: () => Promise<void>;
   setHidden: (hidden: boolean) => Promise<void>;
-  clearPet: () => Promise<void>;
+  resetPet: () => Promise<void>;
 };
 
 const PetRuntimeContext = createContext<PetRuntimeValue | null>(null);
@@ -60,6 +61,11 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
       .then(async (stored) => {
         if (cancelled) return;
         if (!stored) {
+          const created = createDefaultPetData();
+          await savePetData(created);
+          if (cancelled) return;
+          dataRef.current = created;
+          setData(created);
           setStatus("ready");
           return;
         }
@@ -171,10 +177,12 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
     setData(next);
   }, [data]);
 
-  const clearPet = useCallback(async () => {
+  const resetPet = useCallback(async () => {
     await clearPetData();
-    dataRef.current = null;
-    setData(null);
+    const next = createDefaultPetData();
+    await savePetData(next);
+    dataRef.current = next;
+    setData(next);
     setLatestActivity(null);
     setStatus("ready");
   }, []);
@@ -189,12 +197,12 @@ export function PetRuntimeProvider({ children }: { children: ReactNode }) {
     setPosition,
     resetPosition,
     setHidden,
-    clearPet,
+    resetPet,
   }), [
-    clearPet,
     createPet,
     data,
     latestActivity,
+    resetPet,
     resetPosition,
     setHidden,
     setPosition,

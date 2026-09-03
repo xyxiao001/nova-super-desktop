@@ -64,6 +64,10 @@ export const PET_VALUE_MIN = 0;
 export const PET_VALUE_MAX = 100;
 export const PET_IDLE_RESET_MS = 30 * 60 * 1000;
 export const DEFAULT_PET_POSITION = { x: 0.82, y: 0.78 } as const;
+export const DEFAULT_PET_PROFILE = {
+  name: "Nova",
+  personality: "curious",
+} as const;
 
 export const PET_REACTION_COOLDOWN_MS: Record<NovaActivityEventType, number> = {
   "app-activated": 30_000,
@@ -143,6 +147,33 @@ const discoveryFor = (event: NovaActivityEvent) => {
 };
 
 export const petActivityFeedback = (event: NovaActivityEvent) => {
+  if (event.type === "app-activated") {
+    if (event.source === "reader") return "书架打开啦，我陪你慢慢读。";
+    if (event.source === "focus") return "专注时我会安静待着。";
+    if (event.source === "settings") return "设置打开啦，也可以在伙伴页找到我。";
+    if (event.source === "explorer") return "文件都在这里，慢慢整理吧。";
+    if (["games", "gomoku", "chess", "mines"].includes(event.source)) {
+      return "玩得开心，休息好了再继续。";
+    }
+  }
+  if (event.type === "file-created") {
+    if ((event.payload?.count ?? 1) > 1) {
+      return `${event.payload?.count} 个文件已经放到桌面啦。`;
+    }
+    if (event.payload?.itemType === "folder") return "新文件夹建好啦。";
+    if (event.payload?.itemType === "image") return "图片已经放到桌面啦。";
+    return "新文件已经放到桌面啦。";
+  }
+  if (event.type === "files-organized") {
+    if (event.payload?.operation === "trash") return "已经放进回收站，需要时还能找回来。";
+    if (event.payload?.operation === "delete") return "这些项目已经彻底清理掉了。";
+    if (event.payload?.operation === "restore") return "文件已经回到原来的位置啦。";
+    if (event.payload?.operation === "copy") return "副本准备好啦。";
+    if (event.payload?.operation === "arrange") return "桌面一下整齐多啦。";
+    return "文件已经移动到新位置啦。";
+  }
+  if (event.type === "note-created") return "新文稿建好啦，记下刚才的想法吧。";
+  if (event.type === "excerpt-created") return "这段摘录已经收进桌面文稿啦。";
   if (event.type === "creative-saved") {
     return event.source === "photo"
       ? "照片收好啦，这个光影真好看！"
@@ -209,6 +240,18 @@ export const createPetData = ({
     sound: true,
     bubbleFrequency: "medium",
   },
+});
+
+export const createDefaultPetData = ({
+  id,
+  now,
+}: {
+  id?: string;
+  now?: number;
+} = {}) => createPetData({
+  ...DEFAULT_PET_PROFILE,
+  ...(id ? { id } : {}),
+  ...(now === undefined ? {} : { now }),
 });
 
 export const reducePetState = (
