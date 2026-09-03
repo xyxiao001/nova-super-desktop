@@ -16,6 +16,7 @@ export type NovaAiCompletion = {
 export type NovaAiRequestOptions = {
   fetcher?: typeof fetch;
   maxTokens?: number;
+  onUpdate?: (content: string) => void;
   sessionId?: string;
   signal?: AbortSignal;
   timeoutMs?: number;
@@ -45,6 +46,16 @@ type OpenAiResponsesResponse = {
       type?: unknown;
       text?: unknown;
     }>;
+  }>;
+};
+
+type OpenAiStreamEvent = {
+  type?: unknown;
+  delta?: unknown;
+  choices?: Array<{
+    delta?: {
+      content?: unknown;
+    };
   }>;
 };
 
@@ -101,6 +112,47 @@ const usesResponsesApi = (baseUrl: string) => (
   new URL(baseUrl).pathname.replace(/\/+$/, "").endsWith("/responses")
 );
 
+const readStreamingContent = async (
+  response: Response,
+  responsesApi: boolean,
+  onUpdate: (content: string) => void,
+) => {
+  if (!response.body) throw new NovaAiRequestError("AI 服务未返回流式内容");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let content = "";
+
+  const processLine = (line: string) => {
+    if (!line.startsWith("data:")) return;
+    const data = line.slice(5).trim();
+    if (!data || data === "[DONE]") return;
+    let event: OpenAiStreamEvent;
+    try {
+      event = JSON.parse(data) as OpenAiStreamEvent;
+    } catch {
+      throw new NovaAiRequestError("AI 服务返回了无效流式数据");
+    }
+    const delta = responsesApi
+      ? (event.type === "response.output_text.delta" ? event.delta : undefined)
+      : event.choices?.[0]?.delta?.content;
+    if (typeof delta !== "string" || !delta) return;
+    content += delta;
+    onUpdate(content);
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split(/\r?\n/);
+    buffer = done ? "" : (lines.pop() ?? "");
+    lines.forEach(processLine);
+    if (done) break;
+  }
+  if (buffer) processLine(buffer);
+  return content;
+};
+
 export async function requestOpenAiCompletion(
   profile: NovaAiConnectionProfile,
   messages: readonly NovaAiMessage[],
@@ -121,6 +173,7 @@ export async function requestOpenAiCompletion(
 
   try {
     const responsesApi = usesResponsesApi(profile.baseUrl);
+    const streaming = !!options.onUpdate;
     const response = await fetcher(profile.baseUrl, {
       method: "POST",
       headers: {
@@ -129,9 +182,9 @@ export async function requestOpenAiCompletion(
         "x-session-id": sessionId,
       },
       body: JSON.stringify(responsesApi
-        ? {
+          ? {
             model: profile.model,
-            stream: false,
+            stream: streaming,
             tools: [{ type: "web_search", max_keyword: 3 }],
             input: messages.map((message) => message.role === "assistant"
               ? {
@@ -150,6 +203,7 @@ export async function requestOpenAiCompletion(
             model: profile.model,
             messages,
             max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
+            ...(streaming ? { stream: true } : {}),
           }),
       cache: "no-store",
       credentials: "omit",
@@ -159,6 +213,12 @@ export async function requestOpenAiCompletion(
 
     if (!response.ok) {
       throw new NovaAiRequestError(responseErrorMessage(response.status));
+    }
+
+    if (options.onUpdate) {
+      const content = await readStreamingContent(response, responsesApi, options.onUpdate);
+      if (!content.trim()) throw new NovaAiRequestError("AI 服务返回格式无效");
+      return { content, sessionId };
     }
 
     let payload: OpenAiCompletionResponse | OpenAiResponsesResponse;

@@ -221,7 +221,7 @@ export default function DesktopPetLayer({
       if (log) log.scrollTop = log.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [conversation.length, introVisible, panelOpen, thinking]);
+  }, [conversation.at(-1)?.text, introVisible, panelOpen, thinking]);
 
   if (!data || !data.preferences.enabled) return null;
 
@@ -442,6 +442,7 @@ export default function DesktopPetLayer({
     }
 
     setThinking(true);
+    let pendingReplyId: number | null = null;
     try {
       const aiState = await readAiConnectionState();
       const profile = aiState.settings.enabled
@@ -462,6 +463,16 @@ export default function DesktopPetLayer({
         content: item.text,
       }));
       aiSessionIdRef.current ??= `conv-${crypto.randomUUID()}`;
+      const replyId = ++messageIdRef.current;
+      pendingReplyId = replyId;
+      const streamingReply: StoredPetConversationMessage = {
+        id: replyId,
+        role: "pet",
+        text: "…",
+      };
+      const streamingMessages = [...conversationRef.current, streamingReply];
+      conversationRef.current = streamingMessages;
+      setConversation(streamingMessages);
       const completion = await requestOpenAiCompletion(
         profile,
         buildPetAiMessages({
@@ -478,25 +489,37 @@ export default function DesktopPetLayer({
         }, history, text),
         {
           maxTokens: 256,
+          onUpdate: (content) => {
+            const next = streamingMessages.map((item) => item.id === replyId
+              ? { ...item, text: content.slice(0, 400) }
+              : item);
+            conversationRef.current = next;
+            setConversation(next);
+          },
           sessionId: aiSessionIdRef.current,
         },
       );
       const replyMessage: StoredPetConversationMessage = {
-        id: ++messageIdRef.current,
+        id: replyId,
         role: "pet",
         text: completion.content.trim().slice(0, 400),
       };
-      await commitConversation([...conversationRef.current, replyMessage]);
+      await commitConversation(streamingMessages.map((item) => (
+        item.id === replyId ? replyMessage : item
+      )));
     } catch (error) {
       const reason = error instanceof NovaAiRequestError
         ? error.message
         : "AI 对话失败";
       const replyMessage: StoredPetConversationMessage = {
-        id: ++messageIdRef.current,
+        id: pendingReplyId ?? ++messageIdRef.current,
         role: "pet",
         text: `${reason}。${localReply.text}`,
       };
-      await commitConversation([...conversationRef.current, replyMessage]);
+      const messages = pendingReplyId !== null
+        ? conversationRef.current.map((item) => item.id === replyMessage.id ? replyMessage : item)
+        : [...conversationRef.current, replyMessage];
+      await commitConversation(messages);
     } finally {
       setThinking(false);
     }

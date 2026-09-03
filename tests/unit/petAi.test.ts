@@ -148,6 +148,51 @@ describe("OpenAI-compatible pet AI adapter", () => {
     });
   });
 
+  it("streams Responses API text updates in order", async () => {
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response([
+      'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"陪你"}\n\n',
+      'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"读书"}\n\n',
+      'event: response.completed\ndata: {"type":"response.completed"}\n\n',
+    ].join(""), { status: 200, headers: { "Content-Type": "text/event-stream" } }));
+    const onUpdate = vi.fn();
+    const responsesProfile = {
+      ...profile,
+      baseUrl: "https://relay.example.com/api/v3/responses",
+      model: "ep-example",
+    };
+
+    await expect(requestOpenAiCompletion(
+      responsesProfile,
+      [{ role: "user", content: "陪我读书" }],
+      { fetcher: fetcher as typeof fetch, onUpdate },
+    )).resolves.toMatchObject({ content: "陪你读书" });
+
+    expect(onUpdate.mock.calls).toEqual([["陪你"], ["陪你读书"]]);
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      stream: true,
+    });
+  });
+
+  it("streams Chat Completions text updates in order", async () => {
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response([
+      'data: {"choices":[{"delta":{"content":"你"}}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"好"}}]}\n\n',
+      "data: [DONE]\n\n",
+    ].join(""), { status: 200, headers: { "Content-Type": "text/event-stream" } }));
+    const onUpdate = vi.fn();
+
+    await expect(requestOpenAiCompletion(
+      profile,
+      [{ role: "user", content: "你好" }],
+      { fetcher: fetcher as typeof fetch, onUpdate },
+    )).resolves.toMatchObject({ content: "你好" });
+
+    expect(onUpdate.mock.calls).toEqual([["你"], ["你好"]]);
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      stream: true,
+    });
+  });
+
   it("tests only the active stored profile with fixed probe content", async () => {
     const first = await createAiConnection({
       ...profile,
