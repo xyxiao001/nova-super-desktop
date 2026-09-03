@@ -3,6 +3,7 @@
 import "./settings.css";
 
 import { useEffect, useRef, useState } from "react";
+import { clearAiConnections } from "../../../app/aiConnectionStorage";
 import {
   createNovaBackup,
   estimateNovaStorage,
@@ -13,6 +14,7 @@ import {
 } from "../../../app/novaBackup";
 import type { NovaSettings, NovaTheme, NovaWallpaper } from "../../../app/novaSettings";
 import { playNovaSound } from "../../../app/novaSettings";
+import { clearPetData } from "../../../app/petStorage";
 import {
   clearAllResourceCaches,
   clearResourceCache,
@@ -27,6 +29,8 @@ import {
 } from "../../../app/novaStorage";
 import { useAppLaunchIntent } from "../../platform/launch/LaunchRuntime";
 import { useSettingsRuntime } from "../../platform/settings/SettingsRuntime";
+import AiConnectionSettings from "./AiConnectionSettings";
+import PetSettings from "./PetSettings";
 
 const THEMES:{id:NovaTheme;label:string;sample:string}[]=[
   {id:"system",label:"跟随系统",sample:"◐"},
@@ -47,6 +51,8 @@ const WALLPAPERS:{id:NovaWallpaper;label:string;detail:string}[]=[
 const SETTINGS_PANES=[
   {id:"appearance",label:"外观",detail:"主题与桌面壁纸",icon:"◫"},
   {id:"sound",label:"声音",detail:"反馈音效与音量",icon:"♫"},
+  {id:"pet",label:"伙伴",detail:"桌面宠物与互动",icon:"猫"},
+  {id:"ai",label:"AI",detail:"本地连接与权限",icon:"AI"},
   {id:"storage",label:"存储",detail:"数据、资源与备份",icon:"▤"},
 ] as const;
 type SettingsPane=typeof SETTINGS_PANES[number]["id"];
@@ -190,7 +196,7 @@ export default function SettingsApp(){
     setBackupMessage("");
     try{
       if(resourcePackages.some((resource)=>resource.entries>0))await clearAllResourceCaches();
-      await clearAllNovaStorage();
+      await Promise.all([clearAllNovaStorage(),clearPetData(),clearAiConnections()]);
       window.location.replace(window.location.pathname);
     }catch{
       setResetting(false);
@@ -205,7 +211,7 @@ export default function SettingsApp(){
   const otherBytes=Math.max(0,storage.usage-dataBytes-resourceBytes);
   const resetEntries=storageCategories.reduce((total,item)=>total+item.entries,0)+resourcePackages.reduce((total,item)=>total+item.entries,0);
   const activePaneMeta=SETTINGS_PANES.find((pane)=>pane.id===activePane)??SETTINGS_PANES[0];
-  const sectionPane=(sectionId:string):SettingsPane=>sectionId==="sound"?"sound":sectionId==="backup"?"storage":"appearance";
+  const sectionPane=(sectionId:string):SettingsPane=>sectionId==="sound"?"sound":sectionId==="pet"?"pet":sectionId==="ai"?"ai":sectionId==="backup"?"storage":"appearance";
   useEffect(()=>{
     if(!launchIntent)return;
     const frame=window.requestAnimationFrame(()=>{
@@ -243,6 +249,8 @@ export default function SettingsApp(){
           </div>
           <button className="sound-preview-button" disabled={!settings.sound} onClick={()=>playNovaSound("success")}>试听提示音</button>
         </section>}
+        {activePane==="pet"&&<PetSettings/>}
+        {activePane==="ai"&&<AiConnectionSettings/>}
         {activePane==="storage"&&<section className={`${sectionClass("backup")} backup-settings`} data-settings-section="backup">
           <div className="settings-section-heading"><strong>存储概览</strong><span>本地数据与可重新下载的资源分开管理</span></div>
           <div className="storage-overview" aria-busy={storageLoading}>
@@ -282,7 +290,7 @@ export default function SettingsApp(){
     {resetOpen&&<div className="settings-restore-layer">
       <section role="dialog" aria-modal="true" aria-label="确认删除所有 NOVA 数据">
         <strong>删除所有数据并重置 NOVA？</strong>
-        <p>桌面文件、离线书籍、日历日程、存档、阅读记录、偏好设置和按需资源都将从当前设备删除。</p>
+        <p>桌面文件、离线书籍、日历日程、存档、阅读记录、偏好设置、AI 配置和按需资源都将从当前设备删除。</p>
         <dl className="settings-clear-summary"><div><dt>数据与资源项</dt><dd>{resetEntries}</dd></div><div><dt>已识别占用</dt><dd>{formatBytes(dataBytes+resourceBytes)}</dd></div></dl>
         <small>此操作无法撤销。需要保留内容时，请先导出本地备份。</small>
         <footer><button disabled={resetting} onClick={()=>setResetOpen(false)}>取消</button><button className="danger" disabled={resetting} onClick={()=>void confirmResetAll()}>{resetting?"正在重置":"删除并重置"}</button></footer>
