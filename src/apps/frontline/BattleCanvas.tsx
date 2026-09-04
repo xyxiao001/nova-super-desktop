@@ -126,6 +126,44 @@ const drawHealthBars = (
   context.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
   context.save();
   context.lineCap = "round";
+  for (const pool of battle.poisonPools) {
+    const alpha = Math.min(0.55, pool.remaining / 6 * 0.55);
+    context.beginPath();
+    context.ellipse(
+      pool.position.x,
+      pool.position.y - 8,
+      pool.radius,
+      pool.radius * 0.42,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    context.fillStyle = `rgba(57, 210, 65, ${alpha})`;
+    context.shadowColor = "#3bd24d";
+    context.shadowBlur = 10;
+    context.fill();
+  }
+  context.shadowBlur = 0;
+  for (const projectile of battle.projectiles) {
+    if (projectile.movementScale === null) continue;
+    context.beginPath();
+    context.arc(
+      projectile.position.x,
+      projectile.position.y - 30,
+      projectile.impactType === "poison-area" ? 9 : 7,
+      0,
+      Math.PI * 2,
+    );
+    context.fillStyle = projectile.impactType === "poison-area"
+      ? "#7fe337"
+      : "#86dfff";
+    context.shadowColor = projectile.impactType === "poison-area"
+      ? "#39c934"
+      : "#3bbcff";
+    context.shadowBlur = 9;
+    context.fill();
+  }
+  context.shadowBlur = 0;
   for (const arc of battle.lightningArcs) {
     context.beginPath();
     context.moveTo(arc.from.x, arc.from.y - 30);

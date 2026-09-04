@@ -46,6 +46,7 @@ const createConfig = (
       sourceId: 30001,
       name: "闪电丘",
       baseAttack: 40,
+      stepAttackMultipliers: [1, 2.1, 3.5, 4.2],
       damageCoefficient: 100,
       cooldownMs: 1600,
       range: 300,
@@ -326,6 +327,43 @@ describe("frontlineCore", () => {
     }
   });
 
+  it("recomputes merged hero attack from the confirmed vocation step ratios", () => {
+    const config = createConfig();
+    config.tutorial.fixedMerges = [];
+    config.economy.initialCoins = 1000;
+    config.synthesisHeroIds = ["hero-lightning"];
+    let battle = createBattle(config);
+    for (let index = 0; index < 4; index += 1) {
+      battle = summonHero(battle, "hero-lightning");
+    }
+    let heroes = battle.defenders.slice(1);
+    battle = moveOrMergeDefender(battle, heroes[0].id, heroes[1].slotIndex!);
+    battle = moveOrMergeDefender(battle, heroes[2].id, heroes[3].slotIndex!);
+    expect(battle.defenders.slice(1).map((hero) => [hero.step, hero.attack]))
+      .toEqual([[2, 84], [2, 84]]);
+
+    for (let index = 0; index < 4; index += 1) {
+      battle = summonHero(battle, "hero-lightning");
+    }
+    heroes = battle.defenders.filter((defender) => defender.kind === "hero");
+    const oneStars = heroes.filter((hero) => hero.step === 1);
+    battle = moveOrMergeDefender(battle, oneStars[0].id, oneStars[1].slotIndex!);
+    battle = moveOrMergeDefender(battle, oneStars[2].id, oneStars[3].slotIndex!);
+    heroes = battle.defenders.filter((defender) => defender.kind === "hero");
+    const twoStars = heroes.filter((hero) => hero.step === 2);
+    battle = moveOrMergeDefender(battle, twoStars[0].id, twoStars[1].slotIndex!);
+    battle = moveOrMergeDefender(battle, twoStars[2].id, twoStars[3].slotIndex!);
+    expect(battle.defenders.slice(1).map((hero) => [hero.step, hero.attack]))
+      .toEqual([[3, 140], [3, 140]]);
+
+    heroes = battle.defenders.filter((defender) => defender.kind === "hero");
+    battle = moveOrMergeDefender(battle, heroes[0].id, heroes[1].slotIndex!);
+    expect(battle.defenders.slice(1)).toEqual([expect.objectContaining({
+      step: 4,
+      attack: 168,
+    })]);
+  });
+
   it("does not merge matching heroes of different steps or at the maximum step", () => {
     for (const steps of [[1, 2], [4, 4]]) {
       let battle = summonHero(createBattle(createConfig()), "hero-lightning");
@@ -487,6 +525,9 @@ describe("frontlineCore", () => {
       maxLifetimeSeconds: 3,
       lockTarget: false,
       movementScale: null,
+      impactOnRelease: false,
+      impactType: "damage",
+      impactRadius: 0,
     };
     let battle = summonHero(createBattle(config), "hero-lightning");
     battle = stepTicks(battle, 6);
@@ -510,6 +551,43 @@ describe("frontlineCore", () => {
     expect(battle.enemies[0].hp).toBe(100);
   });
 
+  it("resolves Lightning's confirmed beam impact on the release tick", () => {
+    const config = createConfig(null);
+    config.heroes[0].cooldownMs = 10000;
+    config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
+    config.heroes[0].projectile = {
+      tracker: "SDThunderChainTracker",
+      releaseTimeSeconds: 0.1,
+      projectileCount: 1,
+      releaseIntervalSeconds: 0.2,
+      sourceInitSpeed: 10,
+      maxFlyDistance: 90,
+      maxLifetimeSeconds: 3,
+      lockTarget: false,
+      movementScale: null,
+      impactOnRelease: true,
+      impactType: "damage",
+      impactRadius: 0,
+    };
+    config.lightningChain = {
+      sourceId: 30001,
+      additionalTargets: 2,
+      radius: 55,
+      damageRatio: 0.75,
+      arcDuration: 0.15,
+    };
+    let battle = summonHero(createBattle(config), "hero-lightning");
+    battle = stepTicks(battle, 6);
+    expect(battle.enemies[0].hp).toBe(100);
+    battle = stepTicks(battle, 2);
+    expect(battle.enemies[0].hp).toBe(60);
+    expect(battle.projectiles).toEqual([]);
+    expect(battle.lightningArcs).toEqual([expect.objectContaining({
+      from: { x: 120, y: 0 },
+      to: { x: 0, y: 0 },
+    })]);
+  });
+
   it("releases Jinx's two confirmed projectiles 80ms apart without early damage", () => {
     const config = createConfig(null);
     config.heroes[0].sourceId = 30002;
@@ -524,7 +602,10 @@ describe("frontlineCore", () => {
       maxFlyDistance: 20,
       maxLifetimeSeconds: 10,
       lockTarget: false,
-      movementScale: null,
+      movementScale: 100,
+      impactOnRelease: false,
+      impactType: "damage",
+      impactRadius: 0,
     };
     config.synthesisHeroIds = ["hero-jinx"];
     config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
@@ -538,9 +619,58 @@ describe("frontlineCore", () => {
     battle = stepBattle(battle);
     expect(battle.projectiles).toHaveLength(2);
     expect(battle.enemies[0].hp).toBe(100);
+    battle = stepTicks(battle, 12);
+    expect(battle.projectiles).toEqual([]);
+    expect(battle.enemies[0].hp).toBe(20);
+    expect(battle.defenders[1].damageDealt).toBe(80);
   });
 
-  it("creates one Core-owned little ghost without inventing its C# combat AI", () => {
+  it("applies Clown's confirmed poison area and immediate 39% attack tick", () => {
+    const config = createConfig(null);
+    Object.assign(config.heroes[0], {
+      id: "hero-clown",
+      sourceId: 30005,
+      baseAttack: 100,
+      damageCoefficient: 0,
+      cooldownMs: 10000,
+      projectile: {
+        tracker: "SDEffectBullet2DTracker",
+        releaseTimeSeconds: 0.166667,
+        projectileCount: 1,
+        releaseIntervalSeconds: 0.13,
+        sourceInitSpeed: 10,
+        maxFlyDistance: 90,
+        maxLifetimeSeconds: 3,
+        lockTarget: false,
+        movementScale: 100,
+        impactOnRelease: false,
+        impactType: "poison-area",
+        impactRadius: 55,
+        poison: {
+          damageCoefficient: 39,
+          durationSeconds: 6,
+          intervalSeconds: 1,
+          maxStacks: 5,
+          immediate: true,
+        },
+      },
+    });
+    config.synthesisHeroIds = ["hero-clown"];
+    config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
+
+    let battle = summonHero(createBattle(config), "hero-clown");
+    battle = stepTicks(battle, 10);
+    expect(battle.enemies[0].hp).toBe(100);
+    battle = stepTicks(battle, 8);
+    expect(battle.enemies[0].hp).toBe(61);
+    expect(battle.poisonByEnemyId[1]).toHaveLength(1);
+    expect(battle.poisonPools).toHaveLength(1);
+    battle = stepTicks(battle, 60);
+    expect(battle.enemies[0].hp).toBe(22);
+    expect(battle.defenders[1].damageDealt).toBe(78);
+  });
+
+  it("runs the little ghost's confirmed born, seek, move, and attack loop", () => {
     const config = createConfig(null);
     config.towerSlots[0].position = { x: 120, y: 100 };
     config.heroes.push({
@@ -568,6 +698,10 @@ describe("frontlineCore", () => {
         cooldownMs: 2000,
         damageCoefficient: 550,
         maxTargets: 99,
+        attackDurationSeconds: 0.5,
+        hitTimeSeconds: 0.233333,
+        effectRange: 100,
+        effectAngleDegrees: 150,
         attackInheritance: "caller-entity-attack",
       },
     });
@@ -606,9 +740,13 @@ describe("frontlineCore", () => {
       bornRemaining: 0,
     });
 
-    battle = stepTicks(battle, 1276);
+    battle = stepTicks(battle, 30);
     expect(battle.summonedUnits).toHaveLength(1);
-    expect(battle.enemies[0].hp).toBe(100);
+    expect(battle.summonedUnits[0].animation).toBe("attack_1");
+    battle = stepTicks(battle, 15);
+    expect(battle.enemies).toEqual([]);
+    expect(battle.defenders.find((defender) => defender.id === 2)?.damageDealt)
+      .toBe(200);
   });
 
   it("repositions a summoner's existing unit to the new slot road point", () => {
@@ -640,6 +778,10 @@ describe("frontlineCore", () => {
         cooldownMs: 2000,
         damageCoefficient: 550,
         maxTargets: 99,
+        attackDurationSeconds: 0.5,
+        hitTimeSeconds: 0.233333,
+        effectRange: 100,
+        effectAngleDegrees: 150,
         attackInheritance: "caller-entity-attack",
       },
     });
@@ -679,6 +821,10 @@ describe("frontlineCore", () => {
         cooldownMs: 2000,
         damageCoefficient: 550,
         maxTargets: 99,
+        attackDurationSeconds: 0.5,
+        hitTimeSeconds: 0.233333,
+        effectRange: 100,
+        effectAngleDegrees: 150,
         attackInheritance: "caller-entity-attack",
       },
     });

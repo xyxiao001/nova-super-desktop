@@ -164,6 +164,8 @@ export type LevelAssetManifest = {
         id: string;
         sourceId: number;
         name: string;
+        vocation: number;
+        stepAttackMultipliers: number[];
         normalSkillId: number;
         baseAttack: number;
         damageCoefficient: number;
@@ -200,6 +202,16 @@ export type LevelAssetManifest = {
         bornBuffs: number[];
         spawnPointRule: "nearest-origin-road-point-within-owner-range";
       }>;
+      clownPoison: {
+        buffId: number;
+        effectId: number;
+        damageCoefficient: number;
+        durationMs: number;
+        intervalMs: number;
+        maxStacks: number;
+        immediate: boolean;
+        effectParameters: number[];
+      };
       waves: Array<{
         wave: number;
         totalWaves: number;
@@ -315,6 +327,16 @@ export type LevelAssetManifest = {
         eventLockTarget: boolean | null;
         collisionMaxCount: number;
         hitEffectPath: string;
+      };
+      poison?: {
+        buffId: number;
+        effectId: number;
+        damageCoefficient: number;
+        durationMs: number;
+        intervalMs: number;
+        maxStacks: number;
+        immediate: boolean;
+        effectParameters: number[];
       };
       summon?: {
         ownerSourceId: number;

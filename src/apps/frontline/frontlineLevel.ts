@@ -25,6 +25,7 @@ const HERO_ATTACK_DISTANCE: Record<FrontlineHeroId, number> = {
 };
 
 const CONFIRMED_PROJECTILE_HERO_IDS = new Set([30001, 30002, 30005]);
+const CONFIRMED_IMMEDIATE_PROJECTILE_IMPACT_HERO_IDS = new Set([30001]);
 
 const TUTORIAL_HEROES = [
   {
@@ -106,13 +107,14 @@ export const loadFirstLevel = async (
       // Test tuning is applied only to the ephemeral battle config. The roster
       // and its persisted source values remain unchanged.
       baseAttack: roster[id].attack * (testTuning?.heroAttackScale ?? 1),
+      stepAttackMultipliers: hero.stepAttackMultipliers,
       damageCoefficient: hero.damageCoefficient,
       cooldownMs: hero.cooldownMs,
       range: HERO_ATTACK_DISTANCE[id] / 1000 * manifest.scene.projection.pixelsPerWorldUnit,
       animationDurationSeconds: attack.duration,
-      // The fixed event is a release event, not an impact event. Until the
-      // native Tracker movement scale is recovered, Core owns an unresolved
-      // in-flight projectile and intentionally does not apply damage.
+      // The fixed event is a release event. A captured x1 Lightning sample
+      // confirms that its complete beam and impact begin on that same visible
+      // frame; the other projectile trackers remain unresolved in flight.
       hitTimeSeconds: CONFIRMED_PROJECTILE_HERO_IDS.has(definition.sourceId)
         ? null
         : hero.hitTimeSeconds,
@@ -134,7 +136,31 @@ export const loadFirstLevel = async (
             maxLifetimeSeconds: (evidence.eventMaxFlyTimeMs
               ?? evidence.prefabDurationMs) / 1000,
             lockTarget: evidence.eventLockTarget ?? evidence.prefabLockTarget,
-            movementScale: null,
+            // Prefab InitSpeed is expressed in world units per second.
+            movementScale: definition.sourceId === 30001
+              ? null
+              : manifest.scene.projection.pixelsPerWorldUnit,
+            // A 57.2fps x1 capture confirms that Lightning's
+            // SDThunderChainTracker renders the complete caster-to-target beam
+            // on its first visible frame. The other two trackers advance from
+            // their source world speeds using the level projection scale.
+            impactOnRelease: CONFIRMED_IMMEDIATE_PROJECTILE_IMPACT_HERO_IDS
+              .has(definition.sourceId),
+            impactType: definition.sourceId === 30005
+              ? "poison-area"
+              : "damage" as "damage" | "poison-area",
+            impactRadius: definition.sourceId === 30005
+              ? 550 / 1000 * manifest.scene.projection.pixelsPerWorldUnit
+              : 0,
+            poison: definition.sourceId === 30005 && attackEvidence?.poison
+              ? {
+                damageCoefficient: attackEvidence.poison.damageCoefficient,
+                durationSeconds: attackEvidence.poison.durationMs / 1000,
+                intervalSeconds: attackEvidence.poison.intervalMs / 1000,
+                maxStacks: attackEvidence.poison.maxStacks,
+                immediate: attackEvidence.poison.immediate,
+              }
+              : undefined,
           };
         })()
         : undefined,
@@ -147,7 +173,7 @@ export const loadFirstLevel = async (
           const born = summonActor?.animations.find(
             (animation) => animation.name === "born",
           );
-          if (!born) {
+          if (!summonActor || !born) {
             throw new Error("Missing born animation for summon-little-ghost");
           }
           return {
@@ -174,6 +200,13 @@ export const loadFirstLevel = async (
             cooldownMs: summonEvidence.cooldownMs,
             damageCoefficient: summonEvidence.damageCoefficient,
             maxTargets: summonEvidence.maxTargets,
+            attackDurationSeconds: summonActor.animations.find(
+              (animation) => animation.name === "attack_1",
+            )?.duration ?? summonEvidence.hitTriggerSeconds,
+            hitTimeSeconds: summonEvidence.hitTriggerSeconds,
+            effectRange: summonEvidence.effectRange[1] / 1000
+              * manifest.scene.projection.pixelsPerWorldUnit,
+            effectAngleDegrees: summonEvidence.effectRange[0],
             attackInheritance: summonEvidence.attackInheritance,
           };
         })()

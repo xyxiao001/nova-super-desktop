@@ -398,11 +398,19 @@ def export_wave_config(
             for row in tables["Freeze.csv"]
             if int(row["FreezeID(key)"]) == skill["CoolDown"]
         )
+        vocation = int(hero["nVocation"])
+        step_attack_multipliers = [
+            int(row["sPcAttack"].split(";")[1]) / 10000
+            for row in tables["hero_step_c.csv"]
+            if int(row["nVocation(key)"]) == vocation
+        ]
         heroes.append(
             {
                 "id": actor_id,
                 "sourceId": source_id,
                 "name": hero["szName"],
+                "vocation": vocation,
+                "stepAttackMultipliers": step_attack_multipliers,
                 "normalSkillId": skill_id,
                 "baseAttack": reference_attack,
                 "damageCoefficient": skill["DamageCoefficient"],
@@ -488,6 +496,25 @@ def export_wave_config(
         ],
         "spawnPointRule": "nearest-origin-road-point-within-owner-range",
     }
+    clown_poison_buff = next(
+        row for row in tables["Buff.csv"]
+        if row["dwBuffID"] == 30201
+    )
+    clown_poison_effect = next(
+        row for row in tables["Effect.csv"]
+        if row["nEffectID"] == clown_poison_buff["listEffect"][0]
+    )
+    clown_poison_params = [float(value) for value in clown_poison_effect["listParam"]]
+    clown_poison = {
+        "buffId": clown_poison_buff["dwBuffID"],
+        "effectId": clown_poison_effect["nEffectID"],
+        "damageCoefficient": clown_poison_params[3] / 100,
+        "durationMs": clown_poison_buff["nDuration"],
+        "intervalMs": clown_poison_params[6],
+        "maxStacks": clown_poison_buff["nMaxStack"],
+        "immediate": bool(int(clown_poison_params[5]) & 1),
+        "effectParameters": clown_poison_params,
+    }
 
     decoded = {
         "sourceVersion": SOURCE_VERSION,
@@ -535,6 +562,7 @@ def export_wave_config(
         },
         "heroes": heroes,
         "summons": [summon_profile],
+        "clownPoison": clown_poison,
         "waves": waves,
     }
     path = level_root / "wave-config.json"
@@ -890,6 +918,7 @@ def game_object_mono_behaviour(
 def export_attack_evidence(
     environments: dict[str, Any],
     summon_profile: dict[str, Any],
+    clown_poison: dict[str, Any],
 ) -> dict[str, Any]:
     jinx_emitter = game_object_mono_behaviour(
         environments["fxJinx"],
@@ -1025,6 +1054,7 @@ def export_attack_evidence(
                     "collisionMaxCount": int(clown_collision["CollisionMaxNum"]),
                     "hitEffectPath": clown_projectile["destroyEffectPath"],
                 },
+                "poison": clown_poison,
             },
             {
                 "owner": "hero-summoner",
@@ -1304,6 +1334,7 @@ def main() -> None:
         "attackEvidence": export_attack_evidence(
             environments,
             wave_config["summons"][0],
+            wave_config["clownPoison"],
         ),
         "ui": {
             "prefabBundle": BUNDLES["fightUi"]["file"],

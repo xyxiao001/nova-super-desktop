@@ -19,6 +19,13 @@ describe("first-level targeting distance", () => {
     try {
       const { battle } = await loadFirstLevel(lineup, roster);
       expect(battle.heroes.slice(0, 4).map((hero) => hero.range)).toEqual([210, 320, 340, 280]);
+      expect(battle.heroes.slice(0, 4).map((hero) => hero.stepAttackMultipliers))
+        .toEqual([
+          [1, 1.25, 1.4, 1.6],
+          [1, 2.1, 3.3, 4],
+          [1, 2.1, 3.5, 4.2],
+          [1, 2.1, 3.5, 4.2],
+        ]);
       expect(battle.lord.range).toBe(40);
       expect(battle.lord).toMatchObject({
         damageCoefficient: 80,
@@ -42,6 +49,9 @@ describe("first-level targeting distance", () => {
           cooldownMs: 2000,
           damageCoefficient: 550,
           maxTargets: 99,
+          hitTimeSeconds: 0.233333,
+          effectRange: 100,
+          effectAngleDegrees: 150,
           attackInheritance: "caller-entity-attack",
         },
       });
@@ -57,6 +67,9 @@ describe("first-level targeting distance", () => {
           maxLifetimeSeconds: 3,
           lockTarget: false,
           movementScale: null,
+          impactOnRelease: true,
+          impactType: "damage",
+          impactRadius: 0,
         },
       });
       expect(battle.heroes.find((hero) => hero.sourceId === 30002)).toMatchObject({
@@ -70,7 +83,10 @@ describe("first-level targeting distance", () => {
           maxFlyDistance: 20,
           maxLifetimeSeconds: 10,
           lockTarget: false,
-          movementScale: null,
+          movementScale: 100,
+          impactOnRelease: false,
+          impactType: "damage",
+          impactRadius: 0,
         },
       });
       expect(battle.heroes.find((hero) => hero.sourceId === 30005)).toMatchObject({
@@ -85,7 +101,10 @@ describe("first-level targeting distance", () => {
           maxFlyDistance: 90,
           maxLifetimeSeconds: 3,
           lockTarget: false,
-          movementScale: null,
+          movementScale: 100,
+          impactOnRelease: false,
+          impactType: "poison-area",
+          impactRadius: 55.00000000000001,
         },
       });
       expect(battle.heroes.slice(0, 4).map((hero) => hero.animationDurationSeconds))

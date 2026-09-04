@@ -4,6 +4,13 @@ const SOURCE_SPEED_TO_LOGICAL_PIXELS = 0.1;
 
 export type Point = { x: number; y: number };
 export type LightningArc = { from: Point; to: Point; remaining: number };
+export type PoisonConfig = {
+  damageCoefficient: number;
+  durationSeconds: number;
+  intervalSeconds: number;
+  maxStacks: number;
+  immediate: boolean;
+};
 export type ProjectileConfig = {
   tracker: string;
   releaseTimeSeconds: number;
@@ -13,7 +20,11 @@ export type ProjectileConfig = {
   maxFlyDistance: number;
   maxLifetimeSeconds: number;
   lockTarget: boolean;
-  movementScale: null;
+  movementScale: number | null;
+  impactOnRelease: boolean;
+  impactType: "damage" | "poison-area";
+  impactRadius: number;
+  poison?: PoisonConfig;
 };
 export type SummonConfig = {
   actorId: string;
@@ -30,6 +41,10 @@ export type SummonConfig = {
   cooldownMs: number;
   damageCoefficient: number;
   maxTargets: number;
+  attackDurationSeconds: number;
+  hitTimeSeconds: number;
+  effectRange: number;
+  effectAngleDegrees: number;
   attackInheritance: "caller-entity-attack";
 };
 export type BattleStatus = "active" | "paused" | "won" | "lost";
@@ -40,6 +55,7 @@ export type HeroConfig = {
   sourceId: number;
   name: string;
   baseAttack: number;
+  stepAttackMultipliers?: number[];
   damageCoefficient: number;
   cooldownMs: number;
   range: number;
@@ -151,6 +167,7 @@ export type Defender = {
   moveTarget: Point | null;
   moveSpeed: number;
   facingX: -1 | 1;
+  attributeAttack: number;
   attack: number;
   range: number;
   cooldownSeconds: number;
@@ -173,12 +190,27 @@ export type Projectile = {
   targetId: number;
   position: Point;
   targetPositionAtRelease: Point;
+  direction: Point;
   elapsedSeconds: number;
   maxLifetimeSeconds: number;
   sourceInitSpeed: number;
   maxFlyDistance: number;
   lockTarget: boolean;
-  movementScale: null;
+  movementScale: number | null;
+  distanceFlown: number;
+  damage: number;
+  poisonDamage: number;
+  impactType: "damage" | "poison-area";
+  impactRadius: number;
+  poison: PoisonConfig | null;
+};
+
+export type PoisonStack = {
+  sourceDefenderId: number;
+  damage: number;
+  remaining: number;
+  tickRemaining: number;
+  intervalSeconds: number;
 };
 
 export type SummonedUnit = {
@@ -198,6 +230,15 @@ export type SummonedUnit = {
   cooldownSeconds: number;
   damageCoefficient: number;
   maxTargets: number;
+  attackDurationSeconds: number;
+  hitTimeSeconds: number;
+  effectRange: number;
+  effectAngleDegrees: number;
+  cooldownRemaining: number;
+  attackElapsed: number;
+  attackApplied: boolean;
+  targetId: number | null;
+  attackDirection: Point;
 };
 
 export type BattleState = {
@@ -215,6 +256,8 @@ export type BattleState = {
   defenders: Defender[];
   projectiles: Projectile[];
   summonedUnits: SummonedUnit[];
+  poisonByEnemyId: Record<number, PoisonStack[]>;
+  poisonPools: Array<{ position: Point; remaining: number; radius: number }>;
   lightningArcs: LightningArc[];
   coins: number;
   summonCount: number;
@@ -307,7 +350,11 @@ const createDefender = (
   step = 1,
   position: Point | null = null,
   moveSpeed = 0,
-): Defender => ({
+): Defender => {
+  const attributeAttack = hero.baseAttack
+    * (hero.stepAttackMultipliers?.[step - 1] ?? 1)
+    * strengthenMultiplier(strengthenLevel);
+  return {
   id,
   kind,
   slotIndex,
@@ -319,9 +366,8 @@ const createDefender = (
   moveTarget: null,
   moveSpeed,
   facingX: -1,
-  attack: hero.baseAttack
-    * hero.damageCoefficient / 100
-    * strengthenMultiplier(strengthenLevel),
+  attributeAttack,
+  attack: attributeAttack * hero.damageCoefficient / 100,
   range: hero.range,
   cooldownSeconds: hero.cooldownMs / 1000,
   cooldownRemaining: 0,
@@ -334,7 +380,8 @@ const createDefender = (
   targetId: null,
   animation: "stand",
   damageDealt: 0,
-});
+  };
+};
 
 const strengthenMultiplier = (level: number) => 1 + level * 0.1;
 
@@ -364,6 +411,8 @@ export const createBattle = (config: BattleConfig): BattleState => ({
   enemies: [],
   projectiles: [],
   summonedUnits: [],
+  poisonByEnemyId: {},
+  poisonPools: [],
   lightningArcs: [],
   defenders: [createDefender(
     1,
@@ -596,7 +645,12 @@ export const strengthenBattle = (current: BattleState): BattleState => {
     strengthenLevel: nextLevel,
     defenders: current.defenders.map((defender) => ({
       ...defender,
+      attributeAttack: defender.attributeAttack * attackRatio,
       attack: defender.attack * attackRatio,
+    })),
+    summonedUnits: current.summonedUnits.map((unit) => ({
+      ...unit,
+      attack: unit.attack * attackRatio,
     })),
   };
 };
@@ -677,6 +731,13 @@ const releaseProjectile = (
     (hero) => hero.sourceId === defender.sourceId,
   )?.projectile;
   if (!config) return;
+  if (config.impactOnRelease) {
+    const damage = Math.min(target.hp, defender.attack);
+    target.hp -= damage;
+    defender.damageDealt += damage;
+    chainLightning(state, defender, target);
+    return;
+  }
   state.projectiles.push({
     id: state.nextProjectileId,
     tracker: config.tracker,
@@ -684,12 +745,26 @@ const releaseProjectile = (
     targetId: target.id,
     position: { ...origin },
     targetPositionAtRelease: pathPosition(state.config.path, target.distance),
+    direction: (() => {
+      const destination = pathPosition(state.config.path, target.distance);
+      const dx = destination.x - origin.x;
+      const dy = destination.y - origin.y;
+      const distance = Math.hypot(dx, dy);
+      return distance === 0 ? { x: 0, y: 0 } : { x: dx / distance, y: dy / distance };
+    })(),
     elapsedSeconds: 0,
     maxLifetimeSeconds: config.maxLifetimeSeconds,
     sourceInitSpeed: config.sourceInitSpeed,
     maxFlyDistance: config.maxFlyDistance,
     lockTarget: config.lockTarget,
     movementScale: config.movementScale,
+    distanceFlown: 0,
+    damage: defender.attack,
+    poisonDamage: defender.attributeAttack
+      * (config.poison?.damageCoefficient ?? 0) / 100,
+    impactType: config.impactType,
+    impactRadius: config.impactRadius,
+    poison: config.poison ? { ...config.poison } : null,
   });
   state.nextProjectileId += 1;
 };
@@ -721,7 +796,7 @@ const releaseSummonedUnit = (
     animation: "born",
     bornRemaining: config.bornDurationSeconds,
     attack: config.attackInheritance === "caller-entity-attack"
-      ? defender.attack
+      ? defender.attributeAttack
       : 0,
     range: config.range,
     seekDistance: config.seekDistance,
@@ -730,19 +805,235 @@ const releaseSummonedUnit = (
     cooldownSeconds: config.cooldownMs / 1000,
     damageCoefficient: config.damageCoefficient,
     maxTargets: config.maxTargets,
+    attackDurationSeconds: config.attackDurationSeconds,
+    hitTimeSeconds: config.hitTimeSeconds,
+    effectRange: config.effectRange,
+    effectAngleDegrees: config.effectAngleDegrees,
+    cooldownRemaining: 0,
+    attackElapsed: 0,
+    attackApplied: false,
+    targetId: null,
+    attackDirection: { x: -1, y: 0 },
   });
   state.nextSummonedUnitId += 1;
 };
 
+const applyDamage = (
+  state: BattleState,
+  sourceDefenderId: number,
+  target: Enemy,
+  rawDamage: number,
+) => {
+  const damage = Math.min(target.hp, rawDamage);
+  target.hp -= damage;
+  const defender = state.defenders.find((candidate) => candidate.id === sourceDefenderId);
+  if (defender) defender.damageDealt += damage;
+};
+
+const addPoisonStack = (state: BattleState, projectile: Projectile, enemy: Enemy) => {
+  const poison = projectile.poison;
+  if (!poison) return;
+  const stacks = state.poisonByEnemyId[enemy.id] ?? [];
+  stacks.push({
+    sourceDefenderId: projectile.sourceDefenderId,
+    damage: projectile.poisonDamage,
+    remaining: poison.durationSeconds,
+    tickRemaining: poison.immediate ? 0 : poison.intervalSeconds,
+    intervalSeconds: poison.intervalSeconds,
+  });
+  if (stacks.length > poison.maxStacks) stacks.shift();
+  state.poisonByEnemyId[enemy.id] = stacks;
+};
+
+const resolveProjectileImpact = (
+  state: BattleState,
+  projectile: Projectile,
+  target: Enemy,
+) => {
+  if (projectile.impactType === "damage") {
+    applyDamage(state, projectile.sourceDefenderId, target, projectile.damage);
+    return;
+  }
+  const center = pathPosition(state.config.path, target.distance);
+  state.poisonPools.push({
+    position: center,
+    remaining: projectile.poison?.durationSeconds ?? 0,
+    radius: projectile.impactRadius,
+  });
+  for (const enemy of state.enemies) {
+    if (enemy.hp <= 0 || enemy.animation === "dead") continue;
+    const point = pathPosition(state.config.path, enemy.distance);
+    if (Math.hypot(point.x - center.x, point.y - center.y)
+      <= projectile.impactRadius + enemy.modelRadius) {
+      addPoisonStack(state, projectile, enemy);
+    }
+  }
+};
+
+const updateProjectiles = (state: BattleState, seconds: number) => {
+  const survivors: Projectile[] = [];
+  for (const projectile of state.projectiles) {
+    projectile.elapsedSeconds += seconds;
+    if (projectile.elapsedSeconds >= projectile.maxLifetimeSeconds) continue;
+    if (projectile.movementScale === null) {
+      survivors.push(projectile);
+      continue;
+    }
+    const lockedTarget = projectile.lockTarget
+      ? state.enemies.find((enemy) => enemy.id === projectile.targetId
+        && enemy.hp > 0 && enemy.animation !== "dead")
+      : undefined;
+    if (lockedTarget) {
+      const destination = pathPosition(state.config.path, lockedTarget.distance);
+      const dx = destination.x - projectile.position.x;
+      const dy = destination.y - projectile.position.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance > 0) projectile.direction = { x: dx / distance, y: dy / distance };
+    }
+    const movement = projectile.sourceInitSpeed * projectile.movementScale * seconds;
+    projectile.position = {
+      x: projectile.position.x + projectile.direction.x * movement,
+      y: projectile.position.y + projectile.direction.y * movement,
+    };
+    projectile.distanceFlown += movement;
+    const collision = state.enemies
+      .filter((enemy) => enemy.hp > 0 && enemy.animation !== "dead")
+      .map((enemy) => {
+        const point = pathPosition(state.config.path, enemy.distance);
+        return { enemy, distance: Math.hypot(
+          point.x - projectile.position.x,
+          point.y - projectile.position.y,
+        ) };
+      })
+      .filter(({ enemy, distance }) => distance <= enemy.modelRadius)
+      .sort((left, right) => left.distance - right.distance)[0];
+    if (collision) {
+      resolveProjectileImpact(state, projectile, collision.enemy);
+      continue;
+    }
+    if (projectile.distanceFlown < projectile.maxFlyDistance * projectile.movementScale) {
+      survivors.push(projectile);
+    }
+  }
+  state.projectiles = survivors;
+};
+
+const updatePoison = (state: BattleState, seconds: number) => {
+  for (const [enemyId, existing] of Object.entries(state.poisonByEnemyId)) {
+    const enemy = state.enemies.find((candidate) => candidate.id === Number(enemyId));
+    if (!enemy || enemy.hp <= 0 || enemy.animation === "dead") {
+      delete state.poisonByEnemyId[Number(enemyId)];
+      continue;
+    }
+    const stacks: PoisonStack[] = [];
+    for (const original of existing) {
+      const stack = { ...original };
+      stack.remaining -= seconds;
+      stack.tickRemaining -= seconds;
+      while (stack.tickRemaining <= Number.EPSILON && stack.remaining > -seconds) {
+        applyDamage(state, stack.sourceDefenderId, enemy, stack.damage);
+        stack.tickRemaining += stack.intervalSeconds;
+        if (enemy.hp <= 0) break;
+      }
+      if (stack.remaining > 0 && enemy.hp > 0) stacks.push(stack);
+    }
+    if (stacks.length > 0) state.poisonByEnemyId[Number(enemyId)] = stacks;
+    else delete state.poisonByEnemyId[Number(enemyId)];
+  }
+};
+
 const updateSummonedUnits = (state: BattleState, seconds: number) => {
   for (const unit of state.summonedUnits) {
-    if (unit.animation !== "born") continue;
-    if (unit.bornRemaining <= seconds + Number.EPSILON) {
-      unit.bornRemaining = 0;
-      unit.animation = "stand";
-    } else {
-      unit.bornRemaining -= seconds;
+    if (unit.animation === "born") {
+      if (unit.bornRemaining <= seconds + Number.EPSILON) {
+        unit.bornRemaining = 0;
+        unit.animation = "stand";
+      } else {
+        unit.bornRemaining -= seconds;
+      }
+      continue;
     }
+    unit.cooldownRemaining = Math.max(0, unit.cooldownRemaining - seconds);
+    const target = unit.targetId === null
+      ? undefined
+      : state.enemies.find((enemy) => enemy.id === unit.targetId);
+    if (unit.animation === "attack_1") {
+      unit.attackElapsed += seconds;
+      if (!unit.attackApplied && unit.attackElapsed >= unit.hitTimeSeconds) {
+        const angleLimit = unit.effectAngleDegrees / 2 * Math.PI / 180;
+        const targets = state.enemies
+          .filter((enemy) => enemy.hp > 0 && enemy.animation !== "dead")
+          .map((enemy) => {
+            const point = pathPosition(state.config.path, enemy.distance);
+            const dx = point.x - unit.position.x;
+            const dy = point.y - unit.position.y;
+            const distance = Math.hypot(dx, dy);
+            const facingAngle = Math.acos(Math.max(-1, Math.min(1,
+              distance === 0 ? 1 : (
+                dx / distance * unit.attackDirection.x
+                + dy / distance * unit.attackDirection.y
+              ),
+            )));
+            return { enemy, distance, facingAngle };
+          })
+          .filter(({ enemy, distance, facingAngle }) => (
+            distance <= unit.effectRange + enemy.modelRadius
+            && facingAngle <= angleLimit
+          ))
+          .sort((left, right) => right.enemy.distance - left.enemy.distance)
+          .slice(0, unit.maxTargets);
+        for (const candidate of targets) {
+          applyDamage(
+            state,
+            unit.ownerDefenderId,
+            candidate.enemy,
+            unit.attack * unit.damageCoefficient / 100,
+          );
+        }
+        unit.attackApplied = true;
+      }
+      if (unit.attackElapsed >= unit.attackDurationSeconds) {
+        unit.animation = "stand";
+        unit.targetId = null;
+      }
+      continue;
+    }
+    if (unit.cooldownRemaining > 0) continue;
+    const next = state.enemies
+      .filter((enemy) => enemy.hp > 0 && enemy.animation !== "dead")
+      .map((enemy) => {
+        const point = pathPosition(state.config.path, enemy.distance);
+        return { enemy, point, distance: Math.hypot(
+          point.x - unit.position.x, point.y - unit.position.y,
+        ) };
+      })
+      .filter(({ enemy, distance }) => distance <= unit.seekDistance + enemy.modelRadius)
+      .sort((left, right) => right.enemy.distance - left.enemy.distance)[0];
+    if (!next) {
+      unit.animation = "stand";
+      continue;
+    }
+    unit.facingX = next.point.x < unit.position.x ? -1 : 1;
+    if (next.distance <= unit.range + next.enemy.modelRadius) {
+      unit.animation = "attack_1";
+      unit.attackElapsed = 0;
+      unit.attackApplied = false;
+      unit.targetId = next.enemy.id;
+      unit.attackDirection = next.distance === 0
+        ? { x: unit.facingX, y: 0 }
+        : {
+          x: (next.point.x - unit.position.x) / next.distance,
+          y: (next.point.y - unit.position.y) / next.distance,
+        };
+      unit.cooldownRemaining = unit.cooldownSeconds;
+      continue;
+    }
+    const movement = Math.min(unit.moveSpeed * seconds, next.distance);
+    unit.position = {
+      x: unit.position.x + (next.point.x - unit.position.x) / next.distance * movement,
+      y: unit.position.y + (next.point.y - unit.position.y) / next.distance * movement,
+    };
+    unit.animation = "run";
   }
 };
 
@@ -918,17 +1209,20 @@ export const stepBattle = (
     summonedUnits: current.summonedUnits.map((unit) => ({
       ...unit,
       position: { ...unit.position },
+      attackDirection: { ...unit.attackDirection },
     })),
-    projectiles: current.projectiles
-      .map((projectile) => ({
-        ...projectile,
-        position: { ...projectile.position },
-        targetPositionAtRelease: { ...projectile.targetPositionAtRelease },
-        elapsedSeconds: projectile.elapsedSeconds + seconds,
-      }))
-      .filter((projectile) => (
-        projectile.elapsedSeconds < projectile.maxLifetimeSeconds
-      )),
+    projectiles: current.projectiles.map((projectile) => ({
+      ...projectile,
+      position: { ...projectile.position },
+      targetPositionAtRelease: { ...projectile.targetPositionAtRelease },
+      direction: { ...projectile.direction },
+      poison: projectile.poison ? { ...projectile.poison } : null,
+    })),
+    poisonByEnemyId: Object.fromEntries(Object.entries(current.poisonByEnemyId)
+      .map(([enemyId, stacks]) => [enemyId, stacks.map((stack) => ({ ...stack }))])),
+    poisonPools: current.poisonPools
+      .map((pool) => ({ ...pool, position: { ...pool.position }, remaining: pool.remaining - seconds }))
+      .filter((pool) => pool.remaining > 0),
     lightningArcs: current.lightningArcs
       .map((arc) => ({ ...arc, remaining: arc.remaining - seconds }))
       .filter((arc) => arc.remaining > 0),
@@ -937,12 +1231,11 @@ export const stepBattle = (
   state.elapsed += seconds;
   state.waveElapsed += seconds;
   spawnWaveGroups(state);
-  // Lua starts Soldier AI only after the Spine born animation completes. Run
-  // existing summons first so a unit created later in this tick keeps the full
-  // confirmed birth duration. Combat AI remains disabled until its C# states
-  // are recovered.
+  // Lua starts Soldier AI only after the Spine born animation completes.
   updateSummonedUnits(state, seconds);
   updateDefenders(state, seconds);
+  updateProjectiles(state, seconds);
+  updatePoison(state, seconds);
 
   const totalDistance = pathLength(state.config.path);
   for (const enemy of state.enemies) {
