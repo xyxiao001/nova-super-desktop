@@ -7,7 +7,39 @@ import {
 import type { LevelAssetManifest } from "./levelAssetManifest";
 
 const MANIFEST_URL = "/assets/games/frontline/levels/desert-1/manifest.json";
-const RANGE_VALUE_TO_LOGICAL_PIXELS = 20;
+// hero_Different_c.nProp1 (attribute 5), in thousandths of a world unit.
+// Skill.RangeValue describes the skill's effect area, not targeting distance.
+const HERO_ATTACK_DISTANCE: Record<FrontlineHeroId, number> = {
+  summoner: 2100,
+  clown: 3200,
+  jinx: 3400,
+  lightning: 2800,
+};
+
+const TUTORIAL_HEROES = [
+  {
+    id: "hero-basic-ranger",
+    sourceId: 10002,
+    name: "游侠",
+    baseAttack: 40,
+    damageCoefficient: 40,
+    cooldownMs: 800,
+    range: 550,
+    animationDurationSeconds: 0.567,
+    hitTimeSeconds: 0.567,
+  },
+  {
+    id: "hero-basic-gunner",
+    sourceId: 10004,
+    name: "矮人炮手",
+    baseAttack: 40,
+    damageCoefficient: 53,
+    cooldownMs: 2400,
+    range: 750,
+    animationDurationSeconds: 0.657,
+    hitTimeSeconds: 0.657,
+  },
+] satisfies BattleConfig["heroes"];
 
 export const loadFirstLevel = async (
   lineup: FrontlineHeroId[],
@@ -51,11 +83,12 @@ export const loadFirstLevel = async (
     }
     return {
       id: definition.actorId,
+      sourceId: definition.sourceId,
       name: hero.name,
       baseAttack: roster[id].attack,
       damageCoefficient: hero.damageCoefficient,
       cooldownMs: hero.cooldownMs,
-      range: hero.rangeValue[0] * RANGE_VALUE_TO_LOGICAL_PIXELS,
+      range: HERO_ATTACK_DISTANCE[id] / 1000 * manifest.scene.projection.pixelsPerWorldUnit,
       animationDurationSeconds: attack.duration,
       hitTimeSeconds: hero.hitTimeSeconds,
     };
@@ -82,15 +115,31 @@ export const loadFirstLevel = async (
       })),
       lord: {
         id: lordProfile.id,
+        sourceId: lordProfile.sourceId,
         name: lordProfile.name,
         baseAttack: lordProfile.referencePower,
-        damageCoefficient: 0,
+        damageCoefficient: 100,
         cooldownMs: lordProfile.cooldownMs,
-        range: lordProfile.rangeValue * RANGE_VALUE_TO_LOGICAL_PIXELS,
+        // lord_base_c.nAttackDistance = 5;400. Attribute 5 uses millimetres.
+        range: 400 / 1000 * manifest.scene.projection.pixelsPerWorldUnit,
         animationDurationSeconds: lordAttack.duration,
-        hitTimeSeconds: lordProfile.hitTimeSeconds,
+        hitTimeSeconds: 0.066667,
       },
-      heroes,
+      lordMoveSpeed: 200,
+      heroes: [...heroes, ...TUTORIAL_HEROES],
+      synthesisHeroIds: heroes.map((hero) => hero.id),
+      maxSynthesisStep: 4,
+      lightningChain: {
+        sourceId: 30001,
+        additionalTargets: 2,
+        radius: 550 / 1000 * manifest.scene.projection.pixelsPerWorldUnit,
+        damageRatio: 0.75,
+        arcDuration: 0.15,
+      },
+      tutorial: {
+        fixedSummons: [],
+        fixedMerges: [],
+      },
       waves: manifest.battleProfile.waveConfig.waves,
       economy: manifest.battleProfile.waveConfig.economy,
     },

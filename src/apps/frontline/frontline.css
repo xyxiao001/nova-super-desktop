@@ -2184,7 +2184,13 @@
   position: absolute;
   inset: 0;
   z-index: 3;
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.battle-canvas.dragging {
+  cursor: grabbing;
 }
 
 .battle-canvas canvas {
@@ -2196,6 +2202,19 @@
 
 .battle-canvas canvas:last-child {
   z-index: 2;
+}
+
+.battle-drag-target {
+  position: absolute;
+  z-index: 3;
+  width: 56px;
+  height: 28px;
+  translate: -50% -50%;
+  border: 3px solid rgba(255, 227, 118, .92);
+  border-radius: 50%;
+  background: rgba(255, 215, 85, .16);
+  box-shadow: 0 0 14px rgba(255, 215, 85, .72);
+  pointer-events: none;
 }
 
 .battle-hud {

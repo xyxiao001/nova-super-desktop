@@ -10,10 +10,14 @@ import {
 import {
   useEffect,
   useRef,
+  useState,
 } from "react";
 import {
   FIXED_STEP_SECONDS,
   MAX_STEPS_PER_FRAME,
+  closestPathPoint,
+  moveLord,
+  moveOrMergeDefender,
   pathDirection,
   pathPosition,
   stepBattle,
@@ -55,7 +59,25 @@ type BattleCanvasProps = {
 
 export type BattleCommand =
   | { sequence: number; type: "summon"; heroId: string }
-  | { sequence: number; type: "strengthen" };
+  | { sequence: number; type: "strengthen" }
+  | { sequence: number; type: "move-lord"; target: Point }
+  | {
+    sequence: number;
+    type: "move-defender";
+    defenderId: number;
+    targetSlotIndex: number;
+  };
+
+const commandBattle = (battle: BattleState, command: BattleCommand) => {
+  if (command.type === "summon") return summonHero(battle, command.heroId);
+  if (command.type === "strengthen") return strengthenBattle(battle);
+  if (command.type === "move-lord") return moveLord(battle, command.target);
+  return moveOrMergeDefender(
+    battle,
+    command.defenderId,
+    command.targetSlotIndex,
+  );
+};
 
 const setAnimation = (view: ActorView, animation: ActorAnimation) => {
   if (view.animation === animation) return;
@@ -102,6 +124,55 @@ const drawHealthBars = (
   battle: BattleState,
 ) => {
   context.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+  context.save();
+  context.lineCap = "round";
+  for (const arc of battle.lightningArcs) {
+    context.beginPath();
+    context.moveTo(arc.from.x, arc.from.y - 30);
+    context.lineTo(arc.to.x, arc.to.y - 30);
+    context.shadowColor = "#2baaff";
+    context.shadowBlur = 12;
+    context.lineWidth = 7;
+    context.strokeStyle = "#48bfff";
+    context.stroke();
+    context.shadowBlur = 0;
+    context.lineWidth = 2;
+    context.strokeStyle = "#e9ffff";
+    context.stroke();
+  }
+  context.restore();
+  const lord = battle.defenders.find((defender) => defender.kind === "lord");
+  if (lord?.moveTarget) {
+    const { x, y } = lord.moveTarget;
+    context.strokeStyle = "rgba(83, 53, 27, .92)";
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(x, y - 48);
+    context.lineTo(x, y + 4);
+    context.stroke();
+    context.fillStyle = "#f4c84f";
+    context.beginPath();
+    context.moveTo(x + 2, y - 47);
+    context.lineTo(x + 34, y - 34);
+    context.lineTo(x + 2, y - 20);
+    context.closePath();
+    context.fill();
+  }
+  context.textAlign = "center";
+  context.font = "bold 18px sans-serif";
+  context.fillStyle = "#ffd85e";
+  context.strokeStyle = "rgba(68, 39, 18, .95)";
+  context.lineWidth = 4;
+  for (const defender of battle.defenders) {
+    if (defender.kind !== "hero" || defender.slotIndex === null) continue;
+    const slot = battle.config.towerSlots.find(
+      (candidate) => candidate.index === defender.slotIndex,
+    );
+    if (!slot) continue;
+    const stars = "★".repeat(defender.step);
+    context.strokeText(stars, slot.position.x, slot.position.y - 58);
+    context.fillText(stars, slot.position.x, slot.position.y - 58);
+  }
   for (const enemy of battle.enemies) {
     if (enemy.animation === "dead") continue;
     const point = pathPosition(battle.config.path, enemy.distance);
@@ -130,6 +201,15 @@ export default function BattleCanvas({
   const pausedRef = useRef(paused);
   const snapshotRef = useRef(onSnapshot);
   const lastCommandRef = useRef(0);
+  const [dragging, setDragging] = useState<{
+    defenderId: number;
+    point: Point;
+  } | null>(null);
+  const draggingRef = useRef(dragging);
+
+  useEffect(() => {
+    draggingRef.current = dragging;
+  }, [dragging]);
 
   useEffect(() => {
     speedRef.current = speed;
@@ -146,11 +226,77 @@ export default function BattleCanvas({
   useEffect(() => {
     if (!command || command.sequence <= lastCommandRef.current) return;
     lastCommandRef.current = command.sequence;
-    battleRef.current = command.type === "summon"
-      ? summonHero(battleRef.current, command.heroId)
-      : strengthenBattle(battleRef.current);
+    battleRef.current = commandBattle(battleRef.current, command);
     snapshotRef.current(battleRef.current);
   }, [command]);
+
+  const logicalPoint = (event: React.PointerEvent<HTMLDivElement>): Point => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return {
+      x: (event.clientX - bounds.left) / bounds.width * LOGICAL_WIDTH,
+      y: (event.clientY - bounds.top) / bounds.height * LOGICAL_HEIGHT,
+    };
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (pausedRef.current || battleRef.current.status !== "active") return;
+    const point = logicalPoint(event);
+    const hero = battleRef.current.defenders
+      .filter((defender) => defender.kind === "hero" && defender.slotIndex !== null)
+      .map((defender) => ({
+        defender,
+        slot: battleRef.current.config.towerSlots.find(
+          (slot) => slot.index === defender.slotIndex,
+        ),
+      }))
+      .filter((entry) => entry.slot)
+      .sort((left, right) => (
+        Math.hypot(point.x - left.slot!.position.x, point.y - left.slot!.position.y)
+        - Math.hypot(point.x - right.slot!.position.x, point.y - right.slot!.position.y)
+      ))[0];
+    if (hero && Math.hypot(
+      point.x - hero.slot!.position.x,
+      point.y - hero.slot!.position.y,
+    ) <= 60) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setDragging({ defenderId: hero.defender.id, point });
+      return;
+    }
+    battleRef.current = moveLord(
+      battleRef.current,
+      closestPathPoint(battleRef.current.config.path, point),
+    );
+    snapshotRef.current(battleRef.current);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    setDragging({ ...dragging, point: logicalPoint(event) });
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const point = logicalPoint(event);
+    const target = battleRef.current.config.towerSlots
+      .filter((slot) => slot.state === "deployable")
+      .map((slot) => ({
+        slot,
+        distance: Math.hypot(point.x - slot.position.x, point.y - slot.position.y),
+      }))
+      .sort((left, right) => left.distance - right.distance)[0];
+    if (target && target.distance <= 74) {
+      battleRef.current = moveOrMergeDefender(
+        battleRef.current,
+        dragging.defenderId,
+        target.slot.index,
+      );
+      snapshotRef.current(battleRef.current);
+    }
+    setDragging(null);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -215,8 +361,8 @@ export default function BattleCanvas({
         directionX?: number;
       }> = [];
       for (const defender of battle.defenders) {
-        const point = defender.slotIndex === null
-          ? battle.config.playerSlot
+        const point = defender.kind === "lord"
+          ? defender.position
           : battle.config.towerSlots.find(
             (candidate) => candidate.index === defender.slotIndex,
           )?.position;
@@ -226,7 +372,17 @@ export default function BattleCanvas({
           actorId: defender.actorId,
           point,
           animation: defender.animation,
+          directionX: defender.facingX,
         });
+        if (draggingRef.current?.defenderId === defender.id) {
+          renderItems.push({
+            key: `dragging-${defender.id}`,
+            actorId: defender.actorId,
+            point: draggingRef.current.point,
+            animation: "stand",
+            directionX: defender.facingX,
+          });
+        }
       }
       for (const enemy of battle.enemies) {
         const direction = pathDirection(battle.config.path, enemy.distance);
@@ -306,9 +462,26 @@ export default function BattleCanvas({
   }, [initialBattle, onError, onReady]);
 
   return (
-    <div className="battle-canvas" aria-label="第一关战场">
+    <div
+      className={`battle-canvas${dragging ? " dragging" : ""}`}
+      aria-label="第一关战场，可点击移动领主或拖动英雄"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => setDragging(null)}
+    >
       <canvas ref={canvasRef} width={1800} height={3200} />
       <canvas ref={overlayRef} width={900} height={1600} />
+      {dragging && (
+        <span
+          className="battle-drag-target"
+          aria-hidden="true"
+          style={{
+            left: `${dragging.point.x / 9}%`,
+            top: `${dragging.point.y / 16}%`,
+          }}
+        />
+      )}
     </div>
   );
 }

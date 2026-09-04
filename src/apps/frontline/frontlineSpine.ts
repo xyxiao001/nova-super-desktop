@@ -10,6 +10,8 @@ import {
 const ASSET_ROOT = "/assets/games/frontline";
 
 export const FRONTLINE_ACTOR_DIRECTORIES: Record<string, string> = {
+  "hero-basic-ranger": "hero_04_sheshou",
+  "hero-basic-gunner": "hero_02_paoshou",
   "hero-summoner": "hero_25_xiaozhi",
   "hero-clown": "hero_23_baji",
   "hero-jinx": "hero_20_jinkesi",
@@ -21,6 +23,8 @@ export const FRONTLINE_ACTOR_DIRECTORIES: Record<string, string> = {
 };
 
 const FRONTLINE_ACTOR_SKINS: Record<string, string> = {
+  "hero-basic-ranger": "01",
+  "hero-basic-gunner": "01",
   "hero-summoner": "01",
   "hero-clown": "01",
   "hero-jinx": "01",

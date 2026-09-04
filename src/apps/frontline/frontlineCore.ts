@@ -3,11 +3,13 @@ export const MAX_STEPS_PER_FRAME = 5;
 const SOURCE_SPEED_TO_LOGICAL_PIXELS = 0.1;
 
 export type Point = { x: number; y: number };
+export type LightningArc = { from: Point; to: Point; remaining: number };
 export type BattleStatus = "active" | "paused" | "won" | "lost";
 export type ActorAnimation = "stand" | "run" | "attack_1" | "dead";
 
 export type HeroConfig = {
   id: string;
+  sourceId: number;
   name: string;
   baseAttack: number;
   damageCoefficient: number;
@@ -15,6 +17,17 @@ export type HeroConfig = {
   range: number;
   animationDurationSeconds: number;
   hitTimeSeconds: number | null;
+};
+
+export type TutorialSummonConfig = {
+  heroId: string;
+  slotIndex: number;
+  step: number;
+};
+
+export type TutorialMergeConfig = {
+  heroId: string;
+  step: number;
 };
 
 export type SpawnGroupConfig = {
@@ -52,7 +65,21 @@ export type BattleConfig = {
     position: Point;
   }>;
   lord: HeroConfig;
+  lordMoveSpeed: number;
   heroes: HeroConfig[];
+  synthesisHeroIds: string[];
+  maxSynthesisStep: number;
+  lightningChain: {
+    sourceId: number;
+    additionalTargets: number;
+    radius: number;
+    damageRatio: number;
+    arcDuration: number;
+  } | null;
+  tutorial: {
+    fixedSummons: TutorialSummonConfig[];
+    fixedMerges: TutorialMergeConfig[];
+  };
   waves: WaveConfig[];
   economy: {
     initialCoins: number;
@@ -84,7 +111,13 @@ export type Defender = {
   kind: "lord" | "hero";
   slotIndex: number | null;
   actorId: string;
+  sourceId: number;
   name: string;
+  step: number;
+  position: Point | null;
+  moveTarget: Point | null;
+  moveSpeed: number;
+  facingX: -1 | 1;
   attack: number;
   range: number;
   cooldownSeconds: number;
@@ -109,8 +142,10 @@ export type BattleState = {
   nextDefenderId: number;
   enemies: Enemy[];
   defenders: Defender[];
+  lightningArcs: LightningArc[];
   coins: number;
   summonCount: number;
+  synthesisCount: number;
   strengthenLevel: number;
   baseHp: number;
   status: BattleStatus;
@@ -166,18 +201,51 @@ export const pathDirection = (points: Point[], distance: number): Point => {
   return lastDirection;
 };
 
+export const closestPathPoint = (points: Point[], point: Point): Point => {
+  let closest = points[0] ?? { x: 0, y: 0 };
+  let closestDistance = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < points.length; index += 1) {
+    const from = points[index - 1];
+    const to = points[index];
+    const x = to.x - from.x;
+    const y = to.y - from.y;
+    const lengthSquared = x * x + y * y;
+    const ratio = lengthSquared === 0
+      ? 0
+      : Math.max(0, Math.min(1, (
+        (point.x - from.x) * x + (point.y - from.y) * y
+      ) / lengthSquared));
+    const candidate = { x: from.x + x * ratio, y: from.y + y * ratio };
+    const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+    if (distance < closestDistance) {
+      closest = candidate;
+      closestDistance = distance;
+    }
+  }
+  return closest;
+};
+
 const createDefender = (
   id: number,
   hero: HeroConfig,
   kind: Defender["kind"],
   slotIndex: number | null,
   strengthenLevel = 0,
+  step = 1,
+  position: Point | null = null,
+  moveSpeed = 0,
 ): Defender => ({
   id,
   kind,
   slotIndex,
   actorId: hero.id,
+  sourceId: hero.sourceId,
   name: hero.name,
+  step,
+  position,
+  moveTarget: null,
+  moveSpeed,
+  facingX: -1,
   attack: hero.baseAttack
     * hero.damageCoefficient / 100
     * strengthenMultiplier(strengthenLevel),
@@ -217,9 +285,20 @@ export const createBattle = (config: BattleConfig): BattleState => ({
   nextEnemyId: 1,
   nextDefenderId: 2,
   enemies: [],
-  defenders: [createDefender(1, config.lord, "lord", null)],
+  lightningArcs: [],
+  defenders: [createDefender(
+    1,
+    config.lord,
+    "lord",
+    null,
+    0,
+    1,
+    { ...config.playerSlot },
+    config.lordMoveSpeed,
+  )],
   coins: config.economy.initialCoins,
   summonCount: 0,
+  synthesisCount: 0,
   strengthenLevel: 0,
   baseHp: config.economy.baseHp,
   status: "active",
@@ -230,17 +309,27 @@ export const summonHero = (
   heroId: string,
 ): BattleState => {
   if (current.status !== "active") return current;
-  const hero = current.config.heroes.find((candidate) => candidate.id === heroId);
+  const tutorialSummon = current.config.tutorial.fixedSummons[current.summonCount];
+  const summonedHeroId = tutorialSummon?.heroId ?? heroId;
+  const hero = current.config.heroes.find(
+    (candidate) => candidate.id === summonedHeroId,
+  );
   const occupied = new Set(
     current.defenders.flatMap((defender) => (
       defender.slotIndex === null ? [] : [defender.slotIndex]
     )),
   );
-  const slot = current.config.towerSlots
-    .filter((candidate) => (
-      candidate.state === "deployable" && !occupied.has(candidate.index)
+  const slot = tutorialSummon
+    ? current.config.towerSlots.find((candidate) => (
+      candidate.index === tutorialSummon.slotIndex
+      && candidate.state === "deployable"
+      && !occupied.has(candidate.index)
     ))
-    .sort((left, right) => left.priority - right.priority)[0];
+    : current.config.towerSlots
+      .filter((candidate) => (
+        candidate.state === "deployable" && !occupied.has(candidate.index)
+      ))
+      .sort((left, right) => left.priority - right.priority)[0];
   const cost = summonCost(current);
   if (!hero || !slot || current.coins < cost) return current;
 
@@ -257,6 +346,110 @@ export const summonHero = (
         "hero",
         slot.index,
         current.strengthenLevel,
+        tutorialSummon?.step ?? 1,
+      ),
+    ],
+  };
+};
+
+const resetAttack = (defender: Defender): Defender => ({
+  ...defender,
+  cooldownRemaining: 0,
+  attackElapsed: 0,
+  attackApplied: false,
+  targetId: null,
+  animation: "stand",
+});
+
+export const moveLord = (current: BattleState, target: Point): BattleState => {
+  if (current.status !== "active") return current;
+  const lord = current.defenders.find((defender) => defender.kind === "lord");
+  if (!lord?.position || Math.hypot(
+    target.x - lord.position.x,
+    target.y - lord.position.y,
+  ) <= 40) {
+    return current;
+  }
+  return {
+    ...current,
+    defenders: current.defenders.map((defender) => defender.id === lord.id
+      ? {
+        ...resetAttack(defender),
+        moveTarget: { ...target },
+        facingX: target.x < lord.position!.x ? -1 : 1,
+        animation: "run",
+      }
+      : defender),
+  };
+};
+
+export const moveOrMergeDefender = (
+  current: BattleState,
+  defenderId: number,
+  targetSlotIndex: number,
+): BattleState => {
+  if (current.status !== "active") return current;
+  const source = current.defenders.find(
+    (defender) => defender.id === defenderId && defender.kind === "hero",
+  );
+  const targetSlot = current.config.towerSlots.find((slot) => (
+    slot.index === targetSlotIndex && slot.state === "deployable"
+  ));
+  if (!source || !targetSlot || source.slotIndex === targetSlotIndex) return current;
+
+  const target = current.defenders.find(
+    (defender) => defender.slotIndex === targetSlotIndex,
+  );
+  if (!target) {
+    return {
+      ...current,
+      defenders: current.defenders.map((defender) => defender.id === source.id
+        ? { ...resetAttack(defender), slotIndex: targetSlotIndex }
+        : defender),
+    };
+  }
+
+  const canMerge = target.kind === "hero"
+    && target.sourceId === source.sourceId
+    && target.step === source.step
+    && source.step < current.config.maxSynthesisStep;
+  if (!canMerge) {
+    return {
+      ...current,
+      defenders: current.defenders.map((defender) => {
+        if (defender.id === source.id) {
+          return { ...resetAttack(defender), slotIndex: targetSlotIndex };
+        }
+        if (defender.id === target.id) {
+          return { ...resetAttack(defender), slotIndex: source.slotIndex };
+        }
+        return defender;
+      }),
+    };
+  }
+
+  const fixedMerge = current.config.tutorial.fixedMerges[current.synthesisCount];
+  const resultHeroId = fixedMerge
+    ? fixedMerge.heroId
+    : current.config.synthesisHeroIds[
+      Math.floor(Math.random() * current.config.synthesisHeroIds.length)
+    ];
+  const mergedHero = current.config.heroes.find((hero) => hero.id === resultHeroId);
+  if (!mergedHero) return current;
+  return {
+    ...current,
+    synthesisCount: current.synthesisCount + 1,
+    defenders: [
+      ...current.defenders.filter(
+        (defender) => defender.id !== source.id && defender.id !== target.id,
+      ),
+      createDefender(
+        target.id,
+        mergedHero,
+        "hero",
+        targetSlotIndex,
+        current.strengthenLevel,
+        fixedMerge ? fixedMerge.step : source.step + 1,
       ),
     ],
   };
@@ -325,8 +518,53 @@ const spawnWaveGroups = (state: BattleState) => {
   }
 };
 
+const chainLightning = (state: BattleState, defender: Defender, primary: Enemy) => {
+  const chain = state.config.lightningChain;
+  if (!chain || defender.sourceId !== chain.sourceId) return;
+  const origin = state.config.towerSlots.find((slot) => slot.index === defender.slotIndex)!.position;
+  let previous = pathPosition(state.config.path, primary.distance);
+  state.lightningArcs.push({ from: { ...origin }, to: previous, remaining: chain.arcDuration });
+  const hit = new Set([primary.id]);
+  for (let index = 0; index < chain.additionalTargets; index += 1) {
+    const next = state.enemies
+      .filter((enemy) => enemy.hp > 0 && enemy.animation !== "dead" && !hit.has(enemy.id))
+      .map((enemy) => {
+        const point = pathPosition(state.config.path, enemy.distance);
+        return { enemy, point, distance: Math.hypot(point.x - previous.x, point.y - previous.y) };
+      })
+      .filter((candidate) => candidate.distance <= chain.radius)
+      .sort((left, right) => left.distance - right.distance)[0];
+    if (!next) break;
+    const damage = Math.min(next.enemy.hp, defender.attack * chain.damageRatio);
+    next.enemy.hp -= damage;
+    defender.damageDealt += damage;
+    hit.add(next.enemy.id);
+    state.lightningArcs.push({ from: previous, to: next.point, remaining: chain.arcDuration });
+    previous = next.point;
+  }
+};
+
 const updateDefenders = (state: BattleState, seconds: number) => {
   for (const defender of state.defenders) {
+    if (defender.kind === "lord" && defender.position && defender.moveTarget) {
+      const x = defender.moveTarget.x - defender.position.x;
+      const y = defender.moveTarget.y - defender.position.y;
+      const distance = Math.hypot(x, y);
+      const movement = defender.moveSpeed * seconds;
+      if (distance <= movement) {
+        defender.position = { ...defender.moveTarget };
+        defender.moveTarget = null;
+        defender.animation = "stand";
+      } else {
+        defender.position = {
+          x: defender.position.x + x / distance * movement,
+          y: defender.position.y + y / distance * movement,
+        };
+        defender.facingX = x < 0 ? -1 : 1;
+        defender.animation = "run";
+      }
+      continue;
+    }
     defender.cooldownRemaining = Math.max(
       0,
       defender.cooldownRemaining - seconds,
@@ -348,6 +586,7 @@ const updateDefenders = (state: BattleState, seconds: number) => {
         target.hp -= damage;
         defender.damageDealt += damage;
         defender.attackApplied = true;
+        chainLightning(state, defender, target);
       }
       if (defender.attackElapsed >= defender.animationDurationSeconds) {
         defender.animation = "stand";
@@ -360,8 +599,8 @@ const updateDefenders = (state: BattleState, seconds: number) => {
     const slot = state.config.towerSlots.find(
       (candidate) => candidate.index === defender.slotIndex,
     );
-    const defenderPosition = defender.slotIndex === null
-      ? state.config.playerSlot
+    const defenderPosition = defender.kind === "lord"
+      ? defender.position
       : slot?.position;
     if (!defenderPosition) continue;
     const nextTarget = state.enemies
@@ -378,6 +617,8 @@ const updateDefenders = (state: BattleState, seconds: number) => {
       ?.enemy;
     if (!nextTarget) continue;
 
+    const targetPosition = pathPosition(state.config.path, nextTarget.distance);
+    defender.facingX = targetPosition.x < defenderPosition.x ? -1 : 1;
     defender.animation = "attack_1";
     defender.attackElapsed = 0;
     defender.attackApplied = false;
@@ -397,6 +638,9 @@ export const stepBattle = (
     groupSpawned: { ...current.groupSpawned },
     enemies: current.enemies.map((enemy) => ({ ...enemy })),
     defenders: current.defenders.map((defender) => ({ ...defender })),
+    lightningArcs: current.lightningArcs
+      .map((arc) => ({ ...arc, remaining: arc.remaining - seconds }))
+      .filter((arc) => arc.remaining > 0),
   };
   state.tick += 1;
   state.elapsed += seconds;
