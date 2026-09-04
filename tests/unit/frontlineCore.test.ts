@@ -97,6 +97,7 @@ const createConfig = (
       monster: {
         id: 1001,
         name: "沙漠蜥蜴",
+        modelRadius: 20,
         moveSpeed: 10,
         hp: 100,
         crystalDamage: 1,
@@ -194,7 +195,30 @@ describe("frontlineCore", () => {
       animation: "run",
       targetId: null,
       attackElapsed: 0,
+      appliedHitCount: 0,
+      releasedProjectileCount: 0,
     }));
+  });
+
+  it("applies Sand King's two confirmed 80% melee hits at 0.066667s and 0.6s", () => {
+    const config = createConfig();
+    config.lord.baseAttack = 100;
+    config.lord.damageCoefficient = 80;
+    config.lord.hitTimeSeconds = 0.066667;
+    config.lord.additionalHitTimeSeconds = [0.6];
+    config.lord.animationDurationSeconds = 0.833334;
+    config.waves[0].spawnGroups[0].monster.hp = 500;
+    config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
+    let battle = stepBattle(createBattle(config));
+    battle = stepTicks(battle, 4);
+    expect(battle.enemies[0].hp).toBe(500);
+    battle = stepBattle(battle);
+    expect(battle.enemies[0].hp).toBe(420);
+    battle = stepTicks(battle, 30);
+    expect(battle.enemies[0].hp).toBe(420);
+    battle = stepBattle(battle);
+    expect(battle.enemies[0].hp).toBe(340);
+    expect(battle.defenders[0].damageDealt).toBe(160);
   });
 
   it("spends escalating summon costs and fills deployable slots by priority", () => {
@@ -416,23 +440,258 @@ describe("frontlineCore", () => {
   it("starts the lord melee attack only when the enemy enters its radius", () => {
     const config = createConfig();
     config.lord.range = 40;
+    config.playerSlot = { x: 61, y: 0 };
     config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
     let battle = stepBattle(createBattle(config));
-    // Lord is at x=60; the enemy starts at x=0, outside melee range.
+    // The original uses center distance <= range + target model radius.
+    // Base range 40 plus a 20px normal-monster radius: 61px is outside.
     expect(battle.defenders[0].animation).toBe("stand");
-    battle.enemies[0].distance = 19;
-    battle = stepBattle(battle);
-    expect(battle.defenders[0].animation).toBe("stand");
-    battle.enemies[0].distance = 20;
+    battle.defenders[0].position = { x: 60, y: 0 };
     battle = stepBattle(battle);
     expect(battle.defenders[0].animation).toBe("attack_1");
     expect(battle.defenders[0].targetId).toBe(battle.enemies[0].id);
+  });
+
+  it("adds the elite target model radius to defender acquisition range", () => {
+    const config = createConfig();
+    config.lord.range = 40;
+    const monster = config.waves[0].spawnGroups[0].monster;
+    monster.id = 3001;
+    monster.modelRadius = 35;
+    monster.moveSpeed = 0;
+    config.playerSlot = { x: 76, y: 0 };
+    let battle = stepBattle(createBattle(config));
+    expect(battle.defenders[0].animation).toBe("stand");
+    battle.defenders[0].position = { x: 75, y: 0 };
+    battle = stepBattle(battle);
+    expect(battle.defenders[0].animation).toBe("attack_1");
   });
 
   it("does not invent a hit event when timing is unresolved", () => {
     const deployed = summonHero(createBattle(createConfig(null)), "hero-lightning");
     const battle = stepTicks(deployed, 120);
     expect(battle.enemies[0].hp).toBe(100);
+  });
+
+  it("creates a Core-owned lightning projectile at the confirmed release frame without dealing damage", () => {
+    const config = createConfig(null);
+    config.heroes[0].cooldownMs = 10000;
+    config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
+    config.heroes[0].projectile = {
+      tracker: "SDThunderChainTracker",
+      releaseTimeSeconds: 0.1,
+      projectileCount: 1,
+      releaseIntervalSeconds: 0.2,
+      sourceInitSpeed: 10,
+      maxFlyDistance: 90,
+      maxLifetimeSeconds: 3,
+      lockTarget: false,
+      movementScale: null,
+    };
+    let battle = summonHero(createBattle(config), "hero-lightning");
+    battle = stepTicks(battle, 6);
+    expect(battle.projectiles).toEqual([]);
+    battle = stepTicks(battle, 2);
+    expect(battle.enemies[0].hp).toBe(100);
+    expect(battle.projectiles).toEqual([expect.objectContaining({
+      tracker: "SDThunderChainTracker",
+      sourceDefenderId: 2,
+      targetId: 1,
+      position: { x: 120, y: 0 },
+      targetPositionAtRelease: { x: 0, y: 0 },
+      sourceInitSpeed: 10,
+      maxFlyDistance: 90,
+      maxLifetimeSeconds: 3,
+      lockTarget: false,
+      movementScale: null,
+    })]);
+    battle = stepTicks(battle, 181);
+    expect(battle.projectiles).toEqual([]);
+    expect(battle.enemies[0].hp).toBe(100);
+  });
+
+  it("releases Jinx's two confirmed projectiles 80ms apart without early damage", () => {
+    const config = createConfig(null);
+    config.heroes[0].sourceId = 30002;
+    config.heroes[0].id = "hero-jinx";
+    config.heroes[0].cooldownMs = 10000;
+    config.heroes[0].projectile = {
+      tracker: "SDEffectBullet2DTracker",
+      releaseTimeSeconds: 0.033333,
+      projectileCount: 2,
+      releaseIntervalSeconds: 0.08,
+      sourceInitSpeed: 8.5,
+      maxFlyDistance: 20,
+      maxLifetimeSeconds: 10,
+      lockTarget: false,
+      movementScale: null,
+    };
+    config.synthesisHeroIds = ["hero-jinx"];
+    config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
+    let battle = summonHero(createBattle(config), "hero-jinx");
+    battle = stepTicks(battle, 2);
+    expect(battle.projectiles).toEqual([]);
+    battle = stepBattle(battle);
+    expect(battle.projectiles).toHaveLength(1);
+    battle = stepTicks(battle, 4);
+    expect(battle.projectiles).toHaveLength(1);
+    battle = stepBattle(battle);
+    expect(battle.projectiles).toHaveLength(2);
+    expect(battle.enemies[0].hp).toBe(100);
+  });
+
+  it("creates one Core-owned little ghost without inventing its C# combat AI", () => {
+    const config = createConfig(null);
+    config.towerSlots[0].position = { x: 120, y: 100 };
+    config.heroes.push({
+      id: "hero-summoner",
+      sourceId: 30004,
+      name: "精灵大师",
+      baseAttack: 80,
+      damageCoefficient: 100,
+      cooldownMs: 20000,
+      range: 210,
+      animationDurationSeconds: 0.5,
+      hitTimeSeconds: null,
+      summon: {
+        actorId: "summon-little-ghost",
+        soldierId: 52001,
+        maxCount: 1,
+        releaseTimeSeconds: 0,
+        bornDurationSeconds: 0.4,
+        skillNeedsTarget: false,
+        spawnRadius: 210,
+        modelRadius: 40,
+        moveSpeed: 150,
+        range: 40,
+        seekDistance: 100,
+        cooldownMs: 2000,
+        damageCoefficient: 550,
+        maxTargets: 99,
+        attackInheritance: "caller-entity-attack",
+      },
+    });
+    config.synthesisHeroIds = ["hero-summoner"];
+    config.waves[0].spawnGroups[0].monster.moveSpeed = 0;
+
+    let battle = summonHero(createBattle(config), "hero-summoner");
+    battle = stepTicks(battle, 2);
+
+    expect(battle.summonedUnits).toEqual([expect.objectContaining({
+      id: 1,
+      ownerDefenderId: 2,
+      actorId: "summon-little-ghost",
+      soldierId: 52001,
+      position: { x: 120, y: 0 },
+      animation: "born",
+      bornRemaining: 0.4,
+      attack: 80,
+      range: 40,
+      seekDistance: 100,
+      moveSpeed: 150,
+      modelRadius: 40,
+      cooldownSeconds: 2,
+      damageCoefficient: 550,
+      maxTargets: 99,
+    })]);
+    expect(battle.enemies[0].hp).toBe(100);
+    battle = stepTicks(battle, 23);
+    expect(battle.summonedUnits[0]).toMatchObject({
+      animation: "born",
+      bornRemaining: expect.any(Number),
+    });
+    battle = stepBattle(battle);
+    expect(battle.summonedUnits[0]).toMatchObject({
+      animation: "stand",
+      bornRemaining: 0,
+    });
+
+    battle = stepTicks(battle, 1276);
+    expect(battle.summonedUnits).toHaveLength(1);
+    expect(battle.enemies[0].hp).toBe(100);
+  });
+
+  it("repositions a summoner's existing unit to the new slot road point", () => {
+    const config = createConfig(null);
+    config.towerSlots[0].position = { x: 120, y: 100 };
+    config.towerSlots[1].position = { x: 360, y: 80 };
+    config.heroes.push({
+      id: "hero-summoner",
+      sourceId: 30004,
+      name: "精灵大师",
+      baseAttack: 80,
+      damageCoefficient: 100,
+      cooldownMs: 20000,
+      range: 210,
+      animationDurationSeconds: 0.5,
+      hitTimeSeconds: null,
+      summon: {
+        actorId: "summon-little-ghost",
+        soldierId: 52001,
+        maxCount: 1,
+        releaseTimeSeconds: 0,
+        bornDurationSeconds: 0.4,
+        skillNeedsTarget: false,
+        spawnRadius: 210,
+        modelRadius: 40,
+        moveSpeed: 150,
+        range: 40,
+        seekDistance: 100,
+        cooldownMs: 2000,
+        damageCoefficient: 550,
+        maxTargets: 99,
+        attackInheritance: "caller-entity-attack",
+      },
+    });
+    let battle = stepTicks(
+      summonHero(createBattle(config), "hero-summoner"),
+      2,
+    );
+
+    battle = moveOrMergeDefender(battle, 2, 1);
+    expect(battle.summonedUnits[0].position).toEqual({ x: 360, y: 0 });
+  });
+
+  it("clears both owners' summoned units when two summoners merge", () => {
+    const config = createConfig(null);
+    config.heroes.push({
+      id: "hero-summoner",
+      sourceId: 30004,
+      name: "精灵大师",
+      baseAttack: 80,
+      damageCoefficient: 100,
+      cooldownMs: 20000,
+      range: 210,
+      animationDurationSeconds: 0.5,
+      hitTimeSeconds: null,
+      summon: {
+        actorId: "summon-little-ghost",
+        soldierId: 52001,
+        maxCount: 1,
+        releaseTimeSeconds: 0,
+        bornDurationSeconds: 0.4,
+        skillNeedsTarget: false,
+        spawnRadius: 210,
+        modelRadius: 40,
+        moveSpeed: 150,
+        range: 40,
+        seekDistance: 100,
+        cooldownMs: 2000,
+        damageCoefficient: 550,
+        maxTargets: 99,
+        attackInheritance: "caller-entity-attack",
+      },
+    });
+    config.synthesisHeroIds = ["hero-summoner"];
+    let battle = summonHero(createBattle(config), "hero-summoner");
+    battle = summonHero(battle, "hero-summoner");
+    battle = stepTicks(battle, 2);
+    expect(battle.summonedUnits).toHaveLength(2);
+
+    battle = moveOrMergeDefender(battle, 2, 1);
+    expect(battle.defenders.filter((defender) => defender.kind === "hero"))
+      .toHaveLength(1);
+    expect(battle.summonedUnits).toEqual([]);
   });
 
   it("chains lightning to two distinct nearby enemies with 75% of the primary attack", () => {

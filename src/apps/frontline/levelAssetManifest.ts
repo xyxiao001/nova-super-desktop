@@ -16,7 +16,7 @@ export type LevelPoint = {
 
 export type LevelSpineActor = {
   id: string;
-  role: "lineup-hero" | "lord" | "enemy";
+  role: "lineup-hero" | "lord" | "enemy" | "summon";
   sourceName: string;
   displayName: string | null;
   sourceBundle: string;
@@ -140,7 +140,7 @@ export type LevelAssetManifest = {
         rowLayout: "fixed-width";
         dictionaryValues: "indexed";
         int64Values: "indexed";
-        listValues: "variable-width-integer-sequences";
+        listValues: "typed-variable-width-sequences";
         stringLengths: "7-bit-encoded";
       };
       economy: {
@@ -172,6 +172,34 @@ export type LevelAssetManifest = {
         animation: string;
         hitTimeSeconds: number | null;
       }>;
+      summons: Array<{
+        ownerSourceId: number;
+        skillId: number;
+        skillNeedsTarget: boolean;
+        selfChanceBuff: number[];
+        buffId: number;
+        effectId: number;
+        effectParameters: number[];
+        soldierId: number;
+        resourceId: number;
+        maxCount: number;
+        moveSpeed: number;
+        modelRadius: number;
+        attackDistance: number;
+        seekDistance: number;
+        baseAttack: number;
+        attackInheritance: "caller-entity-attack";
+        stepOneCallAttackRatio: number;
+        normalSkillId: number;
+        cooldownMs: number;
+        damageCoefficient: number;
+        effectRange: [number, ...number[]];
+        maxTargets: number;
+        lifeTimeSeconds: number;
+        ownerRemovalDelayMs: number;
+        bornBuffs: number[];
+        spawnPointRule: "nearest-origin-road-point-within-owner-range";
+      }>;
       waves: Array<{
         wave: number;
         totalWaves: number;
@@ -199,6 +227,7 @@ export type LevelAssetManifest = {
             id: number;
             name: string;
             resourceId: number;
+            modelRadius: number;
             moveSpeed: number;
             hpSegments: number;
             baseHp: number;
@@ -220,6 +249,7 @@ export type LevelAssetManifest = {
     heroes: LevelSpineActor[];
     lord: LevelSpineActor;
     enemies: LevelSpineActor[];
+    summons: LevelSpineActor[];
     playerSlot: {
       binding: "runtime-player-loadout";
       fixedActor: string;
@@ -253,6 +283,77 @@ export type LevelAssetManifest = {
     }>;
     file: LevelAssetFile;
   }>;
+  attackEvidence: {
+    distanceRule: {
+      source: string;
+      targetingDistanceUnits: "thousandths-of-world-unit";
+      effectiveCenterDistance: "targeting-distance-plus-target-model-radius";
+      includesCasterRadius: false;
+    };
+    units: Array<{
+      owner: string;
+      kind: "projectile" | "projectile-then-area-effect" | "summon-melee-unit" | "melee";
+      targetingDistance: number;
+      sourceBundles: string[];
+      emitter?: {
+        name: string;
+        trackerPath: string;
+        waveCount: number;
+        bulletsPerWave: number;
+        intervalMs: number;
+      };
+      projectile?: {
+        name: string;
+        tracker: string;
+        prefabInitSpeed: number;
+        prefabMaxFlyDistance: number;
+        prefabDurationMs: number;
+        prefabLockTarget: boolean;
+        eventInitSpeed: number | null;
+        eventMaxFlyDistance: number | null;
+        eventMaxFlyTimeMs: number | null;
+        eventLockTarget: boolean | null;
+        collisionMaxCount: number;
+        hitEffectPath: string;
+      };
+      summon?: {
+        ownerSourceId: number;
+        skillId: number;
+        skillNeedsTarget: boolean;
+        selfChanceBuff: number[];
+        buffId: number;
+        effectId: number;
+        effectParameters: number[];
+        soldierId: number;
+        resourceId: number;
+        moveSpeed: number;
+        attackDistance: number;
+        normalSkillId: number;
+        attackTriggerSeconds: number;
+        hitTriggerSeconds: number;
+        maxCount: number;
+        modelRadius: number;
+        seekDistance: number;
+        cooldownMs: number;
+        damageCoefficient: number;
+        effectRange: [number, ...number[]];
+        maxTargets: number;
+        baseAttack: number;
+        attackInheritance: "caller-entity-attack";
+        stepOneCallAttackRatio: number;
+        lifeTimeSeconds: number;
+        ownerRemovalDelayMs: number;
+        bornBuffs: number[];
+        spawnPointRule: "nearest-origin-road-point-within-owner-range";
+      };
+      melee?: {
+        hitTriggerSeconds: number[];
+        damageCoefficientPerHit: number;
+        effectRange: number;
+        hitEffectPath: string;
+      };
+    }>;
+  };
   unresolved: Array<{
     id: string;
     blocking: boolean;

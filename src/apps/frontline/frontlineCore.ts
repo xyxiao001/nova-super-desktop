@@ -4,8 +4,36 @@ const SOURCE_SPEED_TO_LOGICAL_PIXELS = 0.1;
 
 export type Point = { x: number; y: number };
 export type LightningArc = { from: Point; to: Point; remaining: number };
+export type ProjectileConfig = {
+  tracker: string;
+  releaseTimeSeconds: number;
+  projectileCount: number;
+  releaseIntervalSeconds: number;
+  sourceInitSpeed: number;
+  maxFlyDistance: number;
+  maxLifetimeSeconds: number;
+  lockTarget: boolean;
+  movementScale: null;
+};
+export type SummonConfig = {
+  actorId: string;
+  soldierId: number;
+  maxCount: number;
+  releaseTimeSeconds: number;
+  bornDurationSeconds: number;
+  skillNeedsTarget: boolean;
+  spawnRadius: number;
+  modelRadius: number;
+  moveSpeed: number;
+  range: number;
+  seekDistance: number;
+  cooldownMs: number;
+  damageCoefficient: number;
+  maxTargets: number;
+  attackInheritance: "caller-entity-attack";
+};
 export type BattleStatus = "active" | "paused" | "won" | "lost";
-export type ActorAnimation = "stand" | "run" | "attack_1" | "dead";
+export type ActorAnimation = "stand" | "run" | "attack_1" | "born" | "dead";
 
 export type HeroConfig = {
   id: string;
@@ -17,6 +45,9 @@ export type HeroConfig = {
   range: number;
   animationDurationSeconds: number;
   hitTimeSeconds: number | null;
+  additionalHitTimeSeconds?: number[];
+  projectile?: ProjectileConfig;
+  summon?: SummonConfig;
 };
 
 export type TutorialSummonConfig = {
@@ -40,6 +71,7 @@ export type SpawnGroupConfig = {
   monster: {
     id: number;
     name: string;
+    modelRadius: number;
     moveSpeed: number;
     hp: number;
     crystalDamage: number;
@@ -97,6 +129,7 @@ export type Enemy = {
   actorId: string;
   hp: number;
   maxHp: number;
+  modelRadius: number;
   moveSpeed: number;
   coin: number;
   crystalDamage: number;
@@ -126,9 +159,45 @@ export type Defender = {
   hitTimeSeconds: number | null;
   attackElapsed: number;
   attackApplied: boolean;
+  appliedHitCount: number;
+  releasedProjectileCount: number;
   targetId: number | null;
   animation: ActorAnimation;
   damageDealt: number;
+};
+
+export type Projectile = {
+  id: number;
+  tracker: string;
+  sourceDefenderId: number;
+  targetId: number;
+  position: Point;
+  targetPositionAtRelease: Point;
+  elapsedSeconds: number;
+  maxLifetimeSeconds: number;
+  sourceInitSpeed: number;
+  maxFlyDistance: number;
+  lockTarget: boolean;
+  movementScale: null;
+};
+
+export type SummonedUnit = {
+  id: number;
+  ownerDefenderId: number;
+  actorId: string;
+  soldierId: number;
+  position: Point;
+  facingX: -1 | 1;
+  animation: ActorAnimation;
+  bornRemaining: number;
+  attack: number;
+  range: number;
+  seekDistance: number;
+  moveSpeed: number;
+  modelRadius: number;
+  cooldownSeconds: number;
+  damageCoefficient: number;
+  maxTargets: number;
 };
 
 export type BattleState = {
@@ -140,8 +209,12 @@ export type BattleState = {
   groupSpawned: Record<number, number>;
   nextEnemyId: number;
   nextDefenderId: number;
+  nextProjectileId: number;
+  nextSummonedUnitId: number;
   enemies: Enemy[];
   defenders: Defender[];
+  projectiles: Projectile[];
+  summonedUnits: SummonedUnit[];
   lightningArcs: LightningArc[];
   coins: number;
   summonCount: number;
@@ -256,6 +329,8 @@ const createDefender = (
   hitTimeSeconds: hero.hitTimeSeconds,
   attackElapsed: 0,
   attackApplied: false,
+  appliedHitCount: 0,
+  releasedProjectileCount: 0,
   targetId: null,
   animation: "stand",
   damageDealt: 0,
@@ -284,7 +359,11 @@ export const createBattle = (config: BattleConfig): BattleState => ({
   groupSpawned: {},
   nextEnemyId: 1,
   nextDefenderId: 2,
+  nextProjectileId: 1,
+  nextSummonedUnitId: 1,
   enemies: [],
+  projectiles: [],
+  summonedUnits: [],
   lightningArcs: [],
   defenders: [createDefender(
     1,
@@ -357,9 +436,21 @@ const resetAttack = (defender: Defender): Defender => ({
   cooldownRemaining: 0,
   attackElapsed: 0,
   attackApplied: false,
+  appliedHitCount: 0,
+  releasedProjectileCount: 0,
   targetId: null,
   animation: "stand",
 });
+
+const moveOwnedSummons = (
+  state: BattleState,
+  ownerId: number,
+  ownerPosition: Point,
+) => state.summonedUnits.map((unit) => (
+  unit.ownerDefenderId === ownerId
+    ? { ...unit, position: closestPathPoint(state.config.path, ownerPosition) }
+    : unit
+));
 
 export const moveLord = (current: BattleState, target: Point): BattleState => {
   if (current.status !== "active") return current;
@@ -401,8 +492,14 @@ export const moveOrMergeDefender = (
     (defender) => defender.slotIndex === targetSlotIndex,
   );
   if (!target) {
+    const summonedUnits = moveOwnedSummons(
+      current,
+      source.id,
+      targetSlot.position,
+    );
     return {
       ...current,
+      summonedUnits,
       defenders: current.defenders.map((defender) => defender.id === source.id
         ? { ...resetAttack(defender), slotIndex: targetSlotIndex }
         : defender),
@@ -414,8 +511,29 @@ export const moveOrMergeDefender = (
     && target.step === source.step
     && source.step < current.config.maxSynthesisStep;
   if (!canMerge) {
+    const summonedUnits = current.summonedUnits.map((unit) => {
+      if (unit.ownerDefenderId === source.id) {
+        return {
+          ...unit,
+          position: closestPathPoint(current.config.path, targetSlot.position),
+        };
+      }
+      if (unit.ownerDefenderId === target.id && source.slotIndex !== null) {
+        const sourceSlot = current.config.towerSlots.find(
+          (slot) => slot.index === source.slotIndex,
+        );
+        return sourceSlot
+          ? {
+            ...unit,
+            position: closestPathPoint(current.config.path, sourceSlot.position),
+          }
+          : unit;
+      }
+      return unit;
+    });
     return {
       ...current,
+      summonedUnits,
       defenders: current.defenders.map((defender) => {
         if (defender.id === source.id) {
           return { ...resetAttack(defender), slotIndex: targetSlotIndex };
@@ -439,6 +557,10 @@ export const moveOrMergeDefender = (
   return {
     ...current,
     synthesisCount: current.synthesisCount + 1,
+    summonedUnits: current.summonedUnits.filter(
+      (unit) => unit.ownerDefenderId !== source.id
+        && unit.ownerDefenderId !== target.id,
+    ),
     defenders: [
       ...current.defenders.filter(
         (defender) => defender.id !== source.id && defender.id !== target.id,
@@ -494,6 +616,7 @@ const spawnEnemy = (
     actorId,
     hp: group.monster.hp,
     maxHp: group.monster.hp,
+    modelRadius: group.monster.modelRadius,
     moveSpeed: group.monster.moveSpeed,
     coin: group.coin,
     crystalDamage: group.monster.crystalDamage,
@@ -544,6 +667,85 @@ const chainLightning = (state: BattleState, defender: Defender, primary: Enemy) 
   }
 };
 
+const releaseProjectile = (
+  state: BattleState,
+  defender: Defender,
+  target: Enemy,
+  origin: Point,
+) => {
+  const config = state.config.heroes.find(
+    (hero) => hero.sourceId === defender.sourceId,
+  )?.projectile;
+  if (!config) return;
+  state.projectiles.push({
+    id: state.nextProjectileId,
+    tracker: config.tracker,
+    sourceDefenderId: defender.id,
+    targetId: target.id,
+    position: { ...origin },
+    targetPositionAtRelease: pathPosition(state.config.path, target.distance),
+    elapsedSeconds: 0,
+    maxLifetimeSeconds: config.maxLifetimeSeconds,
+    sourceInitSpeed: config.sourceInitSpeed,
+    maxFlyDistance: config.maxFlyDistance,
+    lockTarget: config.lockTarget,
+    movementScale: config.movementScale,
+  });
+  state.nextProjectileId += 1;
+};
+
+const releaseSummonedUnit = (
+  state: BattleState,
+  defender: Defender,
+  origin: Point,
+) => {
+  const config = state.config.heroes.find(
+    (hero) => hero.sourceId === defender.sourceId,
+  )?.summon;
+  if (!config) return;
+  const ownerCount = state.summonedUnits.filter(
+    (unit) => unit.ownerDefenderId === defender.id,
+  ).length;
+  if (ownerCount >= config.maxCount) return;
+  const position = closestPathPoint(state.config.path, origin);
+  if (Math.hypot(position.x - origin.x, position.y - origin.y) > config.spawnRadius) {
+    return;
+  }
+  state.summonedUnits.push({
+    id: state.nextSummonedUnitId,
+    ownerDefenderId: defender.id,
+    actorId: config.actorId,
+    soldierId: config.soldierId,
+    position,
+    facingX: -1,
+    animation: "born",
+    bornRemaining: config.bornDurationSeconds,
+    attack: config.attackInheritance === "caller-entity-attack"
+      ? defender.attack
+      : 0,
+    range: config.range,
+    seekDistance: config.seekDistance,
+    moveSpeed: config.moveSpeed,
+    modelRadius: config.modelRadius,
+    cooldownSeconds: config.cooldownMs / 1000,
+    damageCoefficient: config.damageCoefficient,
+    maxTargets: config.maxTargets,
+  });
+  state.nextSummonedUnitId += 1;
+};
+
+const updateSummonedUnits = (state: BattleState, seconds: number) => {
+  for (const unit of state.summonedUnits) {
+    if (unit.animation !== "born") continue;
+    if (unit.bornRemaining <= seconds + Number.EPSILON) {
+      unit.bornRemaining = 0;
+      unit.animation = "stand";
+    } else {
+      unit.bornRemaining -= seconds;
+    }
+  }
+};
+
 const updateDefenders = (state: BattleState, seconds: number) => {
   for (const defender of state.defenders) {
     if (defender.kind === "lord" && defender.position && defender.moveTarget) {
@@ -575,18 +777,73 @@ const updateDefenders = (state: BattleState, seconds: number) => {
 
     if (defender.animation === "attack_1") {
       defender.attackElapsed += seconds;
+      const heroConfig = state.config.heroes.find(
+        (hero) => hero.sourceId === defender.sourceId,
+      );
+      const projectile = heroConfig?.projectile;
+      const summon = heroConfig?.summon;
       if (
         !defender.attackApplied
-        && defender.hitTimeSeconds !== null
-        && defender.attackElapsed >= defender.hitTimeSeconds
+        && summon
+        && defender.attackElapsed >= summon.releaseTimeSeconds
+      ) {
+        const slot = state.config.towerSlots.find(
+          (candidate) => candidate.index === defender.slotIndex,
+        );
+        const origin = defender.kind === "lord" ? defender.position : slot?.position;
+        if (origin) releaseSummonedUnit(state, defender, origin);
+        defender.attackApplied = true;
+      }
+      const releaseTime = projectile?.releaseTimeSeconds;
+      if (
+        !defender.attackApplied
+        && projectile
+        && releaseTime !== undefined
         && target
         && target.animation !== "dead"
       ) {
-        const damage = Math.min(target.hp, defender.attack);
-        target.hp -= damage;
-        defender.damageDealt += damage;
-        defender.attackApplied = true;
-        chainLightning(state, defender, target);
+        const slot = state.config.towerSlots.find(
+          (candidate) => candidate.index === defender.slotIndex,
+        );
+        const origin = defender.kind === "lord" ? defender.position : slot?.position;
+        while (
+          origin
+          && defender.releasedProjectileCount < projectile.projectileCount
+          && defender.attackElapsed >= releaseTime
+            + defender.releasedProjectileCount * projectile.releaseIntervalSeconds
+        ) {
+          releaseProjectile(state, defender, target, origin);
+          defender.releasedProjectileCount += 1;
+        }
+        defender.attackApplied = defender.releasedProjectileCount
+          >= projectile.projectileCount;
+      }
+      if (
+        !defender.attackApplied
+        && defender.hitTimeSeconds !== null
+        && target
+        && target.animation !== "dead"
+      ) {
+        const damageConfig = defender.kind === "lord"
+          ? state.config.lord
+          : state.config.heroes.find((hero) => hero.sourceId === defender.sourceId);
+        const hitTimes = [
+          defender.hitTimeSeconds,
+          ...(damageConfig?.additionalHitTimeSeconds ?? []),
+        ];
+        while (
+          defender.appliedHitCount < hitTimes.length
+          && defender.attackElapsed >= hitTimes[defender.appliedHitCount]
+          && target.hp > 0
+        ) {
+          const damage = Math.min(target.hp, defender.attack);
+          target.hp -= damage;
+          defender.damageDealt += damage;
+          defender.appliedHitCount += 1;
+          chainLightning(state, defender, target);
+        }
+        defender.attackApplied = defender.appliedHitCount >= hitTimes.length
+          || target.hp <= 0;
       }
       if (defender.attackElapsed >= defender.animationDurationSeconds) {
         defender.animation = "stand";
@@ -603,16 +860,34 @@ const updateDefenders = (state: BattleState, seconds: number) => {
       ? defender.position
       : slot?.position;
     if (!defenderPosition) continue;
+    const summon = state.config.heroes.find(
+      (hero) => hero.sourceId === defender.sourceId,
+    )?.summon;
+    if (summon && !summon.skillNeedsTarget) {
+      const ownerCount = state.summonedUnits.filter(
+        (unit) => unit.ownerDefenderId === defender.id,
+      ).length;
+      if (ownerCount < summon.maxCount) {
+        defender.animation = "attack_1";
+        defender.attackElapsed = 0;
+        defender.attackApplied = false;
+        defender.appliedHitCount = 0;
+        defender.releasedProjectileCount = 0;
+        defender.targetId = null;
+        defender.cooldownRemaining = defender.cooldownSeconds;
+        continue;
+      }
+    }
     const nextTarget = state.enemies
       .filter((enemy) => enemy.animation !== "dead")
       .map((enemy) => ({
         enemy,
         position: pathPosition(state.config.path, enemy.distance),
       }))
-      .filter(({ position }) => Math.hypot(
+      .filter(({ enemy, position }) => Math.hypot(
         position.x - defenderPosition.x,
         position.y - defenderPosition.y,
-      ) <= defender.range)
+      ) <= defender.range + enemy.modelRadius)
       .sort((left, right) => right.enemy.distance - left.enemy.distance)[0]
       ?.enemy;
     if (!nextTarget) continue;
@@ -622,6 +897,8 @@ const updateDefenders = (state: BattleState, seconds: number) => {
     defender.animation = "attack_1";
     defender.attackElapsed = 0;
     defender.attackApplied = false;
+    defender.appliedHitCount = 0;
+    defender.releasedProjectileCount = 0;
     defender.targetId = nextTarget.id;
     defender.cooldownRemaining = defender.cooldownSeconds;
   }
@@ -638,6 +915,20 @@ export const stepBattle = (
     groupSpawned: { ...current.groupSpawned },
     enemies: current.enemies.map((enemy) => ({ ...enemy })),
     defenders: current.defenders.map((defender) => ({ ...defender })),
+    summonedUnits: current.summonedUnits.map((unit) => ({
+      ...unit,
+      position: { ...unit.position },
+    })),
+    projectiles: current.projectiles
+      .map((projectile) => ({
+        ...projectile,
+        position: { ...projectile.position },
+        targetPositionAtRelease: { ...projectile.targetPositionAtRelease },
+        elapsedSeconds: projectile.elapsedSeconds + seconds,
+      }))
+      .filter((projectile) => (
+        projectile.elapsedSeconds < projectile.maxLifetimeSeconds
+      )),
     lightningArcs: current.lightningArcs
       .map((arc) => ({ ...arc, remaining: arc.remaining - seconds }))
       .filter((arc) => arc.remaining > 0),
@@ -646,6 +937,11 @@ export const stepBattle = (
   state.elapsed += seconds;
   state.waveElapsed += seconds;
   spawnWaveGroups(state);
+  // Lua starts Soldier AI only after the Spine born animation completes. Run
+  // existing summons first so a unit created later in this tick keeps the full
+  // confirmed birth duration. Combat AI remains disabled until its C# states
+  // are recovered.
+  updateSummonedUnits(state, seconds);
   updateDefenders(state, seconds);
 
   const totalDistance = pathLength(state.config.path);

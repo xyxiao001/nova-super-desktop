@@ -384,6 +384,15 @@ export default function BattleCanvas({
           });
         }
       }
+      for (const unit of battle.summonedUnits) {
+        renderItems.push({
+          key: `summon-${unit.id}`,
+          actorId: unit.actorId,
+          point: unit.position,
+          animation: unit.animation,
+          directionX: unit.facingX,
+        });
+      }
       for (const enemy of battle.enemies) {
         const direction = pathDirection(battle.config.path, enemy.distance);
         renderItems.push({

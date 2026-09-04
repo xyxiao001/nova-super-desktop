@@ -59,7 +59,8 @@
         "RKT tail transform and nested archive structure are verified",
         "EctypeWave contains six records for source level 100101",
         "ectype_spawn_monster_info_c contains 18 spawn groups for source level 100101",
-        "Monster identifies four configured monster variants"
+        "Monster identifies four configured monster variants",
+        "ConfigResource supplies each monster model radius used by target acquisition"
       ]
     }
   ],
@@ -361,6 +362,149 @@
         "TextAsset": 3,
         "Texture2D": 1,
         "Transform": 6
+      }
+    },
+    {
+      "id": "fxJinx",
+      "file": "fx_heros_jinkesi_1b56cf83ddfd9d492bd726f437c419f9",
+      "bytes": 256986,
+      "sha256": "5dae9e6f45bb2e3f7c185b3f40e558beceabb835bc7ba36e6b07cdc1078e3ab0",
+      "evidence": "normal-attack-emitter-projectile-and-hit-effect",
+      "objectTypes": {
+        "Animator": 3,
+        "AssetBundle": 1,
+        "AudioClip": 8,
+        "AudioMixerController": 1,
+        "AudioMixerGroupController": 6,
+        "AudioMixerSnapshotController": 1,
+        "AudioSource": 8,
+        "BoxCollider2D": 8,
+        "CircleCollider2D": 4,
+        "GameObject": 123,
+        "Material": 40,
+        "MonoBehaviour": 75,
+        "MonoScript": 12,
+        "ParticleSystem": 49,
+        "ParticleSystemRenderer": 49,
+        "Rigidbody2D": 13,
+        "Shader": 1,
+        "SpriteRenderer": 3,
+        "TrailRenderer": 6,
+        "Transform": 123
+      }
+    },
+    {
+      "id": "fxLightning",
+      "file": "fx_heros_shandianqiu_eba63a02041be39d16eb3c7d86092f3f",
+      "bytes": 112069,
+      "sha256": "3fa83e1e2f627abdb9615f5bbcb04816db173e2afe87947aaeae9014c3ec07ac",
+      "evidence": "normal-attack-emitter-projectile-and-hit-effect",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "AudioClip": 4,
+        "AudioMixerController": 1,
+        "AudioMixerGroupController": 6,
+        "AudioMixerSnapshotController": 1,
+        "AudioSource": 4,
+        "BoxCollider2D": 5,
+        "CapsuleCollider2D": 3,
+        "CircleCollider2D": 2,
+        "GameObject": 67,
+        "Material": 21,
+        "MonoBehaviour": 60,
+        "MonoScript": 12,
+        "ParticleSystem": 21,
+        "ParticleSystemRenderer": 21,
+        "Rigidbody2D": 10,
+        "Transform": 67
+      }
+    },
+    {
+      "id": "fxClown",
+      "file": "fx_heros_timo_dc7189aedbc9e1c88ed4102e55d74c55",
+      "bytes": 157215,
+      "sha256": "137d535cdcfea86d5926e2f693511fa0d331fd18b0ad324d123b096d5ac3334c",
+      "evidence": "normal-attack-emitter-projectile-and-area-effect",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "AudioClip": 4,
+        "AudioMixerController": 1,
+        "AudioMixerGroupController": 6,
+        "AudioMixerSnapshotController": 1,
+        "AudioSource": 3,
+        "BoxCollider2D": 7,
+        "CapsuleCollider2D": 12,
+        "GameObject": 132,
+        "Material": 43,
+        "Mesh": 2,
+        "MeshFilter": 2,
+        "MeshRenderer": 2,
+        "MonoBehaviour": 89,
+        "MonoScript": 14,
+        "ParticleSystem": 60,
+        "ParticleSystemRenderer": 60,
+        "Rigidbody2D": 15,
+        "SortingGroup": 2,
+        "Transform": 132
+      }
+    },
+    {
+      "id": "fxSummon",
+      "file": "fx_heros_xiaozhiguai_4050e8c9f089d54cc640dd4e5e33931c",
+      "bytes": 46193,
+      "sha256": "22a19218e68dc118f2f1fb2e49e816d58a962f136125db723fb94438568b6a2f",
+      "evidence": "summoned-unit-melee-effects",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "GameObject": 55,
+        "Material": 18,
+        "MonoBehaviour": 26,
+        "MonoScript": 2,
+        "ParticleSystem": 25,
+        "ParticleSystemRenderer": 25,
+        "Transform": 55
+      }
+    },
+    {
+      "id": "summonMinion",
+      "file": "char_zhaohuan_xiaozhiguai01_63d009a0028072e0d6caed47c3fcfcb2",
+      "bytes": 95691,
+      "sha256": "e2ce2a07ebf4b9dd81fe611c3692ca6e1411dfaa5f95dc8ded8220f87b602cf7",
+      "evidence": "summoned-unit-combat-events",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "GameObject": 5,
+        "Material": 1,
+        "Mesh": 1,
+        "MeshFilter": 2,
+        "MeshRenderer": 2,
+        "MonoBehaviour": 5,
+        "MonoScript": 5,
+        "Shader": 2,
+        "SortingGroup": 1,
+        "TextAsset": 3,
+        "Texture2D": 1,
+        "Transform": 5
+      }
+    },
+    {
+      "id": "fxLordSandKing",
+      "file": "fx_player_shawang_63649f6f7c2d890d2affcd29ec728b38",
+      "bytes": 50019,
+      "sha256": "4cf00500764b17c02716f6dd44b3eb440359283d71bd90b0eed3d58f3ca4c9ee",
+      "evidence": "lord-normal-attack-hit-effect",
+      "objectTypes": {
+        "AssetBundle": 1,
+        "CapsuleCollider2D": 3,
+        "GameObject": 36,
+        "Material": 17,
+        "MonoBehaviour": 24,
+        "MonoScript": 9,
+        "ParticleSystem": 23,
+        "ParticleSystemRenderer": 23,
+        "Rigidbody2D": 3,
+        "SortingGroup": 5,
+        "Transform": 36
       }
     }
   ],
@@ -976,8 +1120,20 @@
             "sha256": "bd61937b6fa59725fee366e1dbace5bc145f41873e7ff2d19fb15eabd85726d8"
           },
           {
+            "name": "ConfigResource.csv",
+            "sha256": "8e510f926000d69027f70d9c809cfa01d0891073258a68b01655f427c9943788"
+          },
+          {
             "name": "Skill.csv",
             "sha256": "aef551e9e1051a13b3e2606388d18b871023a5fed63cc7e50f8e7cbe89d1f128"
+          },
+          {
+            "name": "Buff.csv",
+            "sha256": "aa045835684f7d1fa5a0c25b0ffbbadb9fe843ea7df0a3ee5eb2b5bb9b2f7fbb"
+          },
+          {
+            "name": "Effect.csv",
+            "sha256": "b0cbdbe7ae126725307a24d853c3f8ca17169bba2c5473b32001613989b55aa0"
           },
           {
             "name": "ectype_misc_info_c.csv",
@@ -998,6 +1154,14 @@
           {
             "name": "Freeze.csv",
             "sha256": "1a782edb82f8d0f40513c3a80761dfac7eaa4d53a392398494fecac0908ff16e"
+          },
+          {
+            "name": "Soldier.csv",
+            "sha256": "55ff46e5bc341cdf813d1d50253d0aef252706abfe2ffebff73f3dd25cfa13bd"
+          },
+          {
+            "name": "hero_step_c.csv",
+            "sha256": "f51dd86fca9f1c977b61bb6d3f59dbd3b24d467d14c4167da84c94af47e6cbe7"
           }
         ]
       },
@@ -1016,7 +1180,7 @@
         "rowLayout": "fixed-width",
         "dictionaryValues": "indexed",
         "int64Values": "indexed",
-        "listValues": "variable-width-integer-sequences",
+        "listValues": "typed-variable-width-sequences",
         "stringLengths": "7-bit-encoded"
       },
       "economy": {
@@ -1140,6 +1304,58 @@
           "hitTimeSeconds": 0.233333
         }
       ],
+      "summons": [
+        {
+          "ownerSourceId": 30004,
+          "skillId": 2100,
+          "skillNeedsTarget": false,
+          "selfChanceBuff": [
+            10000,
+            0,
+            21001,
+            10000,
+            0,
+            21002,
+            10000,
+            0,
+            21003
+          ],
+          "buffId": 21001,
+          "effectId": 21001101,
+          "effectParameters": [
+            52001,
+            1,
+            1,
+            1,
+            0
+          ],
+          "soldierId": 52001,
+          "resourceId": 120010,
+          "maxCount": 1,
+          "moveSpeed": 1500,
+          "modelRadius": 0.4,
+          "attackDistance": 400,
+          "seekDistance": 1000,
+          "baseAttack": 0,
+          "attackInheritance": "caller-entity-attack",
+          "stepOneCallAttackRatio": 15000,
+          "normalSkillId": 2110,
+          "cooldownMs": 2000,
+          "damageCoefficient": 550,
+          "effectRange": [
+            150,
+            1000
+          ],
+          "maxTargets": 99,
+          "lifeTimeSeconds": 0,
+          "ownerRemovalDelayMs": 15000,
+          "bornBuffs": [
+            10362,
+            21080
+          ],
+          "spawnPointRule": "nearest-origin-road-point-within-owner-range"
+        }
+      ],
       "waves": [
         {
           "wave": 1,
@@ -1174,6 +1390,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1217,6 +1434,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1241,6 +1459,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1265,6 +1484,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1308,6 +1528,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1332,6 +1553,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1356,6 +1578,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1380,6 +1603,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1423,6 +1647,7 @@
                 "id": 1002,
                 "name": "野狗",
                 "resourceId": 1002,
+                "modelRadius": 0.2,
                 "moveSpeed": 600,
                 "hpSegments": 1,
                 "baseHp": 224,
@@ -1447,6 +1672,7 @@
                 "id": 1002,
                 "name": "野狗",
                 "resourceId": 1002,
+                "modelRadius": 0.2,
                 "moveSpeed": 600,
                 "hpSegments": 1,
                 "baseHp": 224,
@@ -1490,6 +1716,7 @@
                 "id": 3001,
                 "name": "沙漠蜥蜴精英",
                 "resourceId": 3001,
+                "modelRadius": 0.35,
                 "moveSpeed": 320,
                 "hpSegments": 5,
                 "baseHp": 2392,
@@ -1514,6 +1741,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1538,6 +1766,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1581,6 +1810,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1605,6 +1835,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1629,6 +1860,7 @@
                 "id": 1001,
                 "name": "沙漠蜥蜴",
                 "resourceId": 1001,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 299,
@@ -1653,6 +1885,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1677,6 +1910,7 @@
                 "id": 1003,
                 "name": "沙甲虫",
                 "resourceId": 1003,
+                "modelRadius": 0.2,
                 "moveSpeed": 400,
                 "hpSegments": 1,
                 "baseHp": 598,
@@ -1690,8 +1924,8 @@
       ],
       "file": {
         "path": "levels/desert-1/wave-config.json",
-        "bytes": 17752,
-        "sha256": "b897c26525f8685e8d69fc006430c6a9f914f10646f6283d6a02a5f1283d06bd"
+        "bytes": 20083,
+        "sha256": "8af4040dd64c0e0c209454a38a0e12762d846d5e1c1ca3c9729c7bddde1af89f"
       }
     },
     "boss": {
@@ -2572,6 +2806,123 @@
             "stand",
             "run",
             "attack_1",
+            "dead"
+          ],
+          "missing": []
+        }
+      }
+    ],
+    "summons": [
+      {
+        "id": "summon-little-ghost",
+        "sourceBundle": "char_zhaohuan_xiaozhiguai01_63d009a0028072e0d6caed47c3fcfcb2",
+        "sourceObjects": {
+          "atlas": "zhaohuan_xiaozhiguai01.atlas",
+          "skeleton": "zhaohuan_xiaozhiguai01.skel",
+          "texture": "zhaohuan_xiaozhiguai01"
+        },
+        "runtime": {
+          "package": "@esotericsoftware/spine-webgl",
+          "version": "4.2.120",
+          "pipeline": "binary"
+        },
+        "scale": 0.009999999776482582,
+        "defaultSkin": "default",
+        "gpuFrameReference": [],
+        "files": {
+          "atlas": {
+            "path": "spine/zhaohuan_xiaozhiguai01/skeleton.atlas",
+            "bytes": 434,
+            "sha256": "1b17554c540f3485c90e3d3afa1dbc1a0210fa6ccfc8eb298304582a7464a12f"
+          },
+          "skeleton": {
+            "path": "spine/zhaohuan_xiaozhiguai01/skeleton.skel",
+            "bytes": 52165,
+            "sha256": "f9d709df3bf76d57c983dc757139d894da290a3effe2ea414d7add90cc0f2de5"
+          },
+          "texture": {
+            "path": "spine/zhaohuan_xiaozhiguai01/texture.png",
+            "bytes": 123819,
+            "sha256": "4ec7a2fb642bce08dd243e86e11cf46ffbe8c83ddad3b216351e3635bec97613"
+          }
+        },
+        "role": "summon",
+        "sourceName": "zhaohuan_xiaozhiguai01",
+        "displayName": "小笑笑鬼",
+        "evidence": [
+          "bundle-object:summonMinion",
+          "rkt-config:soldier-52001"
+        ],
+        "requiredAnimations": [
+          "stand",
+          "run",
+          "attack_1",
+          "born",
+          "dead"
+        ],
+        "binaryVersion": "4.2.33",
+        "bounds": {
+          "x": -21.16928482055664,
+          "y": -6.922614574432373,
+          "width": 41.6381950378418,
+          "height": 49.92348098754883
+        },
+        "skins": [
+          "default"
+        ],
+        "animations": [
+          {
+            "name": "attack_1",
+            "duration": 0.5,
+            "events": []
+          },
+          {
+            "name": "attack_2",
+            "duration": 0.7333333492279053,
+            "events": []
+          },
+          {
+            "name": "born",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "dead",
+            "duration": 0.7333333492279053,
+            "events": []
+          },
+          {
+            "name": "run",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "skill_1",
+            "duration": 0.40000003576278687,
+            "events": []
+          },
+          {
+            "name": "skill_1_end",
+            "duration": 0.1666666716337204,
+            "events": []
+          },
+          {
+            "name": "skill_1_start",
+            "duration": 0.23333334922790527,
+            "events": []
+          },
+          {
+            "name": "stand",
+            "duration": 0.5,
+            "events": []
+          }
+        ],
+        "lifecycleAudit": {
+          "required": [
+            "stand",
+            "run",
+            "attack_1",
+            "born",
             "dead"
           ],
           "missing": []
@@ -4785,8 +5136,539 @@
         "bytes": 7079,
         "sha256": "09859219596dacd42ed731ebcb234db69e30284a543480116b72a54145a7bc8c"
       }
+    },
+    {
+      "owner": "summon-little-ghost",
+      "sourceObject": "Heros_xiaogenggui",
+      "assetReferences": [
+        "Assets/IGSoft_Resources/Projects/Audio/heroAudio/Audio_xiaozhi/Audio_xiaozhi_attack1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_1.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_2.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_3.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_4.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_skill_paoxiao.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_dandao.prefab",
+        "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_shouji.prefab"
+      ],
+      "formatVersion": 2,
+      "nominalFrameRate": 30,
+      "records": [
+        {
+          "variantId": 100,
+          "animation": "stand",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 100,
+          "animation": "virtual_skill_2",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 0,
+          "eventType": 0,
+          "soundId": 0,
+          "parameters": {}
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_1",
+          "triggerFrame": 6,
+          "triggerTimeSeconds": 0.2,
+          "eventSourceType": 1,
+          "eventType": 23,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_dandao.prefab",
+            "effectIdList": "0",
+            "initSpeed": "11",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "isParabola": "False",
+            "ParabolaHeight": "0",
+            "fixAngle": "False",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "collisionEffect": "",
+            "scaleDuration": "66",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "True",
+            "collisionAudio": "",
+            "hitEmitePath": "",
+            "destroryEmitePath": "",
+            "hitEmiteTrackerPath": "",
+            "desEmiteTrackerPath": ""
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "virtual_skill_2",
+          "triggerFrame": 6,
+          "triggerTimeSeconds": 0.2,
+          "eventSourceType": 1,
+          "eventType": 23,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_dandao.prefab",
+            "effectIdList": "0",
+            "initSpeed": "11",
+            "maxFlyDis": "90",
+            "maxFlyTime": "3000",
+            "isParabola": "False",
+            "ParabolaHeight": "0",
+            "fixAngle": "False",
+            "collisionEffect": "Assets/IGSoft_Resources/Projects/Prefabs/player/hero/lvbu/eff_hero_q_01_lvbu_skill1_shouji.prefab",
+            "collisionEffectID": "0",
+            "collisionAudioID": "0",
+            "scaleDuration": "66",
+            "hitEmiteID": "0",
+            "destroryEmiteID": "0",
+            "hitEmiteTrackerPathID": "0",
+            "desEmiteTrackerPathID": "0",
+            "freeFlyTime": "0",
+            "lockTarget": "True",
+            "collisionAudio": "",
+            "hitEmitePath": "",
+            "destroryEmitePath": "",
+            "hitEmiteTrackerPath": "",
+            "desEmiteTrackerPath": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "attack_1",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 1,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_1.prefab",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False",
+            "effectIdList": ""
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "attack_2",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 1,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_2.prefab",
+            "effectIdList": "",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False"
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "attack_1",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 2,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_3.prefab",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False",
+            "effectIdList": ""
+          }
+        },
+        {
+          "variantId": 101,
+          "animation": "attack_2",
+          "triggerFrame": 4,
+          "triggerTimeSeconds": 0.133333,
+          "eventSourceType": 2,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_4.prefab",
+            "effectIdList": "",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False"
+          }
+        },
+        {
+          "variantId": 100,
+          "animation": "skill_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 2,
+          "eventType": 1,
+          "soundId": 1,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_skill_paoxiao.prefab",
+            "effectIdList": "",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False"
+          }
+        },
+        {
+          "variantId": 102,
+          "animation": "attack_1",
+          "triggerFrame": 7,
+          "triggerTimeSeconds": 0.233333,
+          "eventSourceType": 2,
+          "eventType": 2,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+            "effectIdList": "",
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HurtAnimArray": "",
+            "HitShake": "False"
+          }
+        },
+        {
+          "variantId": 103,
+          "animation": "attack_1",
+          "triggerFrame": 7,
+          "triggerTimeSeconds": 0.233333,
+          "eventSourceType": 1,
+          "eventType": 2,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+            "effectIdList": "",
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HurtAnimArray": "",
+            "HitShake": "False"
+          }
+        },
+        {
+          "variantId": 102,
+          "animation": "attack_2",
+          "triggerFrame": 7,
+          "triggerTimeSeconds": 0.233333,
+          "eventSourceType": 1,
+          "eventType": 2,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HitShake": "False",
+            "effectIdList": "",
+            "HurtAnimArray": ""
+          }
+        },
+        {
+          "variantId": 103,
+          "animation": "attack_2",
+          "triggerFrame": 12,
+          "triggerTimeSeconds": 0.4,
+          "eventSourceType": 1,
+          "eventType": 2,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HitShake": "False",
+            "effectIdList": "",
+            "HurtAnimArray": ""
+          }
+        },
+        {
+          "variantId": 104,
+          "animation": "attack_2",
+          "triggerFrame": 7,
+          "triggerTimeSeconds": 0.233333,
+          "eventSourceType": 2,
+          "eventType": 2,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+            "effectIdList": "",
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HurtAnimArray": "",
+            "HitShake": "False"
+          }
+        },
+        {
+          "variantId": 106,
+          "animation": "attack_2",
+          "triggerFrame": 12,
+          "triggerTimeSeconds": 0.4,
+          "eventSourceType": 2,
+          "eventType": 2,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/xiaozhiguai/eff_heros_genggui_attack_sj.prefab",
+            "effectIdList": "",
+            "HitScaleFrame": "False",
+            "HitPauseAnim": "False",
+            "ScaleValue": "0",
+            "DuraTime": "0",
+            "HitBack": "False",
+            "HurtAnimArray": "",
+            "HitShake": "False"
+          }
+        },
+        {
+          "variantId": 104,
+          "animation": "attack_1",
+          "triggerFrame": 0,
+          "triggerTimeSeconds": 0,
+          "eventSourceType": 1,
+          "eventType": 1,
+          "soundId": 0,
+          "parameters": {
+            "EffectPrefabArray": "Assets/IGSoft_Resources/Projects/Audio/heroAudio/Audio_xiaozhi/Audio_xiaozhi_attack1.prefab",
+            "effectIdList": "",
+            "AnimEndNotify": "False",
+            "HoldTime": "0",
+            "CheckSelectedTarget": "False",
+            "CheckHitedTarget": "False",
+            "LockCastPosition": "False",
+            "IsDestroyAnimEnd": "False"
+          }
+        }
+      ],
+      "file": {
+        "path": "levels/desert-1/combat-events/Heros_xiaogenggui.bytes",
+        "bytes": 4610,
+        "sha256": "401d95ad2fe530b3f531b634e6f5f8eaceb153f37b9d3dbc262b339acb819d59"
+      }
     }
   ],
+  "attackEvidence": {
+    "distanceRule": {
+      "source": "Client/SkillClient/Statement.lua",
+      "targetingDistanceUnits": "thousandths-of-world-unit",
+      "effectiveCenterDistance": "targeting-distance-plus-target-model-radius",
+      "includesCasterRadius": false
+    },
+    "units": [
+      {
+        "owner": "hero-lightning",
+        "kind": "projectile",
+        "targetingDistance": 2800,
+        "sourceBundles": [
+          "fxLightning"
+        ],
+        "emitter": {
+          "name": "Emiter_hero_shandianqiu_zidan1",
+          "trackerPath": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/shandianqiu/eff_hero_shandianqiu_zidan1.prefab",
+          "waveCount": 1,
+          "bulletsPerWave": 1,
+          "intervalMs": 200
+        },
+        "projectile": {
+          "name": "eff_hero_shandianqiu_zidan1",
+          "tracker": "SDThunderChainTracker",
+          "prefabInitSpeed": 20,
+          "prefabMaxFlyDistance": 20,
+          "prefabDurationMs": 2000,
+          "prefabLockTarget": true,
+          "eventInitSpeed": 10,
+          "eventMaxFlyDistance": 90,
+          "eventMaxFlyTimeMs": 3000,
+          "eventLockTarget": false,
+          "collisionMaxCount": 1,
+          "hitEffectPath": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/shandianqiu/eff_hero_shandianqiu_sj1.prefab"
+        }
+      },
+      {
+        "owner": "hero-jinx",
+        "kind": "projectile",
+        "targetingDistance": 3400,
+        "sourceBundles": [
+          "fxJinx"
+        ],
+        "emitter": {
+          "name": "Emiter_eff_heros_jinkesi_attack_zd_1",
+          "trackerPath": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/jinkesi/eff_heros_jinkesi_attack_zd_1.prefab",
+          "waveCount": 2,
+          "bulletsPerWave": 1,
+          "intervalMs": 80
+        },
+        "projectile": {
+          "name": "eff_heros_jinkesi_attack_zd_1",
+          "tracker": "SDEffectBullet2DTracker",
+          "prefabInitSpeed": 8.5,
+          "prefabMaxFlyDistance": 20,
+          "prefabDurationMs": 10000,
+          "prefabLockTarget": false,
+          "eventInitSpeed": null,
+          "eventMaxFlyDistance": null,
+          "eventMaxFlyTimeMs": null,
+          "eventLockTarget": null,
+          "collisionMaxCount": 1,
+          "hitEffectPath": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/jinkesi/eff_heros_jinkesi_attack_zd_sj_lanse.prefab"
+        }
+      },
+      {
+        "owner": "hero-clown",
+        "kind": "projectile-then-area-effect",
+        "targetingDistance": 3200,
+        "sourceBundles": [
+          "fxClown"
+        ],
+        "emitter": {
+          "name": "Emiter_hero_eject_timo_zidan1",
+          "trackerPath": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/timo/eff_hero_timo_zidan1.prefab",
+          "waveCount": 1,
+          "bulletsPerWave": 1,
+          "intervalMs": 130
+        },
+        "projectile": {
+          "name": "eff_hero_timo_zidan1",
+          "tracker": "SDEffectBullet2DTracker",
+          "prefabInitSpeed": 6,
+          "prefabMaxFlyDistance": 20,
+          "prefabDurationMs": 10000,
+          "prefabLockTarget": false,
+          "eventInitSpeed": 10,
+          "eventMaxFlyDistance": 90,
+          "eventMaxFlyTimeMs": 3000,
+          "eventLockTarget": false,
+          "collisionMaxCount": 1,
+          "hitEffectPath": "Assets/IGSoft_Resources/Projects/Prefabs/Hero/timo/eff_hero_timo_sj1.prefab"
+        }
+      },
+      {
+        "owner": "hero-summoner",
+        "kind": "summon-melee-unit",
+        "targetingDistance": 2100,
+        "sourceBundles": [
+          "summonMinion",
+          "fxSummon"
+        ],
+        "summon": {
+          "ownerSourceId": 30004,
+          "skillId": 2100,
+          "skillNeedsTarget": false,
+          "selfChanceBuff": [
+            10000,
+            0,
+            21001,
+            10000,
+            0,
+            21002,
+            10000,
+            0,
+            21003
+          ],
+          "buffId": 21001,
+          "effectId": 21001101,
+          "effectParameters": [
+            52001,
+            1,
+            1,
+            1,
+            0
+          ],
+          "soldierId": 52001,
+          "resourceId": 120010,
+          "maxCount": 1,
+          "moveSpeed": 1500,
+          "modelRadius": 0.4,
+          "attackDistance": 400,
+          "seekDistance": 1000,
+          "baseAttack": 0,
+          "attackInheritance": "caller-entity-attack",
+          "stepOneCallAttackRatio": 15000,
+          "normalSkillId": 2110,
+          "cooldownMs": 2000,
+          "damageCoefficient": 550,
+          "effectRange": [
+            150,
+            1000
+          ],
+          "maxTargets": 99,
+          "lifeTimeSeconds": 0,
+          "ownerRemovalDelayMs": 15000,
+          "bornBuffs": [
+            10362,
+            21080
+          ],
+          "spawnPointRule": "nearest-origin-road-point-within-owner-range",
+          "attackTriggerSeconds": 0.133333,
+          "hitTriggerSeconds": 0.233333
+        }
+      },
+      {
+        "owner": "lord-sand-king",
+        "kind": "melee",
+        "targetingDistance": 400,
+        "sourceBundles": [
+          "fxLordSandKing"
+        ],
+        "melee": {
+          "hitTriggerSeconds": [
+            0.066667,
+            0.6
+          ],
+          "damageCoefficientPerHit": 80,
+          "effectRange": 500,
+          "hitEffectPath": "Assets/IGSoft_Resources/Projects/Prefabs/player/shawang/eff_player_shawang_sj.prefab"
+        }
+      }
+    ]
+  },
   "ui": {
     "prefabBundle": "gui_fight_d913352ead4336b6b4e34cbb023b66ad",
     "textureBundle": "gui_tex_fight_d1a8ba972cd7aeab5ddf8c8aab1dda61",
@@ -4820,16 +5702,16 @@
   },
   "unresolved": [
     {
-      "id": "summoner-and-lord-damage-attribution",
+      "id": "summon-ai-and-lord-damage-attribution",
       "blocking": true,
-      "reason": "The summoner attack event only emits audio and the lord's active account attack value is not present in static config.",
-      "requiredEvidence": "summoned-unit implementation and reference-account runtime property capture"
+      "reason": "The summoned unit lifecycle and attack inheritance are resolved, but its native C# seek/move/taunt logic and the lord's active account attack value are not.",
+      "requiredEvidence": "soldier AI method bodies or focused runtime samples, plus reference-account runtime property capture"
     },
     {
       "id": "hero-projectile-and-hit-effects",
-      "blocking": true,
-      "reason": "Two binary combat-event assets are decoded, but referenced projectile and hit-effect Bundle ownership is not resolved.",
-      "requiredEvidence": "matching effect Bundle objects"
+      "blocking": false,
+      "reason": "Projectile and hit-effect Bundle ownership is resolved; target-death and area-effect lifetime rules remain unresolved.",
+      "requiredEvidence": "tracker update implementation or focused runtime samples"
     },
     {
       "id": "hurt-feedback",

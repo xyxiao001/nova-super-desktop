@@ -17,6 +17,7 @@ export const FRONTLINE_ACTOR_DIRECTORIES: Record<string, string> = {
   "hero-jinx": "hero_20_jinkesi",
   "hero-lightning": "hero_21_pikaqiu",
   "lord-sand-king": "lingzhu_01_shawang",
+  "summon-little-ghost": "zhaohuan_xiaozhiguai01",
   "monster-01-jiachong": "monster_01_jiachong",
   "monster-01-xiyi": "monster_01_xiyi",
   "monster-01-zongquan": "monster_01_zongquan",

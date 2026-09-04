@@ -93,6 +93,30 @@ BUNDLES = {
         "file": "char_player_lingzhu_01_shawang_642442ff3e8844a691e98bd6da7b94cd",
         "sha256": "422b04e4976f5c82253995d12adc4e701ba753fae2c22ecd7e5942040acaaf77",
     },
+    "fxJinx": {
+        "file": "fx_heros_jinkesi_1b56cf83ddfd9d492bd726f437c419f9",
+        "sha256": "5dae9e6f45bb2e3f7c185b3f40e558beceabb835bc7ba36e6b07cdc1078e3ab0",
+    },
+    "fxLightning": {
+        "file": "fx_heros_shandianqiu_eba63a02041be39d16eb3c7d86092f3f",
+        "sha256": "3fa83e1e2f627abdb9615f5bbcb04816db173e2afe87947aaeae9014c3ec07ac",
+    },
+    "fxClown": {
+        "file": "fx_heros_timo_dc7189aedbc9e1c88ed4102e55d74c55",
+        "sha256": "137d535cdcfea86d5926e2f693511fa0d331fd18b0ad324d123b096d5ac3334c",
+    },
+    "fxSummon": {
+        "file": "fx_heros_xiaozhiguai_4050e8c9f089d54cc640dd4e5e33931c",
+        "sha256": "22a19218e68dc118f2f1fb2e49e816d58a962f136125db723fb94438568b6a2f",
+    },
+    "summonMinion": {
+        "file": "char_zhaohuan_xiaozhiguai01_63d009a0028072e0d6caed47c3fcfcb2",
+        "sha256": "e2ce2a07ebf4b9dd81fe611c3692ca6e1411dfaa5f95dc8ded8220f87b602cf7",
+    },
+    "fxLordSandKing": {
+        "file": "fx_player_shawang_63649f6f7c2d890d2affcd29ec728b38",
+        "sha256": "4cf00500764b17c02716f6dd44b3eb440359283d71bd90b0eed3d58f3ca4c9ee",
+    },
 }
 
 HEROES = [
@@ -102,6 +126,9 @@ HEROES = [
     ("hero-lightning", "hero_21_pikaqiu", "闪电丘", "heroLightning"),
 ]
 LORD = ("lord-sand-king", "lingzhu_01_shawang", "沙王", "lordSandKing")
+SUMMONS = [
+    ("summon-little-ghost", "zhaohuan_xiaozhiguai01", "小笑笑鬼", "summonMinion"),
+]
 ENEMIES = [
     ("monster-01-jiachong", "monster_01_jiachong", "沙甲虫", "monsterJiachong"),
     ("monster-01-xiyi", "monster_01_xiyi", "沙漠蜥蜴", "monsterXiyi"),
@@ -168,7 +195,10 @@ def export_wave_config(
         "ectype_spawn_monster_info_c.csv",
         "Monster.csv",
         "MonsterLevelProp_C.csv",
+        "ConfigResource.csv",
         "Skill.csv",
+        "Buff.csv",
+        "Effect.csv",
     )
     text_table_names = (
         "ectype_misc_info_c.csv",
@@ -176,6 +206,8 @@ def export_wave_config(
         "HeroPropBase.csv",
         "PetSkill.csv",
         "Freeze.csv",
+        "Soldier.csv",
+        "hero_step_c.csv",
     )
     table_names = (*dbc_table_names, *text_table_names)
     table_bytes = {
@@ -218,6 +250,17 @@ def export_wave_config(
     }
     if sorted(monsters_by_id) != monster_ids:
         raise RuntimeError("First-level monster metadata is incomplete")
+    monster_resource_ids = {
+        monster["lResID"]
+        for monster in monsters_by_id.values()
+    }
+    resources_by_id = {
+        row["nResID"]: row
+        for row in tables["ConfigResource.csv"]
+        if row["nResID"] in monster_resource_ids
+    }
+    if sorted(resources_by_id) != sorted(monster_resource_ids):
+        raise RuntimeError("First-level monster model resources are incomplete")
 
     monster_levels_by_id = {
         (row["lMonsterID"], row["lLevel"]): row
@@ -269,6 +312,7 @@ def export_wave_config(
                     f"for monster {row['monsterId']}"
                 )
             base_hp = monster_level["lHP"]
+            resource = resources_by_id[monster["lResID"]]
             groups.append(
                 {
                     "id": row["id"],
@@ -286,6 +330,7 @@ def export_wave_config(
                         "id": row["monsterId"],
                         "name": monster["szName"],
                         "resourceId": monster["lResID"],
+                        "modelRadius": round(resource["fModelRadius"], 6),
                         "moveSpeed": monster["lMoveSpeed"],
                         "hpSegments": monster["lHP_Count"],
                         "baseHp": base_hp,
@@ -368,6 +413,82 @@ def export_wave_config(
             }
         )
 
+    summoner_hero = next(
+        row for row in tables["hero_c.csv"]
+        if int(row["heroID(key)"]) == 30004
+    )
+    summoner_skill = next(
+        row for row in tables["Skill.csv"]
+        if row["SkillID"] == 2100 and row["SkillSubID"] == 1
+    )
+    summon_buff_id = summoner_skill["SelfChanceBuff"][2]
+    summon_buff = next(
+        row for row in tables["Buff.csv"]
+        if row["dwBuffID"] == summon_buff_id
+    )
+    summon_effect = next(
+        row for row in tables["Effect.csv"]
+        if row["nEffectID"] == summon_buff["listEffect"][0]
+    )
+    summon_params = [int(value) for value in summon_effect["listParam"]]
+    if summon_params != [52001, 1, 1, 1, 0]:
+        raise RuntimeError(f"Unexpected summoner effect parameters: {summon_params}")
+    summon_soldier = next(
+        row for row in tables["Soldier.csv"]
+        if int(row["lSoldierID(key)"]) == summon_params[0]
+    )
+    summon_skill = next(
+        row for row in tables["Skill.csv"]
+        if row["SkillID"] == int(summon_soldier["nNormalSkillID"])
+        and row["SkillSubID"] == 1
+    )
+    summon_freeze = next(
+        row for row in tables["Freeze.csv"]
+        if int(row["FreezeID(key)"])
+        == int(summon_soldier["FreezeID(list;int)"].split(";")[0])
+    )
+    summon_resource = next(
+        row for row in tables["ConfigResource.csv"]
+        if row["nResID"] == int(summon_soldier["lResID"])
+    )
+    summon_step = next(
+        row for row in tables["hero_step_c.csv"]
+        if row["nVocation(key)"] == summoner_hero["nVocation"]
+        and row["nStep(key)"] == "1"
+    )
+    summon_profile = {
+        "ownerSourceId": 30004,
+        "skillId": 2100,
+        "skillNeedsTarget": bool(summoner_skill["NeedSkillTarget"]),
+        "selfChanceBuff": summoner_skill["SelfChanceBuff"],
+        "buffId": summon_buff_id,
+        "effectId": summon_effect["nEffectID"],
+        "effectParameters": summon_params,
+        "soldierId": summon_params[0],
+        "resourceId": int(summon_soldier["lResID"]),
+        "maxCount": int(summoner_hero["nSummonMax"]),
+        "moveSpeed": int(summon_soldier["lMoveSpeed"]),
+        "modelRadius": round(summon_resource["fModelRadius"], 6),
+        "attackDistance": int(summon_soldier["nAttackDistance"]),
+        "seekDistance": float(summon_soldier["SeekDistance"]),
+        "baseAttack": int(summon_soldier["lCUR_A(list;int)"].split(";")[0]),
+        "attackInheritance": "caller-entity-attack",
+        "stepOneCallAttackRatio": int(summon_step["sCallAttackRatio"]),
+        "normalSkillId": summon_skill["SkillID"],
+        "cooldownMs": int(summon_freeze["Time"]),
+        "damageCoefficient": summon_skill["DamageCoefficient"],
+        "effectRange": summon_skill["RangeValue"],
+        "maxTargets": summon_skill["MaxTargets"],
+        "lifeTimeSeconds": float(summon_soldier["nLifeTime"]),
+        "ownerRemovalDelayMs": int(summon_soldier["nDelayDeadTime"]),
+        "bornBuffs": [
+            int(value)
+            for value in summon_soldier["BornBuff(list;int)"].split(";")
+            if value
+        ],
+        "spawnPointRule": "nearest-origin-road-point-within-owner-range",
+    }
+
     decoded = {
         "sourceVersion": SOURCE_VERSION,
         "sourceContainer": {
@@ -398,7 +519,7 @@ def export_wave_config(
             "rowLayout": "fixed-width",
             "dictionaryValues": "indexed",
             "int64Values": "indexed",
-            "listValues": "variable-width-integer-sequences",
+            "listValues": "typed-variable-width-sequences",
             "stringLengths": "7-bit-encoded",
         },
         "economy": economy,
@@ -413,6 +534,7 @@ def export_wave_config(
             "hitTimeSeconds": None,
         },
         "heroes": heroes,
+        "summons": [summon_profile],
         "waves": waves,
     }
     path = level_root / "wave-config.json"
@@ -646,6 +768,7 @@ def export_combat_event_data(
         ("heroJinx", "Heros_jinkesi", "hero-jinx"),
         ("heroLightning", "hero_pikaqiu", "hero-lightning"),
         ("lordSandKing", "Lingzhu_shawang", "lord-sand-king"),
+        ("summonMinion", "Heros_xiaogenggui", "summon-little-ghost"),
     ):
         _, asset = find_named_object(
             environments[bundle_key],
@@ -740,6 +863,194 @@ def parse_combat_event_records(raw: bytes) -> list[dict[str, Any]]:
         )
 
     return records
+
+
+def game_object_mono_behaviour(
+    environment: Any,
+    game_object_name: str,
+    script_name: str,
+) -> dict[str, Any]:
+    objects = {obj.path_id: obj for obj in environment.objects}
+    _, game_object = find_named_object(environment, "GameObject", game_object_name)
+    for pair in game_object.m_Component:
+        pointer = getattr(pair, "component", getattr(pair, "m_Component", None))
+        component = objects.get(getattr(pointer, "path_id", 0))
+        if component is None or component.type.name != "MonoBehaviour":
+            continue
+        tree = component.read_typetree()
+        script_pointer = tree.get("m_Script", {})
+        script = objects.get(int(script_pointer.get("m_PathID", 0)))
+        if script is not None and getattr(script.read(), "m_Name", "") == script_name:
+            return tree
+    raise RuntimeError(
+        f"Missing {script_name} on GameObject {game_object_name}"
+    )
+
+
+def export_attack_evidence(
+    environments: dict[str, Any],
+    summon_profile: dict[str, Any],
+) -> dict[str, Any]:
+    jinx_emitter = game_object_mono_behaviour(
+        environments["fxJinx"],
+        "Emiter_eff_heros_jinkesi_attack_zd_1",
+        "EmiteBase",
+    )
+    jinx_projectile = game_object_mono_behaviour(
+        environments["fxJinx"],
+        "eff_heros_jinkesi_attack_zd_1",
+        "SDEffectBullet2DTracker",
+    )
+    jinx_collision = game_object_mono_behaviour(
+        environments["fxJinx"],
+        "eff_heros_jinkesi_attack_zd_1",
+        "SDEffectEntityCollision",
+    )
+    lightning_emitter = game_object_mono_behaviour(
+        environments["fxLightning"],
+        "Emiter_hero_shandianqiu_zidan1",
+        "EmiteBase",
+    )
+    lightning_projectile = game_object_mono_behaviour(
+        environments["fxLightning"],
+        "eff_hero_shandianqiu_zidan1",
+        "SDThunderChainTracker",
+    )
+    lightning_collision = game_object_mono_behaviour(
+        environments["fxLightning"],
+        "eff_hero_shandianqiu_zidan1",
+        "SDEffectEntityCollision",
+    )
+    clown_emitter = game_object_mono_behaviour(
+        environments["fxClown"],
+        "Emiter_hero_eject_timo_zidan1",
+        "EmiterFlySward",
+    )
+    clown_projectile = game_object_mono_behaviour(
+        environments["fxClown"],
+        "eff_hero_timo_zidan1",
+        "SDEffectBullet2DTracker",
+    )
+    clown_collision = game_object_mono_behaviour(
+        environments["fxClown"],
+        "eff_hero_timo_zidan1",
+        "SDEffectEntityCollision",
+    )
+
+    return {
+        "distanceRule": {
+            "source": "Client/SkillClient/Statement.lua",
+            "targetingDistanceUnits": "thousandths-of-world-unit",
+            "effectiveCenterDistance": "targeting-distance-plus-target-model-radius",
+            "includesCasterRadius": False,
+        },
+        "units": [
+            {
+                "owner": "hero-lightning",
+                "kind": "projectile",
+                "targetingDistance": 2800,
+                "sourceBundles": ["fxLightning"],
+                "emitter": {
+                    "name": "Emiter_hero_shandianqiu_zidan1",
+                    "trackerPath": lightning_emitter["TrackerPath"],
+                    "waveCount": int(lightning_emitter["Wave"]),
+                    "bulletsPerWave": int(lightning_emitter["BulletPerWave"]),
+                    "intervalMs": float(lightning_emitter["EmitInterval"]),
+                },
+                "projectile": {
+                    "name": "eff_hero_shandianqiu_zidan1",
+                    "tracker": "SDThunderChainTracker",
+                    "prefabInitSpeed": float(lightning_projectile["InitSpeed"]),
+                    "prefabMaxFlyDistance": float(lightning_projectile["MaxFlyDistance"]),
+                    "prefabDurationMs": float(lightning_projectile["Duration"]),
+                    "prefabLockTarget": bool(lightning_projectile["LockTarget"]),
+                    "eventInitSpeed": 10.0,
+                    "eventMaxFlyDistance": 90.0,
+                    "eventMaxFlyTimeMs": 3000.0,
+                    "eventLockTarget": False,
+                    "collisionMaxCount": int(lightning_collision["CollisionMaxNum"]),
+                    "hitEffectPath": lightning_projectile["HitEffectPath"],
+                },
+            },
+            {
+                "owner": "hero-jinx",
+                "kind": "projectile",
+                "targetingDistance": 3400,
+                "sourceBundles": ["fxJinx"],
+                "emitter": {
+                    "name": "Emiter_eff_heros_jinkesi_attack_zd_1",
+                    "trackerPath": jinx_emitter["TrackerPath"],
+                    "waveCount": int(jinx_emitter["Wave"]),
+                    "bulletsPerWave": int(jinx_emitter["BulletPerWave"]),
+                    "intervalMs": float(jinx_emitter["EmitInterval"]),
+                },
+                "projectile": {
+                    "name": "eff_heros_jinkesi_attack_zd_1",
+                    "tracker": "SDEffectBullet2DTracker",
+                    "prefabInitSpeed": float(jinx_projectile["InitSpeed"]),
+                    "prefabMaxFlyDistance": float(jinx_projectile["MaxFlyDistance"]),
+                    "prefabDurationMs": float(jinx_projectile["Duration"]),
+                    "prefabLockTarget": bool(jinx_projectile["LockTarget"]),
+                    "eventInitSpeed": None,
+                    "eventMaxFlyDistance": None,
+                    "eventMaxFlyTimeMs": None,
+                    "eventLockTarget": None,
+                    "collisionMaxCount": int(jinx_collision["CollisionMaxNum"]),
+                    "hitEffectPath": jinx_projectile["HitEffectPath"],
+                },
+            },
+            {
+                "owner": "hero-clown",
+                "kind": "projectile-then-area-effect",
+                "targetingDistance": 3200,
+                "sourceBundles": ["fxClown"],
+                "emitter": {
+                    "name": "Emiter_hero_eject_timo_zidan1",
+                    "trackerPath": clown_emitter["TrackerPath"],
+                    "waveCount": int(clown_emitter["Wave"]),
+                    "bulletsPerWave": int(clown_emitter["BulletPerWave"]),
+                    "intervalMs": float(clown_emitter["EmitInterval"]),
+                },
+                "projectile": {
+                    "name": "eff_hero_timo_zidan1",
+                    "tracker": "SDEffectBullet2DTracker",
+                    "prefabInitSpeed": float(clown_projectile["InitSpeed"]),
+                    "prefabMaxFlyDistance": float(clown_projectile["MaxFlyDistance"]),
+                    "prefabDurationMs": float(clown_projectile["Duration"]),
+                    "prefabLockTarget": bool(clown_projectile["LockTarget"]),
+                    "eventInitSpeed": 10.0,
+                    "eventMaxFlyDistance": 90.0,
+                    "eventMaxFlyTimeMs": 3000.0,
+                    "eventLockTarget": False,
+                    "collisionMaxCount": int(clown_collision["CollisionMaxNum"]),
+                    "hitEffectPath": clown_projectile["destroyEffectPath"],
+                },
+            },
+            {
+                "owner": "hero-summoner",
+                "kind": "summon-melee-unit",
+                "targetingDistance": 2100,
+                "sourceBundles": ["summonMinion", "fxSummon"],
+                "summon": {
+                    **summon_profile,
+                    "attackTriggerSeconds": 0.133333,
+                    "hitTriggerSeconds": 0.233333,
+                },
+            },
+            {
+                "owner": "lord-sand-king",
+                "kind": "melee",
+                "targetingDistance": 400,
+                "sourceBundles": ["fxLordSandKing"],
+                "melee": {
+                    "hitTriggerSeconds": [0.066667, 0.6],
+                    "damageCoefficientPerHit": 80,
+                    "effectRange": 500,
+                    "hitEffectPath": "Assets/IGSoft_Resources/Projects/Prefabs/player/shawang/eff_player_shawang_sj.prefab",
+                },
+            },
+        ],
+    }
 
 
 def make_actor(
@@ -845,6 +1156,19 @@ def main() -> None:
         )
         for actor_id, asset_name, display_name, bundle_key in ENEMIES
     ]
+    summons = [
+        make_actor(
+            bundle_paths[bundle_key],
+            output_root,
+            actor_id,
+            asset_name,
+            "summon",
+            [f"bundle-object:{bundle_key}", "rkt-config:soldier-52001"],
+            ["stand", "run", "attack_1", "born", "dead"],
+            display_name,
+        )
+        for actor_id, asset_name, display_name, bundle_key in SUMMONS
+    ]
 
     manifest = {
         "schemaVersion": 1,
@@ -908,6 +1232,7 @@ def main() -> None:
                     "EctypeWave contains six records for source level 100101",
                     "ectype_spawn_monster_info_c contains 18 spawn groups for source level 100101",
                     "Monster identifies four configured monster variants",
+                    "ConfigResource supplies each monster model radius used by target acquisition",
                 ],
             },
         ],
@@ -930,6 +1255,12 @@ def main() -> None:
                     "heroClown": "hero-resource:30005-model:90201",
                     "heroSummoner": "hero-resource:30004-model:120001",
                     "lordSandKing": "lord-resource:1",
+                    "fxJinx": "normal-attack-emitter-projectile-and-hit-effect",
+                    "fxLightning": "normal-attack-emitter-projectile-and-hit-effect",
+                    "fxClown": "normal-attack-emitter-projectile-and-area-effect",
+                    "fxSummon": "summoned-unit-melee-effects",
+                    "summonMinion": "summoned-unit-combat-events",
+                    "fxLordSandKing": "lord-normal-attack-hit-effect",
                 }[key],
             )
             for key in BUNDLES
@@ -951,6 +1282,7 @@ def main() -> None:
             "heroes": heroes,
             "lord": lord,
             "enemies": enemies,
+            "summons": summons,
             "playerSlot": {
                 "binding": "runtime-player-loadout",
                 "fixedActor": "lord-sand-king",
@@ -969,6 +1301,10 @@ def main() -> None:
             level_root,
             output_root,
         ),
+        "attackEvidence": export_attack_evidence(
+            environments,
+            wave_config["summons"][0],
+        ),
         "ui": {
             "prefabBundle": BUNDLES["fightUi"]["file"],
             "textureBundle": BUNDLES["fightUiTextures"]["file"],
@@ -977,16 +1313,16 @@ def main() -> None:
         },
         "unresolved": [
             {
-                "id": "summoner-and-lord-damage-attribution",
+                "id": "summon-ai-and-lord-damage-attribution",
                 "blocking": True,
-                "reason": "The summoner attack event only emits audio and the lord's active account attack value is not present in static config.",
-                "requiredEvidence": "summoned-unit implementation and reference-account runtime property capture",
+                "reason": "The summoned unit lifecycle and attack inheritance are resolved, but its native C# seek/move/taunt logic and the lord's active account attack value are not.",
+                "requiredEvidence": "soldier AI method bodies or focused runtime samples, plus reference-account runtime property capture",
             },
             {
                 "id": "hero-projectile-and-hit-effects",
-                "blocking": True,
-                "reason": "Two binary combat-event assets are decoded, but referenced projectile and hit-effect Bundle ownership is not resolved.",
-                "requiredEvidence": "matching effect Bundle objects",
+                "blocking": False,
+                "reason": "Projectile and hit-effect Bundle ownership is resolved; target-death and area-effect lifetime rules remain unresolved.",
+                "requiredEvidence": "tracker update implementation or focused runtime samples",
             },
             {
                 "id": "hurt-feedback",

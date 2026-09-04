@@ -29,6 +29,12 @@ class DbcField:
     pool_index: int
 
 
+@dataclass(frozen=True)
+class DbcList:
+    values: list[int]
+    value_width: int
+
+
 def recover_rkt_tail(raw: bytes) -> tuple[bytes, int]:
     if len(raw) < RKT_HEADER_SIZE or raw[:4] != RKT_MAGIC:
         raise ValueError("Not an RKT archive")
@@ -178,12 +184,41 @@ def _read_dbc_int64_pools(
     return pools
 
 
+def _read_dbc_float_pools(
+    raw: bytes,
+    offset: int,
+    size: int,
+    count: int,
+) -> list[list[float]]:
+    section_end = offset + size
+    descriptors = []
+    for _ in range(count):
+        value_offset, value_count = struct.unpack_from("<II", raw, offset)
+        offset += 8
+        descriptors.append((value_offset, value_count))
+
+    values_start = offset
+    pools = []
+    for value_offset, value_count in descriptors:
+        pools.append([
+            struct.unpack_from("<f", raw, values_start + value_offset + index * 4)[0]
+            for index in range(value_count)
+        ])
+
+    if values_start + max(
+        (value_offset + value_count * 4 for value_offset, value_count in descriptors),
+        default=0,
+    ) != section_end:
+        raise ValueError("DBC float section size mismatch")
+    return pools
+
+
 def _read_dbc_lists(
     raw: bytes,
     offset: int,
     size: int,
     count: int,
-) -> list[list[int]]:
+) -> list[DbcList]:
     if count == 0:
         if size != 0:
             raise ValueError("DBC list section has data but no lists")
@@ -213,7 +248,7 @@ def _read_dbc_lists(
     lists = []
     for value_offset, value_count in descriptors:
         if value_count == 0:
-            lists.append([])
+            lists.append(DbcList(values=[], value_width=0))
             continue
         value_end = next(
             (
@@ -237,7 +272,7 @@ def _read_dbc_lists(
                 "little",
                 signed=True,
             ))
-        lists.append(values)
+        lists.append(DbcList(values=values, value_width=value_width))
 
     if populated_offsets and max(populated_offsets) >= values_size:
         raise ValueError("DBC list section size mismatch")
@@ -265,6 +300,9 @@ def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
     int64_offset = header[14]
     int64_size = header[15]
     int64_count = header[16]
+    float_offset = header[17]
+    float_size = header[18]
+    float_count = header[19]
     list_offset = header[20]
     list_size = header[21]
     list_count = header[22]
@@ -307,6 +345,12 @@ def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
         int64_size,
         int64_count,
     )
+    float_pools = _read_dbc_float_pools(
+        raw,
+        float_offset,
+        float_size,
+        float_count,
+    )
     strings = _read_dbc_strings(
         raw,
         string_offset,
@@ -334,11 +378,27 @@ def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
             if encoded == null_value:
                 value: Any = None
             elif field.flags & 0x20:
-                value = lists[encoded]
+                list_index = encoded
+                if field.flags & 0x40:
+                    list_index = dictionaries[field.pool_index][encoded]
+                dbc_list = lists[list_index]
+                value = dbc_list.values
                 if field.value_type in (4, 5):
                     value = [strings[item] for item in value]
+                elif field.value_type == 3:
+                    if dbc_list.value_width != 4:
+                        raise ValueError(
+                            "Unsupported DBC float list value width: "
+                            f"{dbc_list.value_width}"
+                        )
+                    value = [
+                        struct.unpack("<f", struct.pack("<i", item))[0]
+                        for item in value
+                    ]
             elif field.value_type == 2 and field.flags & 0x40:
                 value = int64_pools[field.pool_index][encoded]
+            elif field.value_type == 3 and field.flags & 0x40:
+                value = float_pools[field.pool_index][encoded]
             elif field.flags & 0x40:
                 value = dictionaries[field.pool_index][encoded]
             elif field.value_type in (4, 5):

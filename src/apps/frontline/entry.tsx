@@ -18,7 +18,10 @@ import {
   type BattleState,
 } from "./frontlineCore";
 import FrontlineCampaign from "./FrontlineCampaign";
-import { loadFirstLevel } from "./frontlineLevel";
+import {
+  FIRST_LEVEL_ATTACK_TEST_TUNING,
+  loadFirstLevel,
+} from "./frontlineLevel";
 import FrontlineHeroes from "./FrontlineHeroes";
 import FrontlineLord from "./FrontlineLord";
 import FrontlineRecruit, {
@@ -134,7 +137,11 @@ export default function FrontlineGame() {
     setError("");
     setRendererReady(false);
     try {
-      const level = await loadFirstLevel(progress.lineup, progress.heroes);
+      const level = await loadFirstLevel(
+        progress.lineup,
+        progress.heroes,
+        FIRST_LEVEL_ATTACK_TEST_TUNING,
+      );
       const battle = createBattle(level.battle);
       setInitialBattle(battle);
       setSnapshot(battle);
@@ -387,6 +394,7 @@ export default function FrontlineGame() {
               <div>
                 <small>烈日沙漠1</small>
                 <strong>第 {snapshot.waveIndex + 1} / 6 波</strong>
+                <small className="battle-test-badge">英雄攻击测试 ×5%</small>
               </div>
               <output>
                 <span>剩余</span>

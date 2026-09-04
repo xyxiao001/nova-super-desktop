@@ -13,6 +13,7 @@ const actors = [
   ...manifest.actors.heroes,
   manifest.actors.lord,
   ...manifest.actors.enemies,
+  ...manifest.actors.summons,
 ];
 
 for (const actor of actors) {

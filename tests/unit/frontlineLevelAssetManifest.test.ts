@@ -46,6 +46,12 @@ describe("frontline first-level asset manifest", () => {
       "heroClown",
       "heroSummoner",
       "lordSandKing",
+      "fxJinx",
+      "fxLightning",
+      "fxClown",
+      "fxSummon",
+      "summonMinion",
+      "fxLordSandKing",
     ]);
     expect(manifest.bundles.every((bundle) => bundle.sha256.length === 64))
       .toBe(true);
@@ -76,7 +82,7 @@ describe("frontline first-level asset manifest", () => {
     expect(scene.crystal.logical).toEqual({ x: 462.414, y: 1423.554 });
   });
 
-  it("records the four lineup heroes, Sand King, and three observed enemy types", async () => {
+  it("records the four heroes, their summon, Sand King, and three enemy types", async () => {
     const { actors, battleProfile } = await readManifest();
 
     expect(battleProfile).toMatchObject({
@@ -105,12 +111,23 @@ describe("frontline first-level asset manifest", () => {
       "沙漠蜥蜴",
       "野狗",
     ]);
+    expect(actors.summons).toEqual([expect.objectContaining({
+      id: "summon-little-ghost",
+      role: "summon",
+      displayName: "小笑笑鬼",
+      requiredAnimations: ["stand", "run", "attack_1", "born", "dead"],
+    })]);
     expect(actors.playerSlot).toMatchObject({
       binding: "runtime-player-loadout",
       fixedActor: "lord-sand-king",
     });
 
-    for (const actor of [...actors.heroes, actors.lord, ...actors.enemies]) {
+    for (const actor of [
+      ...actors.heroes,
+      actors.lord,
+      ...actors.enemies,
+      ...actors.summons,
+    ]) {
       expect(actor.binaryVersion, actor.id).toBe("4.2.33");
       expect(actor.lifecycleAudit.missing, actor.id).toEqual([]);
       expect(
@@ -130,6 +147,7 @@ describe("frontline first-level asset manifest", () => {
       ...manifest.actors.heroes.flatMap((actor) => Object.values(actor.files)),
       ...Object.values(manifest.actors.lord.files),
       ...manifest.actors.enemies.flatMap((actor) => Object.values(actor.files)),
+      ...manifest.actors.summons.flatMap((actor) => Object.values(actor.files)),
       manifest.audio.backgroundMusic.file,
       ...manifest.combatEventData.map((entry) => entry.file),
     ];
@@ -159,7 +177,7 @@ describe("frontline first-level asset manifest", () => {
       rowLayout: "fixed-width",
       dictionaryValues: "indexed",
       int64Values: "indexed",
-      listValues: "variable-width-integer-sequences",
+      listValues: "typed-variable-width-sequences",
       stringLengths: "7-bit-encoded",
     });
     expect(waveConfig.sourceContainer).toEqual({
@@ -185,8 +203,20 @@ describe("frontline first-level asset manifest", () => {
           sha256: "bd61937b6fa59725fee366e1dbace5bc145f41873e7ff2d19fb15eabd85726d8",
         },
         {
+          name: "ConfigResource.csv",
+          sha256: "8e510f926000d69027f70d9c809cfa01d0891073258a68b01655f427c9943788",
+        },
+        {
           name: "Skill.csv",
           sha256: "aef551e9e1051a13b3e2606388d18b871023a5fed63cc7e50f8e7cbe89d1f128",
+        },
+        {
+          name: "Buff.csv",
+          sha256: "aa045835684f7d1fa5a0c25b0ffbbadb9fe843ea7df0a3ee5eb2b5bb9b2f7fbb",
+        },
+        {
+          name: "Effect.csv",
+          sha256: "b0cbdbe7ae126725307a24d853c3f8ca17169bba2c5473b32001613989b55aa0",
         },
         {
           name: "ectype_misc_info_c.csv",
@@ -208,8 +238,36 @@ describe("frontline first-level asset manifest", () => {
           name: "Freeze.csv",
           sha256: "1a782edb82f8d0f40513c3a80761dfac7eaa4d53a392398494fecac0908ff16e",
         },
+        {
+          name: "Soldier.csv",
+          sha256: "55ff46e5bc341cdf813d1d50253d0aef252706abfe2ffebff73f3dd25cfa13bd",
+        },
+        {
+          name: "hero_step_c.csv",
+          sha256: "f51dd86fca9f1c977b61bb6d3f59dbd3b24d467d14c4167da84c94af47e6cbe7",
+        },
       ],
     });
+    expect(waveConfig.summons).toEqual([expect.objectContaining({
+      ownerSourceId: 30004,
+      skillId: 2100,
+      skillNeedsTarget: false,
+      selfChanceBuff: [10000, 0, 21001, 10000, 0, 21002, 10000, 0, 21003],
+      buffId: 21001,
+      effectId: 21001101,
+      effectParameters: [52001, 1, 1, 1, 0],
+      soldierId: 52001,
+      maxCount: 1,
+      baseAttack: 0,
+      attackInheritance: "caller-entity-attack",
+      stepOneCallAttackRatio: 15000,
+      normalSkillId: 2110,
+      cooldownMs: 2000,
+      damageCoefficient: 550,
+      effectRange: [150, 1000],
+      maxTargets: 99,
+      spawnPointRule: "nearest-origin-road-point-within-owner-range",
+    })]);
     expect(waveConfig.heroes.map((hero) => hero.rangeValue))
       .toEqual([[2000], [800], [550], [550]]);
     expect(waveConfig.economy).toEqual({
@@ -262,6 +320,17 @@ describe("frontline first-level asset manifest", () => {
       1003: 598,
       3001: 2392,
     });
+    const monsterModelRadii = Object.fromEntries(
+      waveConfig.waves
+        .flatMap((wave) => wave.spawnGroups)
+        .map((group) => [group.monster.id, group.monster.modelRadius]),
+    );
+    expect(monsterModelRadii).toEqual({
+      1001: 0.2,
+      1002: 0.2,
+      1003: 0.2,
+      3001: 0.35,
+    });
     for (const wave of waveConfig.waves) {
       for (const group of wave.spawnGroups) {
         expect(group.monster.hp).toBeCloseTo(
@@ -279,6 +348,9 @@ describe("frontline first-level asset manifest", () => {
     const lightning = combatEventData.find(
       (entry) => entry.owner === "hero-lightning",
     );
+    const summon = combatEventData.find(
+      (entry) => entry.owner === "summon-little-ghost",
+    );
     const lord = combatEventData.find(
       (entry) => entry.owner === "lord-sand-king",
     );
@@ -289,6 +361,7 @@ describe("frontline first-level asset manifest", () => {
     });
     expect(jinx?.records).toHaveLength(15);
     expect(lightning?.records).toHaveLength(21);
+    expect(summon?.records.length).toBeGreaterThan(0);
     expect(lord?.records).toHaveLength(21);
 
     const jinxAttack = jinx?.records.find(
@@ -317,6 +390,10 @@ describe("frontline first-level asset manifest", () => {
       eventType: 27,
       parameters: {
         initSpeed: "10",
+        maxFlyDis: "90",
+        maxFlyTime: "3000",
+        lockTarget: "False",
+        SkillOffset: "0.2,0.6",
         EffectPrefabArray: "Assets/IGSoft_Resources/Projects/Prefabs/Hero/shandianqiu/Emiter_hero_shandianqiu_zidan1.prefab|Assets/IGSoft_Resources/Projects/Audio/heroAudio/Audio_shandianqiu_attack.prefab",
       },
     });
@@ -343,9 +420,71 @@ describe("frontline first-level asset manifest", () => {
       .map((item) => item.id);
 
     expect(blocking).toEqual([
-      "summoner-and-lord-damage-attribution",
-      "hero-projectile-and-hit-effects",
+      "summon-ai-and-lord-damage-attribution",
       "hurt-feedback",
     ]);
+  });
+
+  it("records the extracted attack projectile and melee evidence", async () => {
+    const { attackEvidence } = await readManifest();
+    expect(attackEvidence.distanceRule).toEqual({
+      source: "Client/SkillClient/Statement.lua",
+      targetingDistanceUnits: "thousandths-of-world-unit",
+      effectiveCenterDistance: "targeting-distance-plus-target-model-radius",
+      includesCasterRadius: false,
+    });
+
+    expect(attackEvidence.units).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        owner: "hero-lightning",
+        kind: "projectile",
+        projectile: expect.objectContaining({
+          tracker: "SDThunderChainTracker",
+          prefabInitSpeed: 20,
+          eventInitSpeed: 10,
+          eventLockTarget: false,
+          collisionMaxCount: 1,
+        }),
+      }),
+      expect.objectContaining({
+        owner: "hero-jinx",
+        emitter: expect.objectContaining({
+          waveCount: 2,
+          bulletsPerWave: 1,
+          intervalMs: 80,
+        }),
+        projectile: expect.objectContaining({
+          prefabInitSpeed: 8.5,
+          prefabLockTarget: false,
+        }),
+      }),
+      expect.objectContaining({
+        owner: "hero-clown",
+        projectile: expect.objectContaining({
+          prefabInitSpeed: 6,
+          eventInitSpeed: 10,
+          prefabLockTarget: false,
+        }),
+      }),
+      expect.objectContaining({
+        owner: "hero-summoner",
+        kind: "summon-melee-unit",
+        summon: expect.objectContaining({
+          soldierId: 52001,
+          attackDistance: 400,
+          normalSkillId: 2110,
+          hitTriggerSeconds: 0.233333,
+        }),
+      }),
+      expect.objectContaining({
+        owner: "lord-sand-king",
+        kind: "melee",
+        melee: expect.objectContaining({
+          hitTriggerSeconds: [0.066667, 0.6],
+          damageCoefficientPerHit: 80,
+          effectRange: 500,
+        }),
+      }),
+    ]));
   });
 });

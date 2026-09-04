@@ -2247,6 +2247,12 @@
   font-size: 17px;
 }
 
+.battle-hud .battle-test-badge {
+  color: #f2bf70;
+  font-size: 9px;
+  letter-spacing: .04em;
+}
+
 .battle-hud output {
   min-width: 48px;
   color: #d9c59c;
