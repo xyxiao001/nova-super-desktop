@@ -73,14 +73,35 @@ BUNDLES = {
         "file": "gui_tex_fight_d1a8ba972cd7aeab5ddf8c8aab1dda61",
         "sha256": "cfe52964990f3c2dbba943d092e3bbe9f0964c3411f3b830a6f44b46e26d06b3",
     },
+    "heroJinx": {
+        "file": "char_hero_20_jinkesi_2c5f8ce8280086fac9e42c2ff9c3802f",
+        "sha256": "e12058882326fd5209b495ba8f52e67e59d379f4d6b3127e0d7dab8a3e510b71",
+    },
+    "heroLightning": {
+        "file": "char_hero_21_pikaqiu_9b9b8fd4cc2ca2ffc280d41598ee5b6e",
+        "sha256": "2d62b0e63d732a677398faaa7d623baee2b3fafb19d15f318e295933667cf1c6",
+    },
+    "heroClown": {
+        "file": "char_hero_23_baji_fc2526e17298e4bbb6e361da0c75a2b5",
+        "sha256": "74bf9a2197f7cd2dd13b84a30428aeadd2cd7677828a307547aba7c73cb1ad2f",
+    },
+    "heroSummoner": {
+        "file": "char_hero_25_xiaozhi_f359208d0c91fdfb66ec629dc5333117",
+        "sha256": "12e7348ac673ee69e6ffbbc097c15444897688399c56e84ddd123bb77eb278af",
+    },
+    "lordSandKing": {
+        "file": "char_player_lingzhu_01_shawang_642442ff3e8844a691e98bd6da7b94cd",
+        "sha256": "422b04e4976f5c82253995d12adc4e701ba753fae2c22ecd7e5942040acaaf77",
+    },
 }
 
 HEROES = [
-    ("hero-01-fashi", "hero_01_fashi"),
-    ("hero-02-paoshou", "hero_02_paoshou"),
-    ("hero-03-qishi", "hero_03_qishi"),
-    ("hero-04-sheshou", "hero_04_sheshou"),
+    ("hero-summoner", "hero_25_xiaozhi", "精灵大师", "heroSummoner"),
+    ("hero-clown", "hero_23_baji", "小丑皇", "heroClown"),
+    ("hero-jinx", "hero_20_jinkesi", "暴走萌弹", "heroJinx"),
+    ("hero-lightning", "hero_21_pikaqiu", "闪电丘", "heroLightning"),
 ]
+LORD = ("lord-sand-king", "lingzhu_01_shawang", "沙王", "lordSandKing")
 ENEMIES = [
     ("monster-01-jiachong", "monster_01_jiachong", "沙甲虫", "monsterJiachong"),
     ("monster-01-xiyi", "monster_01_xiyi", "沙漠蜥蜴", "monsterXiyi"),
@@ -146,9 +167,11 @@ def export_wave_config(
         "EctypeWave.csv",
         "ectype_spawn_monster_info_c.csv",
         "Monster.csv",
+        "MonsterLevelProp_C.csv",
         "Skill.csv",
     )
     text_table_names = (
+        "ectype_misc_info_c.csv",
         "hero_c.csv",
         "HeroPropBase.csv",
         "PetSkill.csv",
@@ -196,14 +219,56 @@ def export_wave_config(
     if sorted(monsters_by_id) != monster_ids:
         raise RuntimeError("First-level monster metadata is incomplete")
 
+    monster_levels_by_id = {
+        (row["lMonsterID"], row["lLevel"]): row
+        for row in tables["MonsterLevelProp_C.csv"]
+        if row["lMonsterID"] in monster_ids
+    }
+    ectype_misc = next(
+        row
+        for row in tables["ectype_misc_info_c.csv"]
+        if int(row["nEctypeSID(key)"]) == SOURCE_LEVEL_ID
+    )
+    economy = {
+        "initialCoins": 100,
+        "baseHp": int(ectype_misc["nEctypeHealth"]),
+        "summonCosts": [
+            int(value)
+            for value in ectype_misc["tCallCostList(list;int)"].split(";")
+        ],
+        "strengthenCosts": [
+            int(value)
+            for value in ectype_misc["tStrengthCostList(list;int)"].split(";")
+        ],
+        "strengthenUnlockSummons": 5,
+    }
+
     waves = []
     for wave_row in wave_rows:
         wave = wave_row["nWave"]
+        monster_prop_ratios = wave_row["monsterPropRatios"]
+        if not isinstance(monster_prop_ratios, list) or len(monster_prop_ratios) % 2:
+            raise RuntimeError(f"Invalid monster property ratios for wave {wave}")
+        ratios_by_property = dict(zip(
+            monster_prop_ratios[::2],
+            monster_prop_ratios[1::2],
+            strict=True,
+        ))
+        hp_ratio = ratios_by_property[2]
         groups = []
         for row in spawn_rows:
             if row["nWave"] != wave:
                 continue
             monster = monsters_by_id[row["monsterId"]]
+            monster_level = monster_levels_by_id.get(
+                (row["monsterId"], row["monsterLevel"])
+            )
+            if monster_level is None:
+                raise RuntimeError(
+                    f"Missing level {row['monsterLevel']} properties "
+                    f"for monster {row['monsterId']}"
+                )
+            base_hp = monster_level["lHP"]
             groups.append(
                 {
                     "id": row["id"],
@@ -213,6 +278,8 @@ def export_wave_config(
                     "intervalMs": row["interval"],
                     "durationMs": row["duration"],
                     "count": row["monsterCount"],
+                    "coin": row["coin"],
+                    "experience": row["lExp"],
                     "pathOffsetType": row["pathOffsetType"],
                     "monsterLevel": row["monsterLevel"],
                     "monster": {
@@ -220,7 +287,10 @@ def export_wave_config(
                         "name": monster["szName"],
                         "resourceId": monster["lResID"],
                         "moveSpeed": monster["lMoveSpeed"],
-                        "hpScale": monster["lHP_Count"],
+                        "hpSegments": monster["lHP_Count"],
+                        "baseHp": base_hp,
+                        "hpRatio": hp_ratio / 10000,
+                        "hp": base_hp * hp_ratio / 10000,
                         "crystalDamage": monster["nEctypeHealthDamage"],
                     },
                 }
@@ -236,6 +306,8 @@ def export_wave_config(
                 ],
                 "notWaitWaveAllSpawn": bool(wave_row["bNotWaitWaveAllSpawn"]),
                 "bossEffect": int(wave_row["bIsBoosEffect"]),
+                "monsterPropRatios": monster_prop_ratios,
+                "monsterHpRatio": hp_ratio / 10000,
                 "totalMonsterCount": sum(group["count"] for group in groups),
                 "spawnGroups": groups,
             }
@@ -252,13 +324,13 @@ def export_wave_config(
         if base_prop[f"nPropID{index}"] == "1"
     )
     hero_specs = (
-        (10001, "hero-01-fashi", 0.133333),
-        (10002, "hero-04-sheshou", None),
-        (10003, "hero-03-qishi", None),
-        (10004, "hero-02-paoshou", 0.033333),
+        (30004, "hero-summoner", 1739, None),
+        (30005, "hero-clown", 1819, 0.166667),
+        (30002, "hero-jinx", 1819, 0.033333),
+        (30001, "hero-lightning", 2060, 0.233333),
     )
     heroes = []
-    for source_id, actor_id, hit_time in hero_specs:
+    for source_id, actor_id, reference_attack, hit_time in hero_specs:
         hero = next(
             row
             for row in tables["hero_c.csv"]
@@ -287,7 +359,7 @@ def export_wave_config(
                 "sourceId": source_id,
                 "name": hero["szName"],
                 "normalSkillId": skill_id,
-                "baseAttack": base_attack,
+                "baseAttack": reference_attack,
                 "damageCoefficient": skill["DamageCoefficient"],
                 "cooldownMs": int(freeze["Time"]),
                 "rangeValue": skill["RangeValue"],
@@ -325,7 +397,20 @@ def export_wave_config(
             "headerBytes": 108,
             "rowLayout": "fixed-width",
             "dictionaryValues": "indexed",
+            "int64Values": "indexed",
+            "listValues": "variable-width-integer-sequences",
             "stringLengths": "7-bit-encoded",
+        },
+        "economy": economy,
+        "lord": {
+            "id": "lord-sand-king",
+            "sourceId": 1,
+            "name": "沙王",
+            "referencePower": 1178,
+            "cooldownMs": 2000,
+            "rangeValue": 4,
+            "animation": "attack_1",
+            "hitTimeSeconds": None,
         },
         "heroes": heroes,
         "waves": waves,
@@ -550,16 +635,23 @@ def export_audio(
 
 
 def export_combat_event_data(
-    level_environment: Any,
+    environments: dict[str, Any],
     level_root: Path,
     output_root: Path,
 ) -> list[dict[str, Any]]:
     result = []
-    for name, owner in (
-        ("hero_01_fashi", "hero-01-fashi"),
-        ("Heros_paoshou", "hero-02-paoshou"),
+    for bundle_key, name, owner in (
+        ("heroSummoner", "Heros_xiaozhi", "hero-summoner"),
+        ("heroClown", "hero_baji", "hero-clown"),
+        ("heroJinx", "Heros_jinkesi", "hero-jinx"),
+        ("heroLightning", "hero_pikaqiu", "hero-lightning"),
+        ("lordSandKing", "Lingzhu_shawang", "lord-sand-king"),
     ):
-        _, asset = find_named_object(level_environment, "TextAsset", name)
+        _, asset = find_named_object(
+            environments[bundle_key],
+            "TextAsset",
+            name,
+        )
         raw = text_asset_bytes(asset.m_Script)
         path = level_root / "combat-events" / f"{name}.bytes"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -716,16 +808,27 @@ def main() -> None:
 
     heroes = [
         make_actor(
-            bundle_paths["level"],
+            bundle_paths[bundle_key],
             output_root,
             actor_id,
             asset_name,
-            "fixed-first-level-hero",
-            ["bundle-object:firstlv", "live-observation:challenge-roster"],
+            "lineup-hero",
+            [f"bundle-object:{bundle_key}", "live-observation:account-lineup"],
             ["stand", "run", "attack_1"],
+            display_name,
         )
-        for actor_id, asset_name in HEROES
+        for actor_id, asset_name, display_name, bundle_key in HEROES
     ]
+    lord = make_actor(
+        bundle_paths[LORD[3]],
+        output_root,
+        LORD[0],
+        LORD[1],
+        "lord",
+        ["bundle-object:lordSandKing", "live-observation:account-lord"],
+        ["stand", "run", "attack_1"],
+        LORD[2],
+    )
     enemies = [
         make_actor(
             bundle_paths[bundle_key],
@@ -822,6 +925,11 @@ def main() -> None:
                     "monsterZongquan": "live-challenge-roster-and-battle",
                     "fightUi": "live-battle-controls-and-prefab-object-names",
                     "fightUiTextures": "live-battle-controls-and-source-sprite-names",
+                    "heroJinx": "hero-resource:30002-model:100001",
+                    "heroLightning": "hero-resource:30001-model:90001",
+                    "heroClown": "hero-resource:30005-model:90201",
+                    "heroSummoner": "hero-resource:30004-model:120001",
+                    "lordSandKing": "lord-resource:1",
                 }[key],
             )
             for key in BUNDLES
@@ -830,7 +938,7 @@ def main() -> None:
         "battleProfile": {
             "waveCount": 6,
             "threeStarTimeSeconds": 220,
-            "fixedHeroCount": 4,
+            "lineupHeroCount": 4,
             "enemyRosterCount": 3,
             "waveConfig": wave_config,
             "boss": {
@@ -841,10 +949,11 @@ def main() -> None:
         },
         "actors": {
             "heroes": heroes,
+            "lord": lord,
             "enemies": enemies,
             "playerSlot": {
                 "binding": "runtime-player-loadout",
-                "fixedActor": None,
+                "fixedActor": "lord-sand-king",
                 "evidence": ["level-config:heroPos", "live-observation:battle-layout"],
             },
         },
@@ -856,7 +965,7 @@ def main() -> None:
             },
         },
         "combatEventData": export_combat_event_data(
-            environments["level"],
+            environments,
             level_root,
             output_root,
         ),
@@ -868,10 +977,10 @@ def main() -> None:
         },
         "unresolved": [
             {
-                "id": "animation-hit-times",
+                "id": "summoner-and-lord-damage-attribution",
                 "blocking": True,
-                "reason": "Mage and cannon event frames are decoded, but knight and archer timing is not present in the two exported event assets.",
-                "requiredEvidence": "remaining combat event config or frame-by-frame battle sampling",
+                "reason": "The summoner attack event only emits audio and the lord's active account attack value is not present in static config.",
+                "requiredEvidence": "summoned-unit implementation and reference-account runtime property capture",
             },
             {
                 "id": "hero-projectile-and-hit-effects",

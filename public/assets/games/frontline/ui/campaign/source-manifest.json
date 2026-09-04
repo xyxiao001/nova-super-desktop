@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "sourceVersion": "412f11e3c27d645ddeafcf921f558d57",
+  "bundles": [
+    {
+      "file": "gui_mainline_main_background_01_f8d3ee575bbeffccb8f4402a0442762e",
+      "bytes": 263045,
+      "sha256": "b81fc2648c37c4b9adf5232ebcab19b76255d76fbf2f6462076fbffbead7c007"
+    },
+    {
+      "file": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "bytes": 129907,
+      "sha256": "3950bb2d71b6f44c6e0226b18368c6482946e4f2154ad04564fc00498bcd79c5"
+    },
+    {
+      "file": "gui_common_tex_iconitem_monster_6f25b88648faa65d68347c2f20f09b8c",
+      "bytes": 6603923,
+      "sha256": "6ededabbed885e414db5172ab42ca303b307b241c9c7a8e88b7564190c34c529"
+    },
+    {
+      "file": "gui_common_tex_iconitem_currencyicon_bdd2603a4237b25b8f4ae05fde794429",
+      "bytes": 14955,
+      "sha256": "a85e4d5cf63bcbd9ce50e5e453578012e02d548af3e623f70f70d9fe3d3cb889"
+    }
+  ],
+  "files": [
+    {
+      "sourceBundle": "gui_mainline_main_background_01_f8d3ee575bbeffccb8f4402a0442762e",
+      "sourceObject": "Main_background_01",
+      "width": 720,
+      "height": 1600,
+      "file": {
+        "path": "world-map.png",
+        "bytes": 1288965,
+        "sha256": "05c868140537ccf6e519605bd54c9c5d1eb182406b000fb5546ccdd376142602"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guangka_xuanze01",
+      "width": 60,
+      "height": 66,
+      "file": {
+        "path": "ui/campaign/map-node-locked.png",
+        "bytes": 1542,
+        "sha256": "a91359e027ba4ca74c1badffd1e584c4b9110728d29fd13f349a370aa3c4aa8a"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guangka_xuanze02",
+      "width": 60,
+      "height": 66,
+      "file": {
+        "path": "ui/campaign/map-node-current.png",
+        "bytes": 1366,
+        "sha256": "fb4141daad926430162e000d0e4e15e52cfb98c52c1ed770c33d710d93b58dab"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guangka_xuanze03",
+      "width": 74,
+      "height": 90,
+      "file": {
+        "path": "ui/campaign/map-node-selection.png",
+        "bytes": 4847,
+        "sha256": "44e686a695b9c531614fa9b230294c0c46dcaaee36789a8c02b5b913df4f1e41"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guangka_map01",
+      "width": 57,
+      "height": 61,
+      "file": {
+        "path": "ui/campaign/map-node-frame.png",
+        "bytes": 666,
+        "sha256": "46ed3675ecb767f9ea4dd8d099b2aa34ad157217ce8835fa3fbe127b71688c0c"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guangka_map01_hei",
+      "width": 57,
+      "height": 61,
+      "file": {
+        "path": "ui/campaign/map-node-frame-locked.png",
+        "bytes": 757,
+        "sha256": "5714ae4a50d9226e5604bc363719cc9fe3a91622d647e29eedf86c30d7efc6b2"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guanka_di",
+      "width": 364,
+      "height": 28,
+      "file": {
+        "path": "ui/campaign/map-level-label.png",
+        "bytes": 493,
+        "sha256": "ee1a7d20a7f5f4eab715dd57e1eb7b4548f1e1d8f13feda00e6b9e09345dd63c"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Battle_guangka_di",
+      "width": 338,
+      "height": 216,
+      "file": {
+        "path": "ui/campaign/challenge-panel.png",
+        "bytes": 3223,
+        "sha256": "1cc63976dd15f3c1e3689ff3556df32433ae5bdbf45c2b2f6c7ee2e906001286"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Battle_guangka_biaoti",
+      "width": 195,
+      "height": 38,
+      "file": {
+        "path": "ui/campaign/challenge-heading.png",
+        "bytes": 646,
+        "sha256": "056f43f46c7bf90dbd238d7aaf80c9e6b79e5ea6d113f4f2d75836045244a098"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Battle_guangka_title",
+      "width": 228,
+      "height": 39,
+      "file": {
+        "path": "ui/campaign/challenge-title.png",
+        "bytes": 1902,
+        "sha256": "7b1b5a3494fd30bc744a50eff9c266df93f8f14ea64d315f794082441cf8424a"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Battle_guangka_zhengrongdi",
+      "width": 97,
+      "height": 34,
+      "file": {
+        "path": "ui/campaign/challenge-lineup-strip.png",
+        "bytes": 1255,
+        "sha256": "9e330f97b5c664dc5021541fdc21925ecad2716cbf11c9aea1d13826ce4d2947"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Battle_guangka_tongguang",
+      "width": 133,
+      "height": 77,
+      "file": {
+        "path": "ui/campaign/challenge-complete.png",
+        "bytes": 6933,
+        "sha256": "315c8fed2dc354ee9ed5bc559ae41f4d46c9ced859dd12d67cf3ac77167e827a"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Battle_guangka_bossdi01",
+      "width": 166,
+      "height": 203,
+      "file": {
+        "path": "ui/campaign/challenge-enemy-card.png",
+        "bytes": 9236,
+        "sha256": "8e51d0b32864b0b5e6c714bfa3ba87d25d917c585c2501cf43f2c92d089bd39d"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_button_kszd",
+      "width": 277,
+      "height": 114,
+      "file": {
+        "path": "ui/campaign/challenge-button.png",
+        "bytes": 3878,
+        "sha256": "628f634a9d1f940bce0d760557d8618300d8c1b57d4baf4642c4f78374ce88ed"
+      }
+    },
+    {
+      "sourceBundle": "gui_mainline_97f0e7d83537ebdac5c94c270da8f374",
+      "sourceObject": "Main_guangka_tishi",
+      "width": 31,
+      "height": 31,
+      "file": {
+        "path": "ui/campaign/challenge-warning.png",
+        "bytes": 1245,
+        "sha256": "a3c67f4c29507ccd3f08f3dc388e1b3299173618b58e06d23be9d3b5efc817f4"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_monster_6f25b88648faa65d68347c2f20f09b8c",
+      "sourceObject": "lihui_monster_01_jiachong",
+      "width": 134,
+      "height": 101,
+      "file": {
+        "path": "ui/campaign/monster-scarab.png",
+        "bytes": 19778,
+        "sha256": "1bdf21707b0c744d0cb52bd8b7fd366aa4257e9494cbdac0854df3502e732b0e"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_monster_6f25b88648faa65d68347c2f20f09b8c",
+      "sourceObject": "lihui_monster_01_xiyi",
+      "width": 116,
+      "height": 123,
+      "file": {
+        "path": "ui/campaign/monster-lizard.png",
+        "bytes": 29242,
+        "sha256": "2abfe4d62c8df5559fc870ec796651419764efefe31331e4cbc4c2165c34a245"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_monster_6f25b88648faa65d68347c2f20f09b8c",
+      "sourceObject": "lihui_monster_01_zongquan",
+      "width": 129,
+      "height": 116,
+      "file": {
+        "path": "ui/campaign/monster-hound.png",
+        "bytes": 24491,
+        "sha256": "4a9035685c6e012b26066e5dd9190685aa97520b60fda0a54308bb35bac8bdcc"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_currencyicon_bdd2603a4237b25b8f4ae05fde794429",
+      "sourceObject": "Icon_tongbi",
+      "width": 79,
+      "height": 79,
+      "file": {
+        "path": "ui/campaign/reward-coin.png",
+        "bytes": 6244,
+        "sha256": "f8bdf64606b46ff802e54b800972b9c0502821474c0a1bc0fd9948c382c2689d"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_currencyicon_bdd2603a4237b25b8f4ae05fde794429",
+      "sourceObject": "Icon_item_jingyan",
+      "width": 86,
+      "height": 90,
+      "file": {
+        "path": "ui/campaign/reward-experience.png",
+        "bytes": 6864,
+        "sha256": "85bcfb82aeff47e3a96aa90f34c001b389015e4d5e0499a1d567d6695f8fde74"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_currencyicon_bdd2603a4237b25b8f4ae05fde794429",
+      "sourceObject": "Icon_dianjiangqi",
+      "width": 96,
+      "height": 89,
+      "file": {
+        "path": "ui/campaign/reward-ticket.png",
+        "bytes": 6604,
+        "sha256": "30da49e599b1865f86ba05842e8a10c088ffc42f5b198bb49ff44b28170d065b"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_currencyicon_bdd2603a4237b25b8f4ae05fde794429",
+      "sourceObject": "Icon_item_liangcao",
+      "width": 96,
+      "height": 86,
+      "file": {
+        "path": "ui/campaign/reward-ration.png",
+        "bytes": 4488,
+        "sha256": "a519c22d6a67e3078403ca1de61b7c5c136d5c4e6b61264511c858801d924da7"
+      }
+    }
+  ]
+}

@@ -11,6 +11,7 @@ const manifestPath = resolve(
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const actors = [
   ...manifest.actors.heroes,
+  manifest.actors.lord,
   ...manifest.actors.enemies,
 ];
 

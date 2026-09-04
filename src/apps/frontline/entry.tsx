@@ -10,37 +10,81 @@ import {
   touchGame,
 } from "../games/shared/gameStorage";
 import BattleCanvas from "./BattleCanvas";
+import type { BattleCommand } from "./BattleCanvas";
 import {
   createBattle,
+  strengthenCost,
+  summonCost,
   type BattleState,
 } from "./frontlineCore";
+import FrontlineCampaign from "./FrontlineCampaign";
 import { loadFirstLevel } from "./frontlineLevel";
+import FrontlineHeroes from "./FrontlineHeroes";
+import FrontlineLord from "./FrontlineLord";
+import FrontlineRecruit, {
+  type FrontlineRecruitState,
+} from "./FrontlineRecruit";
+import {
+  FRONTLINE_HERO_BY_ID,
+  FRONTLINE_HEROES,
+  type FrontlineHeroId,
+  type FrontlineHeroRoster,
+} from "./frontlineRoster";
 
 type FrontlineProgress = {
-  version: 1;
+  version: 3;
   sourceVersion: string;
   unlockedLevelId: string;
   completedLevelIds: string[];
   stars: Record<string, 0 | 1 | 2 | 3>;
   bestBaseHp: Record<string, number>;
+  heroes: FrontlineHeroRoster;
+  lineup: FrontlineHeroId[];
+  lord: { power: number; gearLevel: number };
+  recruit: FrontlineRecruitState;
 };
 
-type Screen = "map" | "loading" | "battle" | "error";
+type LegacyFrontlineProgress = Omit<FrontlineProgress, "version" | "recruit"> & {
+  version: 2;
+};
+
+type Screen = "map" | "heroes" | "lord" | "recruit" | "loading" | "battle" | "error";
+type PendingBattleCommand =
+  | { type: "summon"; heroId: string }
+  | { type: "strengthen" };
 
 const SOURCE_VERSION = "412f11e3c27d645ddeafcf921f558d57";
+const CAMPAIGN_POWER = 1182;
 const DEFAULT_PROGRESS: FrontlineProgress = {
-  version: 1,
+  version: 3,
   sourceVersion: SOURCE_VERSION,
   unlockedLevelId: "desert-1",
   completedLevelIds: [],
   stars: {},
   bestBaseHp: {},
+  heroes: {
+    lightning: { level: 9, attack: 2060, pieces: 0, material: 400 },
+    jinx: { level: 6, attack: 1819, pieces: 0, material: 1021 },
+    summoner: { level: 5, attack: 1739, pieces: 0, material: 278 },
+    clown: { level: 6, attack: 1819, pieces: 0, material: 46 },
+  },
+  lineup: ["summoner", "clown", "jinx", "lightning"],
+  lord: { power: 1178, gearLevel: 18 },
+  recruit: { tickets: 8, experience: 996, exchangeProgress: 90 },
 };
 const ASSET_ROOT = "/assets/games/frontline";
 
 const loadProgress = () => {
-  const saved = loadGameProgress<FrontlineProgress>("frontline");
-  return saved?.version === 1 ? saved : DEFAULT_PROGRESS;
+  const saved = loadGameProgress<FrontlineProgress | LegacyFrontlineProgress>("frontline");
+  if (saved?.version === 3) return saved;
+  if (saved?.version === 2) {
+    return {
+      ...saved,
+      version: 3,
+      recruit: DEFAULT_PROGRESS.recruit,
+    } satisfies FrontlineProgress;
+  }
+  return DEFAULT_PROGRESS;
 };
 
 const remainingInWave = (battle: BattleState) => {
@@ -60,8 +104,12 @@ export default function FrontlineGame() {
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState<1 | 2>(1);
   const [rendererReady, setRendererReady] = useState(false);
+  const [battleCommand, setBattleCommand] = useState<BattleCommand | null>(null);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [initialHeroFormation, setInitialHeroFormation] = useState(false);
   const [error, setError] = useState("");
   const audioRef = useRef<HTMLAudioElement>(null);
+  const battleCommandSequence = useRef(0);
 
   useEffect(() => {
     touchGame("frontline");
@@ -69,6 +117,9 @@ export default function FrontlineGame() {
       setProgress(DEFAULT_PROGRESS);
       setInitialBattle(null);
       setSnapshot(null);
+      setBattleCommand(null);
+      setShowStatistics(false);
+      setInitialHeroFormation(false);
       setScreen("map");
       saveGameProgress("frontline", DEFAULT_PROGRESS);
     });
@@ -83,19 +134,21 @@ export default function FrontlineGame() {
     setError("");
     setRendererReady(false);
     try {
-      const level = await loadFirstLevel();
+      const level = await loadFirstLevel(progress.lineup, progress.heroes);
       const battle = createBattle(level.battle);
       setInitialBattle(battle);
       setSnapshot(battle);
       setPaused(false);
       setSpeed(1);
+      setBattleCommand(null);
+      setShowStatistics(false);
       setScreen("battle");
       void audioRef.current?.play();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "第一关资源加载失败");
       setScreen("error");
     }
-  }, []);
+  }, [progress.heroes, progress.lineup]);
 
   const onSnapshot = useCallback((battle: BattleState) => {
     setSnapshot({ ...battle });
@@ -111,7 +164,7 @@ export default function FrontlineGame() {
   const leaveBattle = useCallback(() => {
     if (snapshot?.status === "won") {
       const stars: 1 | 2 | 3 = snapshot.elapsed <= 220
-        ? snapshot.baseHp === 10 ? 3 : 2
+        ? snapshot.baseHp === snapshot.config.economy.baseHp ? 3 : 2
         : 1;
       setProgress((current) => ({
         ...current,
@@ -131,15 +184,108 @@ export default function FrontlineGame() {
     audioRef.current?.pause();
     setInitialBattle(null);
     setSnapshot(null);
+    setBattleCommand(null);
+    setShowStatistics(false);
     setPaused(false);
     setScreen("map");
   }, [snapshot]);
 
   const towerSlots = initialBattle?.config.towerSlots ?? [];
   const occupiedSlots = useMemo(
-    () => new Set(initialBattle?.defenders.map((defender) => defender.slotIndex) ?? []),
-    [initialBattle],
+    () => new Set(snapshot?.defenders.flatMap((defender) => (
+      defender.slotIndex === null ? [] : [defender.slotIndex]
+    )) ?? []),
+    [snapshot],
   );
+
+  const upgradeHero = useCallback((hero: (typeof FRONTLINE_HEROES)[number]) => {
+    setProgress((current) => {
+      const state = current.heroes[hero.id];
+      if (state.material < hero.materialCost) return current;
+      return {
+        ...current,
+        heroes: {
+          ...current.heroes,
+          [hero.id]: {
+            ...state,
+            level: state.level + 1,
+            attack: state.attack + 80,
+            material: state.material - hero.materialCost,
+          },
+        },
+      };
+    });
+  }, []);
+
+  const toggleLineup = useCallback((id: FrontlineHeroId) => {
+    setProgress((current) => ({
+      ...current,
+      lineup: current.lineup.includes(id)
+        ? current.lineup.filter((heroId) => heroId !== id)
+        : [...current.lineup, id].slice(-4),
+    }));
+  }, []);
+
+  const upgradeLord = useCallback(() => {
+    setProgress((current) => ({
+      ...current,
+      lord: {
+        power: current.lord.power + 24,
+        gearLevel: current.lord.gearLevel + 1,
+      },
+    }));
+  }, []);
+
+  const recruitHeroes = useCallback((heroIds: FrontlineHeroId[]) => {
+    setProgress((current) => {
+      if (current.recruit.tickets < heroIds.length) return current;
+      const heroes = { ...current.heroes };
+      for (const id of heroIds) {
+        heroes[id] = {
+          ...heroes[id],
+          pieces: heroes[id].pieces + 1,
+        };
+      }
+      return {
+        ...current,
+        heroes,
+        recruit: {
+          tickets: current.recruit.tickets - heroIds.length,
+          experience: Math.min(1200, current.recruit.experience + heroIds.length),
+          exchangeProgress: Math.min(
+            100,
+            current.recruit.exchangeProgress + heroIds.length,
+          ),
+        },
+      };
+    });
+  }, []);
+
+  const sendBattleCommand = useCallback((
+    command: PendingBattleCommand,
+  ) => {
+    battleCommandSequence.current += 1;
+    setBattleCommand({
+      ...command,
+      sequence: battleCommandSequence.current,
+    } as BattleCommand);
+  }, []);
+
+  const summonRandomHero = useCallback(() => {
+    if (!snapshot || progress.lineup.length === 0) return;
+    const deployed = new Set(
+      snapshot.defenders
+        .filter((defender) => defender.kind === "hero")
+        .map((defender) => defender.actorId),
+    );
+    const lineup = progress.lineup
+      .map((id) => FRONTLINE_HERO_BY_ID.get(id))
+      .filter((hero) => hero !== undefined);
+    const undeployed = lineup.filter((hero) => !deployed.has(hero.actorId));
+    const pool = undeployed.length > 0 ? undeployed : lineup;
+    const hero = pool[Math.floor(Math.random() * pool.length)];
+    if (hero) sendBattleCommand({ type: "summon", heroId: hero.actorId });
+  }, [progress.lineup, sendBattleCommand, snapshot]);
 
   return (
     <main className="frontline">
@@ -151,33 +297,18 @@ export default function FrontlineGame() {
       />
       <section className={`frontline-stage ${screen === "map" ? "world-map" : "battle-field"}`}>
         {screen === "map" && (
-          <>
-            <header className="frontline-map-header">
-              <div>
-                <small>第一章</small>
-                <strong>烈日沙漠</strong>
-              </div>
-              <output aria-label="章节星级">
-                {progress.stars["desert-1"] ?? 0}<span>/3</span>
-              </output>
-            </header>
-            <button
-              className="frontline-level-node"
-              type="button"
-              onClick={startLevel}
-              aria-label="进入第一关 烈日沙漠1"
-            >
-              <b>1-1</b>
-              <span>烈日沙漠1</span>
-            </button>
-            <footer className="frontline-map-command">
-              <div>
-                <strong>烈日沙漠1</strong>
-                <span>6 波 · 推荐战力 1060</span>
-              </div>
-              <button type="button" onClick={startLevel}>出战</button>
-            </footer>
-          </>
+          <FrontlineCampaign
+            stars={progress.stars["desert-1"] ?? 0}
+            power={CAMPAIGN_POWER}
+            roster={progress.heroes}
+            lineup={progress.lineup}
+            onEditLineup={() => {
+              setInitialHeroFormation(true);
+              setScreen("heroes");
+            }}
+            onOpenRecruit={() => setScreen("recruit")}
+            onStartLevel={startLevel}
+          />
         )}
 
         {screen === "loading" && (
@@ -185,6 +316,31 @@ export default function FrontlineGame() {
             <span />
             <strong>正在部署战场</strong>
           </div>
+        )}
+
+        {screen === "heroes" && (
+          <FrontlineHeroes
+            roster={progress.heroes}
+            lineup={progress.lineup}
+            initialFormation={initialHeroFormation}
+            onUpgrade={upgradeHero}
+            onToggleLineup={toggleLineup}
+          />
+        )}
+
+        {screen === "lord" && (
+          <FrontlineLord
+            power={progress.lord.power}
+            gearLevel={progress.lord.gearLevel}
+            onUpgrade={upgradeLord}
+          />
+        )}
+
+        {screen === "recruit" && (
+          <FrontlineRecruit
+            {...progress.recruit}
+            onRecruit={recruitHeroes}
+          />
         )}
 
         {screen === "error" && (
@@ -220,6 +376,7 @@ export default function FrontlineGame() {
             </div>
             <BattleCanvas
               initialBattle={initialBattle}
+              command={battleCommand}
               speed={speed}
               paused={paused}
               onSnapshot={onSnapshot}
@@ -237,7 +394,7 @@ export default function FrontlineGame() {
               </output>
               <output>
                 <span>水晶</span>
-                <b>{snapshot.baseHp}/10</b>
+                <b>{snapshot.baseHp}/{snapshot.config.economy.baseHp}</b>
               </output>
             </header>
             <div className="battle-actions">
@@ -255,12 +412,52 @@ export default function FrontlineGame() {
               >
                 ×{speed}
               </button>
+              <button
+                type="button"
+                aria-label="查看战斗统计"
+                onClick={() => {
+                  setPaused(true);
+                  setShowStatistics(true);
+                }}
+              >
+                ▤
+              </button>
+            </div>
+            <div className="battle-command-bar">
+              <button
+                type="button"
+                className="strengthen"
+                onClick={() => sendBattleCommand({ type: "strengthen" })}
+                disabled={
+                  snapshot.summonCount < snapshot.config.economy.strengthenUnlockSummons
+                  || snapshot.coins < strengthenCost(snapshot)
+                }
+              >
+                <img src={`${ASSET_ROOT}/strengthen.png`} alt="" />
+                <strong>强化</strong>
+                <span>{strengthenCost(snapshot)}</span>
+              </button>
+              <div>
+                <span>银币</span>
+                <strong>{Math.floor(snapshot.coins)}</strong>
+              </div>
+              <button
+                type="button"
+                className="summon"
+                onClick={summonRandomHero}
+                disabled={
+                  snapshot.coins < summonCost(snapshot)
+                  || occupiedSlots.size >= towerSlots.filter((slot) => slot.state === "deployable").length
+                }
+              >
+                <img src={`${ASSET_ROOT}/summon.png`} alt="" />
+                <strong>召唤</strong>
+                <span>{summonCost(snapshot)}</span>
+              </button>
             </div>
             <footer className="battle-status">
-              <div>
-                <span>已部署</span>
-                <strong>{snapshot.defenders.length}/4</strong>
-              </div>
+              <div><span>强化</span><strong>Lv.{snapshot.strengthenLevel}</strong></div>
+              <div><span>已召唤</span><strong>{snapshot.summonCount}/7</strong></div>
               <div>
                 <span>战斗时间</span>
                 <strong>{Math.floor(snapshot.elapsed / 60)}:{String(Math.floor(snapshot.elapsed % 60)).padStart(2, "0")}</strong>
@@ -272,7 +469,24 @@ export default function FrontlineGame() {
                 <strong>正在加载原版 Spine</strong>
               </div>
             )}
-            {(paused || snapshot.status === "won" || snapshot.status === "lost") && rendererReady && (
+            {showStatistics && rendererReady && (
+              <div className="frontline-dialog battle-statistics" role="dialog" aria-modal="true">
+                <strong>战斗统计</strong>
+                <div>
+                  {snapshot.defenders.map((defender) => (
+                    <p key={defender.id}>
+                      <span>{defender.name}</span>
+                      <b>{Math.round(defender.damageDealt)}</b>
+                    </p>
+                  ))}
+                </div>
+                <button type="button" onClick={() => {
+                  setShowStatistics(false);
+                  setPaused(false);
+                }}>返回战斗</button>
+              </div>
+            )}
+            {!showStatistics && (paused || snapshot.status === "won" || snapshot.status === "lost") && rendererReady && (
               <div className="frontline-dialog" role="dialog" aria-modal="true">
                 <strong>
                   {paused
@@ -282,7 +496,7 @@ export default function FrontlineGame() {
                       : "水晶失守"}
                 </strong>
                 {snapshot.status !== "active" && (
-                  <span>水晶生命 {snapshot.baseHp}/10</span>
+                  <span>水晶生命 {snapshot.baseHp}/{snapshot.config.economy.baseHp}</span>
                 )}
                 {paused && snapshot.status === "active" ? (
                   <button type="button" onClick={() => setPaused(false)}>继续</button>
@@ -292,6 +506,23 @@ export default function FrontlineGame() {
               </div>
             )}
           </>
+        )}
+
+
+        {(screen === "map" || screen === "heroes" || screen === "lord" || screen === "recruit") && (
+          <nav className="frontline-main-nav" aria-label="游戏主导航">
+            <button type="button" className={screen === "map" ? "active" : ""} onClick={() => setScreen("map")}><span>⚔</span>战役</button>
+            <button
+              type="button"
+              className={screen === "heroes" ? "active" : ""}
+              onClick={() => {
+                setInitialHeroFormation(false);
+                setScreen("heroes");
+              }}
+            ><span>✦</span>英雄</button>
+            <button type="button" className={screen === "lord" ? "active" : ""} onClick={() => setScreen("lord")}><span>♛</span>领主</button>
+            <button type="button" className={screen === "recruit" ? "active" : ""} onClick={() => setScreen("recruit")}><span>▣</span>招募</button>
+          </nav>
         )}
       </section>
     </main>

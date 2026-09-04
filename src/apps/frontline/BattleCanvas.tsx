@@ -3,14 +3,9 @@
 import {
   AnimationState,
   AnimationStateData,
-  AtlasAttachmentLoader,
-  GLTexture,
   Physics,
   SceneRenderer,
   Skeleton,
-  SkeletonBinary,
-  TextureAtlas,
-  type SkeletonData,
 } from "@esotericsoftware/spine-webgl";
 import {
   useEffect,
@@ -19,32 +14,25 @@ import {
 import {
   FIXED_STEP_SECONDS,
   MAX_STEPS_PER_FRAME,
+  pathDirection,
   pathPosition,
   stepBattle,
+  strengthenBattle,
+  summonHero,
   type ActorAnimation,
   type BattleState,
   type Point,
 } from "./frontlineCore";
+import {
+  applyFrontlineActorSkin,
+  FRONTLINE_ACTOR_DIRECTORIES,
+  loadFrontlineSpineActor,
+  type FrontlineSpineAsset,
+} from "./frontlineSpine";
 
 const LOGICAL_WIDTH = 900;
 const LOGICAL_HEIGHT = 1600;
 const ACTOR_SCALE = 100;
-const ASSET_ROOT = "/assets/games/frontline";
-
-const ACTOR_ROOTS: Record<string, string> = {
-  "hero-01-fashi": "hero_01_fashi",
-  "hero-02-paoshou": "hero_02_paoshou",
-  "hero-03-qishi": "hero_03_qishi",
-  "hero-04-sheshou": "hero_04_sheshou",
-  "monster-01-jiachong": "monster_01_jiachong",
-  "monster-01-xiyi": "monster_01_xiyi",
-  "monster-01-zongquan": "monster_01_zongquan",
-};
-
-type LoadedActor = {
-  data: SkeletonData;
-  texture: GLTexture;
-};
 
 type ActorView = {
   skeleton: Skeleton;
@@ -52,10 +40,12 @@ type ActorView = {
   animation: ActorAnimation;
   centerX: number;
   bottomY: number;
+  facingX: -1 | 1;
 };
 
 type BattleCanvasProps = {
   initialBattle: BattleState;
+  command: BattleCommand | null;
   speed: 1 | 2;
   paused: boolean;
   onSnapshot: (state: BattleState) => void;
@@ -63,19 +53,9 @@ type BattleCanvasProps = {
   onError: (message: string) => void;
 };
 
-const fetchRequired = async (source: string) => {
-  const response = await fetch(source);
-  if (!response.ok) throw new Error(`Failed to load ${source}: ${response.status}`);
-  return response;
-};
-
-const loadImage = (source: string) => new Promise<HTMLImageElement>((resolve, reject) => {
-  const image = new Image();
-  image.decoding = "async";
-  image.onload = () => resolve(image);
-  image.onerror = () => reject(new Error(`Failed to load ${source}`));
-  image.src = source;
-});
+export type BattleCommand =
+  | { sequence: number; type: "summon"; heroId: string }
+  | { sequence: number; type: "strengthen" };
 
 const setAnimation = (view: ActorView, animation: ActorAnimation) => {
   if (view.animation === animation) return;
@@ -87,8 +67,12 @@ const setAnimation = (view: ActorView, animation: ActorAnimation) => {
   );
 };
 
-const createActorView = (asset: LoadedActor): ActorView => {
+const createActorView = (
+  asset: FrontlineSpineAsset,
+  actorId: string,
+): ActorView => {
   const skeleton = new Skeleton(asset.data);
+  applyFrontlineActorSkin(skeleton, actorId);
   skeleton.scaleX = ACTOR_SCALE;
   skeleton.scaleY = ACTOR_SCALE;
   skeleton.updateWorldTransform(Physics.none);
@@ -101,11 +85,15 @@ const createActorView = (asset: LoadedActor): ActorView => {
     animation: "stand",
     centerX: bounds.x + bounds.width / 2,
     bottomY: bounds.y,
+    facingX: -1,
   };
 };
 
-const placeActor = (view: ActorView, point: Point) => {
-  view.skeleton.x = point.x - view.centerX;
+const placeActor = (view: ActorView, point: Point, directionX = 0) => {
+  if (directionX !== 0) view.facingX = directionX < 0 ? -1 : 1;
+  const scaleDirection = view.facingX > 0 ? -1 : 1;
+  view.skeleton.scaleX = ACTOR_SCALE * scaleDirection;
+  view.skeleton.x = point.x - view.centerX * scaleDirection;
   view.skeleton.y = LOGICAL_HEIGHT - point.y - view.bottomY;
 };
 
@@ -128,6 +116,7 @@ const drawHealthBars = (
 
 export default function BattleCanvas({
   initialBattle,
+  command,
   speed,
   paused,
   onSnapshot,
@@ -140,15 +129,35 @@ export default function BattleCanvas({
   const speedRef = useRef(speed);
   const pausedRef = useRef(paused);
   const snapshotRef = useRef(onSnapshot);
+  const lastCommandRef = useRef(0);
 
-  speedRef.current = speed;
-  pausedRef.current = paused;
-  snapshotRef.current = onSnapshot;
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    snapshotRef.current = onSnapshot;
+  }, [onSnapshot]);
+
+  useEffect(() => {
+    if (!command || command.sequence <= lastCommandRef.current) return;
+    lastCommandRef.current = command.sequence;
+    battleRef.current = command.type === "summon"
+      ? summonHero(battleRef.current, command.heroId)
+      : strengthenBattle(battleRef.current);
+    snapshotRef.current(battleRef.current);
+  }, [command]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const overlay = overlayRef.current;
     if (!canvas || !overlay) return;
+    battleRef.current = initialBattle;
+    lastCommandRef.current = 0;
     const gl = canvas.getContext("webgl", {
       alpha: true,
       antialias: true,
@@ -164,46 +173,22 @@ export default function BattleCanvas({
     let snapshotElapsed = 0;
     let lastReportedStatus = battleRef.current.status;
     const views = new Map<string, ActorView>();
-    const textures: GLTexture[] = [];
+    let loadedAssets: FrontlineSpineAsset[] = [];
     const renderer = new SceneRenderer(canvas, gl, true);
     renderer.camera.setViewport(LOGICAL_WIDTH, LOGICAL_HEIGHT);
     renderer.camera.position.set(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2, 0);
 
     const loadActors = async () => {
       const loadedEntries = await Promise.all(
-        Object.entries(ACTOR_ROOTS).map(async ([actorId, directory]) => {
-          const root = `${ASSET_ROOT}/spine/${directory}`;
-          const [atlasResponse, skeletonResponse, image] = await Promise.all([
-            fetchRequired(`${root}/skeleton.atlas`),
-            fetchRequired(`${root}/skeleton.skel`),
-            loadImage(`${root}/texture.png`),
-          ]);
-          const [atlasText, skeletonBuffer] = await Promise.all([
-            atlasResponse.text(),
-            skeletonResponse.arrayBuffer(),
-          ]);
-          const texture = new GLTexture(gl, image, false);
-          textures.push(texture);
-          const atlas = new TextureAtlas(atlasText);
-          if (atlas.pages.length !== 1) {
-            throw new Error(`${actorId} has ${atlas.pages.length} atlas pages`);
-          }
-          atlas.pages[0].setTexture(texture);
-          const binary = new SkeletonBinary(new AtlasAttachmentLoader(atlas));
-          binary.scale = 0.01;
-          return [
-            actorId,
-            {
-              data: binary.readSkeletonData(new Uint8Array(skeletonBuffer)),
-              texture,
-            },
-          ] as const;
-        }),
+        Object.keys(FRONTLINE_ACTOR_DIRECTORIES).map(async (actorId) => [
+          actorId,
+          await loadFrontlineSpineActor(gl, actorId),
+        ] as const),
       );
       return new Map(loadedEntries);
     };
 
-    const render = (assets: Map<string, LoadedActor>, now: number) => {
+    const render = (assets: Map<string, FrontlineSpineAsset>, now: number) => {
       if (!active) return;
       const frameSeconds = Math.min((now - previous) / 1000, 0.1);
       previous = now;
@@ -222,25 +207,35 @@ export default function BattleCanvas({
 
       const battle = battleRef.current;
       const activeKeys = new Set<string>();
-      const renderItems: Array<{ key: string; actorId: string; point: Point; animation: ActorAnimation }> = [];
+      const renderItems: Array<{
+        key: string;
+        actorId: string;
+        point: Point;
+        animation: ActorAnimation;
+        directionX?: number;
+      }> = [];
       for (const defender of battle.defenders) {
-        const slot = battle.config.towerSlots.find(
-          (candidate) => candidate.index === defender.slotIndex,
-        );
-        if (!slot) continue;
+        const point = defender.slotIndex === null
+          ? battle.config.playerSlot
+          : battle.config.towerSlots.find(
+            (candidate) => candidate.index === defender.slotIndex,
+          )?.position;
+        if (!point) continue;
         renderItems.push({
           key: `defender-${defender.id}`,
           actorId: defender.actorId,
-          point: slot.position,
+          point,
           animation: defender.animation,
         });
       }
       for (const enemy of battle.enemies) {
+        const direction = pathDirection(battle.config.path, enemy.distance);
         renderItems.push({
           key: `enemy-${enemy.id}`,
           actorId: enemy.actorId,
           point: pathPosition(battle.config.path, enemy.distance),
           animation: enemy.animation,
+          directionX: direction.x,
         });
       }
       renderItems.sort((left, right) => left.point.y - right.point.y);
@@ -255,14 +250,14 @@ export default function BattleCanvas({
         if (!view) {
           const asset = assets.get(item.actorId);
           if (!asset) continue;
-          view = createActorView(asset);
+          view = createActorView(asset, item.actorId);
           views.set(item.key, view);
         }
         setAnimation(view, item.animation);
         view.animationState.update(simulationSeconds);
         view.animationState.apply(view.skeleton);
         view.skeleton.update(simulationSeconds);
-        placeActor(view, item.point);
+        placeActor(view, item.point, item.directionX);
         view.skeleton.updateWorldTransform(Physics.update);
         renderer.drawSkeleton(view.skeleton, true);
       }
@@ -287,7 +282,11 @@ export default function BattleCanvas({
     document.addEventListener("visibilitychange", handleVisibilityChange);
     loadActors()
       .then((assets) => {
-        if (!active) return;
+        if (!active) {
+          assets.forEach((asset) => asset.texture.dispose());
+          return;
+        }
+        loadedAssets = [...assets.values()];
         onReady();
         frameId = requestAnimationFrame((time) => render(assets, time));
       })
@@ -301,7 +300,7 @@ export default function BattleCanvas({
       active = false;
       cancelAnimationFrame(frameId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      textures.forEach((texture) => texture.dispose());
+      loadedAssets.forEach((asset) => asset.texture.dispose());
       renderer.dispose();
     };
   }, [initialBattle, onError, onReady]);

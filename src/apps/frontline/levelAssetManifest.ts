@@ -16,7 +16,7 @@ export type LevelPoint = {
 
 export type LevelSpineActor = {
   id: string;
-  role: "fixed-first-level-hero" | "enemy";
+  role: "lineup-hero" | "lord" | "enemy";
   sourceName: string;
   displayName: string | null;
   sourceBundle: string;
@@ -111,7 +111,7 @@ export type LevelAssetManifest = {
   battleProfile: {
     waveCount: number;
     threeStarTimeSeconds: number;
-    fixedHeroCount: number;
+    lineupHeroCount: number;
     enemyRosterCount: number;
     waveConfig: {
       sourceVersion: string;
@@ -139,7 +139,26 @@ export type LevelAssetManifest = {
         headerBytes: number;
         rowLayout: "fixed-width";
         dictionaryValues: "indexed";
+        int64Values: "indexed";
+        listValues: "variable-width-integer-sequences";
         stringLengths: "7-bit-encoded";
+      };
+      economy: {
+        initialCoins: number;
+        baseHp: number;
+        summonCosts: number[];
+        strengthenCosts: number[];
+        strengthenUnlockSummons: number;
+      };
+      lord: {
+        id: string;
+        sourceId: number;
+        name: string;
+        referencePower: number;
+        cooldownMs: number;
+        rangeValue: number;
+        animation: string;
+        hitTimeSeconds: number | null;
       };
       heroes: Array<{
         id: string;
@@ -149,7 +168,7 @@ export type LevelAssetManifest = {
         baseAttack: number;
         damageCoefficient: number;
         cooldownMs: number;
-        rangeValue: number;
+        rangeValue: [number, ...number[]];
         animation: string;
         hitTimeSeconds: number | null;
       }>;
@@ -161,6 +180,8 @@ export type LevelAssetManifest = {
         violentLeftMonsterNextWave: number;
         notWaitWaveAllSpawn: boolean;
         bossEffect: number;
+        monsterPropRatios: number[];
+        monsterHpRatio: number;
         totalMonsterCount: number;
         spawnGroups: Array<{
           id: number;
@@ -170,6 +191,8 @@ export type LevelAssetManifest = {
           intervalMs: number;
           durationMs: number;
           count: number;
+          coin: number;
+          experience: number;
           pathOffsetType: number;
           monsterLevel: number;
           monster: {
@@ -177,7 +200,10 @@ export type LevelAssetManifest = {
             name: string;
             resourceId: number;
             moveSpeed: number;
-            hpScale: number;
+            hpSegments: number;
+            baseHp: number;
+            hpRatio: number;
+            hp: number;
             crystalDamage: number;
           };
         }>;
@@ -192,10 +218,11 @@ export type LevelAssetManifest = {
   };
   actors: {
     heroes: LevelSpineActor[];
+    lord: LevelSpineActor;
     enemies: LevelSpineActor[];
     playerSlot: {
       binding: "runtime-player-loadout";
-      fixedActor: null;
+      fixedActor: string;
       evidence: string[];
     };
   };

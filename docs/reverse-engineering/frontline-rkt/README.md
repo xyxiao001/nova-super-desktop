@@ -14,29 +14,43 @@
 - [RKT 容器格式](./RKT_FORMAT.md)
 - [DBC 1000 表格式](./DBC_FORMAT.md)
 - [第一关 100101 配置证据](./LEVEL_100101.md)
+- [英雄界面实机与资源记录](./HERO_UI.md)
+- [战役地图实机与资源记录](./CAMPAIGN_UI.md)
 
 ## 实现
 
 - `scripts/frontline/rkt_formats.py`
   - 恢复 RKT 可读尾段；
   - 从 ZIP 中读取不与受保护首段相交的条目；
-  - 解码 DBC `1000` 的数值、布尔和字符串字段。
+  - 解码 DBC `1000` 的数值、布尔、字符串、int64 池和可变宽度 list 池。
 - `scripts/frontline/audit_level_01.py`
   - 校验固定 Boot RKT 哈希；
   - 递归读取 `BinaryAssets/CSV.zip`；
-  - 提取 `EctypeWave.csv`、`ectype_spawn_monster_info_c.csv`、`Monster.csv`；
-  - 生成第一关 `wave-config.json` 和 `LevelAssetManifest`。
+  - 提取波次、刷怪、怪物等级、战斗经济、英雄技能和冷却配置；
+  - 生成带绝对怪物生命、六波倍率和战斗单位证据的第一关配置及 Manifest。
+- `scripts/frontline/extract_hero_ui.py`
+  - 固定校验英雄界面相关 Bundle；
+  - 导出庭院、布阵、详情底图及台座、属性、技能框 Sprite；
+  - 生成文件尺寸和 SHA-256 来源清单。
+- `scripts/frontline/extract_campaign_ui.py`
+  - 固定校验第一章地图、主线 UI、怪物头像和奖励图标 Bundle；
+  - 导出第一章地图节点和 `1-1` 挑战面板所需 Sprite；
+  - 生成文件尺寸和 SHA-256 来源清单。
 
 ## 可重复执行
 
 ```bash
 FRONTLINE_ASSET_ROOT="<TJCS 缓存根目录>" npm run frontline:audit-level-01
+FRONTLINE_ASSET_ROOT="<TJCS 缓存根目录>" uv run --with UnityPy==1.25.3 python scripts/frontline/extract_hero_ui.py
+FRONTLINE_ASSET_ROOT="<TJCS 缓存根目录>" uv run --with UnityPy==1.25.3 python scripts/frontline/extract_campaign_ui.py
 ```
 
 当前正式输出：
 
 - `public/assets/games/frontline/levels/desert-1/wave-config.json`
 - `public/assets/games/frontline/levels/desert-1/manifest.json`
+- `public/assets/games/frontline/ui/heroes/source-manifest.json`
+- `public/assets/games/frontline/ui/campaign/source-manifest.json`
 
 ## 证据等级
 

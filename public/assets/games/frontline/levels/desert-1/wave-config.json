@@ -19,8 +19,16 @@
         "sha256": "095f17597424940ee48c1b13c632ac8eb11ff4b1f32fa68f844f23ff49ef8499"
       },
       {
+        "name": "MonsterLevelProp_C.csv",
+        "sha256": "bd61937b6fa59725fee366e1dbace5bc145f41873e7ff2d19fb15eabd85726d8"
+      },
+      {
         "name": "Skill.csv",
         "sha256": "aef551e9e1051a13b3e2606388d18b871023a5fed63cc7e50f8e7cbe89d1f128"
+      },
+      {
+        "name": "ectype_misc_info_c.csv",
+        "sha256": "ca398ba652e560c5d63f4b9d860bee24b4e63896ca7a8d0c0fcbd1f2f7147bf9"
       },
       {
         "name": "hero_c.csv",
@@ -54,56 +62,129 @@
     "headerBytes": 108,
     "rowLayout": "fixed-width",
     "dictionaryValues": "indexed",
+    "int64Values": "indexed",
+    "listValues": "variable-width-integer-sequences",
     "stringLengths": "7-bit-encoded"
+  },
+  "economy": {
+    "initialCoins": 100,
+    "baseHp": 20,
+    "summonCosts": [
+      10,
+      20,
+      30,
+      45,
+      60,
+      80,
+      90,
+      110,
+      130,
+      150,
+      160,
+      175,
+      190,
+      200,
+      215,
+      235,
+      260,
+      290,
+      320,
+      350,
+      380,
+      420,
+      455,
+      485,
+      515,
+      545,
+      575,
+      605,
+      620,
+      630,
+      640,
+      650,
+      660
+    ],
+    "strengthenCosts": [
+      100,
+      200,
+      300,
+      400,
+      600,
+      800,
+      1000,
+      1200,
+      1500,
+      1500,
+      1500
+    ],
+    "strengthenUnlockSummons": 5
+  },
+  "lord": {
+    "id": "lord-sand-king",
+    "sourceId": 1,
+    "name": "沙王",
+    "referencePower": 1178,
+    "cooldownMs": 2000,
+    "rangeValue": 4,
+    "animation": "attack_1",
+    "hitTimeSeconds": null
   },
   "heroes": [
     {
-      "id": "hero-01-fashi",
-      "sourceId": 10001,
-      "name": "魔法师",
-      "normalSkillId": 1230,
-      "baseAttack": 40,
-      "damageCoefficient": 88,
-      "cooldownMs": 1600,
-      "rangeValue": 15,
-      "animation": "attack_1",
-      "hitTimeSeconds": 0.133333
-    },
-    {
-      "id": "hero-04-sheshou",
-      "sourceId": 10002,
-      "name": "游侠",
-      "normalSkillId": 1310,
-      "baseAttack": 40,
-      "damageCoefficient": 40,
-      "cooldownMs": 800,
-      "rangeValue": 8,
-      "animation": "attack_1",
-      "hitTimeSeconds": null
-    },
-    {
-      "id": "hero-03-qishi",
-      "sourceId": 10003,
-      "name": "骑士",
-      "normalSkillId": 1330,
-      "baseAttack": 40,
+      "id": "hero-summoner",
+      "sourceId": 30004,
+      "name": "精灵大师",
+      "normalSkillId": 2100,
+      "baseAttack": 1739,
       "damageCoefficient": 100,
-      "cooldownMs": 9000,
-      "rangeValue": 9,
+      "cooldownMs": 20000,
+      "rangeValue": [
+        2000
+      ],
       "animation": "attack_1",
       "hitTimeSeconds": null
     },
     {
-      "id": "hero-02-paoshou",
-      "sourceId": 10004,
-      "name": "矮人炮手",
-      "normalSkillId": 1410,
-      "baseAttack": 40,
-      "damageCoefficient": 53,
-      "cooldownMs": 2400,
-      "rangeValue": 20,
+      "id": "hero-clown",
+      "sourceId": 30005,
+      "name": "小丑皇",
+      "normalSkillId": 30201,
+      "baseAttack": 1819,
+      "damageCoefficient": 0,
+      "cooldownMs": 3000,
+      "rangeValue": [
+        800
+      ],
+      "animation": "attack_1",
+      "hitTimeSeconds": 0.166667
+    },
+    {
+      "id": "hero-jinx",
+      "sourceId": 30002,
+      "name": "暴走萌弹",
+      "normalSkillId": 1900,
+      "baseAttack": 1819,
+      "damageCoefficient": 62,
+      "cooldownMs": 800,
+      "rangeValue": [
+        550
+      ],
       "animation": "attack_1",
       "hitTimeSeconds": 0.033333
+    },
+    {
+      "id": "hero-lightning",
+      "sourceId": 30001,
+      "name": "闪电丘",
+      "normalSkillId": 30001,
+      "baseAttack": 2060,
+      "damageCoefficient": 161,
+      "cooldownMs": 1600,
+      "rangeValue": [
+        550
+      ],
+      "animation": "attack_1",
+      "hitTimeSeconds": 0.233333
     }
   ],
   "waves": [
@@ -115,6 +196,13 @@
       "violentLeftMonsterNextWave": 4,
       "notWaitWaveAllSpawn": false,
       "bossEffect": 0,
+      "monsterPropRatios": [
+        2,
+        10000,
+        1,
+        10000
+      ],
+      "monsterHpRatio": 1.0,
       "totalMonsterCount": 8,
       "spawnGroups": [
         {
@@ -125,6 +213,8 @@
           "intervalMs": 1250,
           "durationMs": 10000,
           "count": 8,
+          "coin": 15,
+          "experience": 15,
           "pathOffsetType": 2,
           "monsterLevel": 1,
           "monster": {
@@ -132,7 +222,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 1.0,
+            "hp": 299.0,
             "crystalDamage": 1
           }
         }
@@ -146,6 +239,13 @@
       "violentLeftMonsterNextWave": 5,
       "notWaitWaveAllSpawn": false,
       "bossEffect": 0,
+      "monsterPropRatios": [
+        2,
+        12000,
+        1,
+        10500
+      ],
+      "monsterHpRatio": 1.2,
       "totalMonsterCount": 12,
       "spawnGroups": [
         {
@@ -156,6 +256,8 @@
           "intervalMs": 3750,
           "durationMs": 15000,
           "count": 4,
+          "coin": 60,
+          "experience": 60,
           "pathOffsetType": 0,
           "monsterLevel": 1,
           "monster": {
@@ -163,7 +265,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 1.2,
+            "hp": 717.6,
             "crystalDamage": 1
           }
         },
@@ -175,6 +280,8 @@
           "intervalMs": 3750,
           "durationMs": 15000,
           "count": 4,
+          "coin": 30,
+          "experience": 30,
           "pathOffsetType": -1,
           "monsterLevel": 1,
           "monster": {
@@ -182,7 +289,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 1.2,
+            "hp": 358.8,
             "crystalDamage": 1
           }
         },
@@ -194,6 +304,8 @@
           "intervalMs": 3750,
           "durationMs": 15000,
           "count": 4,
+          "coin": 30,
+          "experience": 30,
           "pathOffsetType": 1,
           "monsterLevel": 1,
           "monster": {
@@ -201,7 +313,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 1.2,
+            "hp": 358.8,
             "crystalDamage": 1
           }
         }
@@ -215,6 +330,13 @@
       "violentLeftMonsterNextWave": 5,
       "notWaitWaveAllSpawn": false,
       "bossEffect": 0,
+      "monsterPropRatios": [
+        2,
+        18000,
+        1,
+        11000
+      ],
+      "monsterHpRatio": 1.8,
       "totalMonsterCount": 12,
       "spawnGroups": [
         {
@@ -225,6 +347,8 @@
           "intervalMs": 2000,
           "durationMs": 8000,
           "count": 4,
+          "coin": 80,
+          "experience": 80,
           "pathOffsetType": -1,
           "monsterLevel": 1,
           "monster": {
@@ -232,7 +356,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 1.8,
+            "hp": 538.2,
             "crystalDamage": 1
           }
         },
@@ -244,6 +371,8 @@
           "intervalMs": 2000,
           "durationMs": 8000,
           "count": 4,
+          "coin": 80,
+          "experience": 80,
           "pathOffsetType": 1,
           "monsterLevel": 1,
           "monster": {
@@ -251,7 +380,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 1.8,
+            "hp": 538.2,
             "crystalDamage": 1
           }
         },
@@ -263,6 +395,8 @@
           "intervalMs": 2000,
           "durationMs": 4000,
           "count": 2,
+          "coin": 80,
+          "experience": 80,
           "pathOffsetType": -1,
           "monsterLevel": 1,
           "monster": {
@@ -270,7 +404,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 1.8,
+            "hp": 1076.4,
             "crystalDamage": 1
           }
         },
@@ -282,6 +419,8 @@
           "intervalMs": 2000,
           "durationMs": 4000,
           "count": 2,
+          "coin": 80,
+          "experience": 80,
           "pathOffsetType": 1,
           "monsterLevel": 1,
           "monster": {
@@ -289,7 +428,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 1.8,
+            "hp": 1076.4,
             "crystalDamage": 1
           }
         }
@@ -303,6 +445,13 @@
       "violentLeftMonsterNextWave": 5,
       "notWaitWaveAllSpawn": false,
       "bossEffect": 0,
+      "monsterPropRatios": [
+        2,
+        23400,
+        1,
+        11500
+      ],
+      "monsterHpRatio": 2.34,
       "totalMonsterCount": 20,
       "spawnGroups": [
         {
@@ -313,6 +462,8 @@
           "intervalMs": 1000,
           "durationMs": 10000,
           "count": 10,
+          "coin": 60,
+          "experience": 60,
           "pathOffsetType": 2,
           "monsterLevel": 1,
           "monster": {
@@ -320,7 +471,10 @@
             "name": "野狗",
             "resourceId": 1002,
             "moveSpeed": 600,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 224,
+            "hpRatio": 2.34,
+            "hp": 524.16,
             "crystalDamage": 1
           }
         },
@@ -332,6 +486,8 @@
           "intervalMs": 1000,
           "durationMs": 10000,
           "count": 10,
+          "coin": 60,
+          "experience": 60,
           "pathOffsetType": 2,
           "monsterLevel": 1,
           "monster": {
@@ -339,7 +495,10 @@
             "name": "野狗",
             "resourceId": 1002,
             "moveSpeed": 600,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 224,
+            "hpRatio": 2.34,
+            "hp": 524.16,
             "crystalDamage": 1
           }
         }
@@ -353,6 +512,13 @@
       "violentLeftMonsterNextWave": 6,
       "notWaitWaveAllSpawn": false,
       "bossEffect": 2,
+      "monsterPropRatios": [
+        2,
+        23400,
+        1,
+        12000
+      ],
+      "monsterHpRatio": 2.34,
       "totalMonsterCount": 21,
       "spawnGroups": [
         {
@@ -363,6 +529,8 @@
           "intervalMs": 0,
           "durationMs": 0,
           "count": 1,
+          "coin": 0,
+          "experience": 0,
           "pathOffsetType": 0,
           "monsterLevel": 1,
           "monster": {
@@ -370,7 +538,10 @@
             "name": "沙漠蜥蜴精英",
             "resourceId": 3001,
             "moveSpeed": 320,
-            "hpScale": 5,
+            "hpSegments": 5,
+            "baseHp": 2392,
+            "hpRatio": 2.34,
+            "hp": 5597.28,
             "crystalDamage": 6
           }
         },
@@ -382,6 +553,8 @@
           "intervalMs": 3000,
           "durationMs": 30000,
           "count": 10,
+          "coin": 75,
+          "experience": 75,
           "pathOffsetType": -1,
           "monsterLevel": 1,
           "monster": {
@@ -389,7 +562,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 2.34,
+            "hp": 1399.32,
             "crystalDamage": 1
           }
         },
@@ -401,6 +577,8 @@
           "intervalMs": 3000,
           "durationMs": 30000,
           "count": 10,
+          "coin": 75,
+          "experience": 75,
           "pathOffsetType": 1,
           "monsterLevel": 1,
           "monster": {
@@ -408,7 +586,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 2.34,
+            "hp": 1399.32,
             "crystalDamage": 1
           }
         }
@@ -422,6 +603,13 @@
       "violentLeftMonsterNextWave": 6,
       "notWaitWaveAllSpawn": false,
       "bossEffect": 0,
+      "monsterPropRatios": [
+        2,
+        23800,
+        1,
+        12500
+      ],
+      "monsterHpRatio": 2.38,
       "totalMonsterCount": 56,
       "spawnGroups": [
         {
@@ -432,6 +620,8 @@
           "intervalMs": 2500,
           "durationMs": 30000,
           "count": 12,
+          "coin": 80,
+          "experience": 80,
           "pathOffsetType": 0,
           "monsterLevel": 1,
           "monster": {
@@ -439,7 +629,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 2.38,
+            "hp": 1423.24,
             "crystalDamage": 1
           }
         },
@@ -451,6 +644,8 @@
           "intervalMs": 2500,
           "durationMs": 30000,
           "count": 12,
+          "coin": 40,
+          "experience": 40,
           "pathOffsetType": -1,
           "monsterLevel": 1,
           "monster": {
@@ -458,7 +653,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 2.38,
+            "hp": 711.62,
             "crystalDamage": 1
           }
         },
@@ -470,6 +668,8 @@
           "intervalMs": 2500,
           "durationMs": 30000,
           "count": 12,
+          "coin": 40,
+          "experience": 40,
           "pathOffsetType": 1,
           "monsterLevel": 1,
           "monster": {
@@ -477,7 +677,10 @@
             "name": "沙漠蜥蜴",
             "resourceId": 1001,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 299,
+            "hpRatio": 2.38,
+            "hp": 711.62,
             "crystalDamage": 1
           }
         },
@@ -489,6 +692,8 @@
           "intervalMs": 2000,
           "durationMs": 20000,
           "count": 10,
+          "coin": 100,
+          "experience": 100,
           "pathOffsetType": -1,
           "monsterLevel": 1,
           "monster": {
@@ -496,7 +701,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 2.38,
+            "hp": 1423.24,
             "crystalDamage": 1
           }
         },
@@ -508,6 +716,8 @@
           "intervalMs": 2000,
           "durationMs": 20000,
           "count": 10,
+          "coin": 100,
+          "experience": 100,
           "pathOffsetType": 1,
           "monsterLevel": 1,
           "monster": {
@@ -515,7 +725,10 @@
             "name": "沙甲虫",
             "resourceId": 1003,
             "moveSpeed": 400,
-            "hpScale": 1,
+            "hpSegments": 1,
+            "baseHp": 598,
+            "hpRatio": 2.38,
+            "hp": 1423.24,
             "crystalDamage": 1
           }
         }

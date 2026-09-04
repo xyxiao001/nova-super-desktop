@@ -1,0 +1,740 @@
+{
+  "schemaVersion": 1,
+  "sourceVersion": "412f11e3c27d645ddeafcf921f558d57",
+  "bundles": [
+    {
+      "file": "gui_common_raw_hero_background_6fe60a6e99502b6ceb3873d7dcba16ef",
+      "bytes": 99398,
+      "sha256": "c9236b42782dfc9ab004a9724e89b371b30ea58a1db719317543f7d39f254708"
+    },
+    {
+      "file": "gui_common_raw_hero_buzheng_beijing_cac3909cb10509b40de00dd74a5e97b7",
+      "bytes": 41592,
+      "sha256": "93a0af35289b70a8f68a76ce69bb9cb4701e73f6de09881c34c35b848e8e1912"
+    },
+    {
+      "file": "gui_common_raw_hero_qianghuadi_01_ce30ab6cbc6ff0edc3ca9eccb982aeca",
+      "bytes": 17904,
+      "sha256": "69fd33cd0e49c771a5b35a1b1aa86bc5aca9e746068221ce95fdad0e01c7eaa0"
+    },
+    {
+      "file": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "bytes": 465642,
+      "sha256": "b0733e13d148e09588869658539298001ae59646730d3b608ed388b39482242f"
+    },
+    {
+      "file": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "bytes": 650514,
+      "sha256": "a6f0aa0e7dd084d060beb85bdf7eb90efcc05ad73972a3335e551f7a9682b6ad"
+    },
+    {
+      "file": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "bytes": 11786,
+      "sha256": "49ae3bb897f846135add9021bda2a89930ad22d461bbae19f77d389bc678663a"
+    },
+    {
+      "file": "gui_common_tex_iconitem_swleechdom_903608687112c2701e45f491e79600f9",
+      "bytes": 718806,
+      "sha256": "68244398a266136135c3cf798c222327cdbc71c46b0852424166edd785748140"
+    },
+    {
+      "file": "gui_common_tex_commonimg_424035c415f59d9562bc82c009d3edd2",
+      "bytes": 276757,
+      "sha256": "3df7c22870005ad439ef2caf91e23575be69b7fb908bbd413308d7ea4b2c9c52"
+    },
+    {
+      "file": "gui_common_tex_cardbg_987a417fc0f36079cfa8327d012a5065",
+      "bytes": 44377,
+      "sha256": "b7628c54d4ee58071dd5a6e42b6ca52855ebe62dd271ef795d39b0c84613e31d"
+    },
+    {
+      "file": "gui_common_tex_icon_bust_a2be0b233df195a88f52f6d37b21194d",
+      "bytes": 240334,
+      "sha256": "e7ffac470441595f4bbdc0c629c89adbf9bdacd9940a8021ddb2a02fa0ed4e73"
+    }
+  ],
+  "files": [
+    {
+      "sourceBundle": "gui_common_raw_hero_background_6fe60a6e99502b6ceb3873d7dcba16ef",
+      "sourceObject": "Hero_background",
+      "width": 720,
+      "height": 577,
+      "file": {
+        "path": "hero-background.png",
+        "bytes": 491133,
+        "sha256": "806288cebf5f61bad594009cb1f464f50c2dcfb8cf3e812cd2fabfd8b0b333af"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_raw_hero_buzheng_beijing_cac3909cb10509b40de00dd74a5e97b7",
+      "sourceObject": "Hero_buzheng_beijing",
+      "width": 601,
+      "height": 273,
+      "file": {
+        "path": "hero-formation-background.png",
+        "bytes": 172223,
+        "sha256": "b9239967a293c1bb610db1eaad3e3362c6e7f990d9654fc4dc1a88170c9a0514"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_raw_hero_qianghuadi_01_ce30ab6cbc6ff0edc3ca9eccb982aeca",
+      "sourceObject": "Hero_qianghuadi_01",
+      "width": 720,
+      "height": 361,
+      "file": {
+        "path": "hero-detail-panel.png",
+        "bytes": 32656,
+        "sha256": "a6c828d5860afc5dc096d8745150102c47d62eb1083da0a50991a5a2d9a0454a"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_diban",
+      "width": 473,
+      "height": 137,
+      "file": {
+        "path": "hero-pedestal.png",
+        "bytes": 30549,
+        "sha256": "5d4a33d92efa92d086717e00513b958811f2df4d4588ef8eb1ef75eb8c01d8bc"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_diban_gq",
+      "width": 720,
+      "height": 688,
+      "file": {
+        "path": "hero-page-panel.png",
+        "bytes": 212029,
+        "sha256": "0c0456603e993b88f677fc9846022d666f56830e98d4ff8dbfbf19919579d28a"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_diban_gq01",
+      "width": 526,
+      "height": 485,
+      "file": {
+        "path": "hero-formation-panel.png",
+        "bytes": 118887,
+        "sha256": "ea5dd1a366fee51f94195169cddd139cbd17b75b797c6a6fce9ed580cffe28cf"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_liebiao_di",
+      "width": 720,
+      "height": 267,
+      "file": {
+        "path": "hero-list-panel.png",
+        "bytes": 7551,
+        "sha256": "2360ecab5ae2d6e86afbdf3be7b79c8d696592cc2f977d1fdaf5455747e27863"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_liebiao_diT",
+      "width": 720,
+      "height": 267,
+      "file": {
+        "path": "hero-list-panel-top.png",
+        "bytes": 6023,
+        "sha256": "ddf7385abfe383173acb8ec489c3026433b397ebde41d697108be01c0a8e24b3"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_zhandouzhong",
+      "width": 86,
+      "height": 26,
+      "file": {
+        "path": "hero-active-ribbon.png",
+        "bytes": 983,
+        "sha256": "f074ed2f9b93a6ed252d03b07bad6fda7da5c91b0b0d9ea3b0fd668897642220"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_zhiye_xuanzhong",
+      "width": 51,
+      "height": 51,
+      "file": {
+        "path": "hero-role-selected.png",
+        "bytes": 2425,
+        "sha256": "14d7185bb58f5f037d1edc1df9a3eafc1514ba9655f2a54ef7ba8e6fcea6db22"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_zhiye_bq_fashi",
+      "width": 102,
+      "height": 31,
+      "file": {
+        "path": "hero-role-label-mage.png",
+        "bytes": 1217,
+        "sha256": "246b7dcffd356a0af0bc79ef389708596b15325bbe769e9ec3327f20c93cbd91"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_zhiye_bq_yuancheng",
+      "width": 102,
+      "height": 31,
+      "file": {
+        "path": "hero-role-label-ranger.png",
+        "bytes": 1263,
+        "sha256": "c592c70209733b87abf7ce14875949d17e0228d8b8e6928ac4a60f495324ccb9"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_zhiye_bq_zhaohuan",
+      "width": 102,
+      "height": 31,
+      "file": {
+        "path": "hero-role-label-summon.png",
+        "bytes": 1120,
+        "sha256": "b937d13864b264e715691cd4cae39211ea06a4e3902e0e1cf3441dd23fc49e23"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_zhiye_bq_duxi",
+      "width": 102,
+      "height": 31,
+      "file": {
+        "path": "hero-role-label-poison.png",
+        "bytes": 1357,
+        "sha256": "65e2360ae058ed3cfc32a2c503644ebbab6ecf76df2dc1c98016dde46c584896"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_xiangqingtitle",
+      "width": 606,
+      "height": 76,
+      "file": {
+        "path": "hero-detail-title.png",
+        "bytes": 7381,
+        "sha256": "f2c7e401235032623e4ec16a01c94227b48382a37fa90338ca4049b8b8b358cc"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_yingxiong_huawen",
+      "width": 606,
+      "height": 76,
+      "file": {
+        "path": "hero-detail-ornament.png",
+        "bytes": 7680,
+        "sha256": "d00af9cfcedde5db952140941b373a9677a86a1a43d902cb020f25ecddbf111e"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_icon_dengji",
+      "width": 31,
+      "height": 30,
+      "file": {
+        "path": "hero-stat-level.png",
+        "bytes": 1408,
+        "sha256": "f528d851cba91a8309350263fe0aab8c6013b0104994f58d599d53667c1fc421"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_icon_gongji",
+      "width": 29,
+      "height": 30,
+      "file": {
+        "path": "hero-stat-attack.png",
+        "bytes": 1654,
+        "sha256": "ec5943a71c6a5e55588556585a4bd9d9910634796dd66cfb716d5d9f1635b069"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_icon_jiange",
+      "width": 28,
+      "height": 31,
+      "file": {
+        "path": "hero-stat-interval.png",
+        "bytes": 1593,
+        "sha256": "1e02a2bb9635e2507e6b44eca4e68c7baf1434de42cb09997af138f7adecd4b6"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_skill_kuang",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "hero-skill-frame.png",
+        "bytes": 5842,
+        "sha256": "9e8f2cc26d7ab7e5b4e7c8acaec9e9a759c7695a2e4ceaad635314035ec244c8"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_skill_kuang_dazhao",
+      "width": 101,
+      "height": 100,
+      "file": {
+        "path": "hero-skill-ultimate-frame.png",
+        "bytes": 6188,
+        "sha256": "76f9e8bc9ac62058827d13485c3468d81d0a67e526a558e300e0a8416634b3d6"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_skill_kuang_tianhu",
+      "width": 98,
+      "height": 98,
+      "file": {
+        "path": "hero-skill-talent-frame.png",
+        "bytes": 6664,
+        "sha256": "da187185c72a92f1276cda574de31349d2a0b2064c25eefb24e8f0a5a32bc50a"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_touxiang_zhezhao",
+      "width": 100,
+      "height": 99,
+      "file": {
+        "path": "hero-formation-selected.png",
+        "bytes": 839,
+        "sha256": "f06da2a29b3a6fe5b31f8b4b587405442917549f3e291802e1c091cd9a9803e3"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Challenge_suo",
+      "width": 102,
+      "height": 102,
+      "file": {
+        "path": "hero-lock.png",
+        "bytes": 8756,
+        "sha256": "88a2bbba57da65f3ded3ba2ba170b663535096b4b05f927d3b4b749b02d31b3c"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_shengji_di",
+      "width": 720,
+      "height": 71,
+      "file": {
+        "path": "hero-upgrade-bar.png",
+        "bytes": 25529,
+        "sha256": "7fe8895161b683dbff70e1198de5d05646cbd556891e624ad64f611f4d744ca3"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_qianghuadi_title",
+      "width": 240,
+      "height": 71,
+      "file": {
+        "path": "hero-milestone-title.png",
+        "bytes": 17233,
+        "sha256": "e0348871df1e109e2b7fb6a361ad3914628595baa9cc51394c7f1ebc52c44c4c"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_qianghuadi_02",
+      "width": 372,
+      "height": 106,
+      "file": {
+        "path": "hero-milestone-row.png",
+        "bytes": 17416,
+        "sha256": "b632189887704ae734ac66e0d866662833b08078fb210db4173d78c893e2cb90"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_qianghuadi_03",
+      "width": 128,
+      "height": 129,
+      "file": {
+        "path": "hero-upgrade-material.png",
+        "bytes": 4699,
+        "sha256": "f4f7937a4587afaf5bb5f1c4c103cafca991af0e3100498e3689014a79054d43"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Rune_text_gzjs",
+      "width": 242,
+      "height": 71,
+      "file": {
+        "path": "hero-rune-title.png",
+        "bytes": 18002,
+        "sha256": "88c831d5692d23e452738d354fe752c96279ffc665b676f349110be8b3c0c53d"
+      }
+    },
+    {
+      "sourceBundle": "gui_tex_warrior_ad30d9aea6299507c8a1a054bf1fcc58",
+      "sourceObject": "Hero_dazhao_title",
+      "width": 245,
+      "height": 71,
+      "file": {
+        "path": "hero-ultimate-title.png",
+        "bytes": 18751,
+        "sha256": "3a745484f61c14700dda03f49c108543cb6edd8c5f002b30a7778e14e4a2882e"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_xiaozhiSkill1",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "skill-summoner-1.png",
+        "bytes": 17659,
+        "sha256": "089ebd93f3626d4789bd14e0ab4083a909d4b753a9c163334e30fc94a3cfda4c"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_xiaozhiSkill2",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "skill-summoner-2.png",
+        "bytes": 18039,
+        "sha256": "e0797ad7d1aa78dbe364da90155c957f13744ca15c9627ad71ebb0135618fb3b"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_xiaozhiSkill3",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "skill-summoner-3.png",
+        "bytes": 17038,
+        "sha256": "e0b9489202c4e7e947f19beae5dae09c3cacb5498cb615f56949e72542d9e147"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_timoSkill1",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "skill-clown-1.png",
+        "bytes": 16949,
+        "sha256": "3633e6d9c529885c5e0f940fff66e123af3971dc082369db7b1044ad8122b755"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_timoSkill2",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "skill-clown-2.png",
+        "bytes": 16572,
+        "sha256": "2d334b1fc59a77a6c13608bce34712c3c0d0efd82c424b0bc14a49901f628ea1"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_timoSkill3",
+      "width": 101,
+      "height": 101,
+      "file": {
+        "path": "skill-clown-3.png",
+        "bytes": 17635,
+        "sha256": "2dbf20fc38e5d3db72be377b996304874928c2d2de278e9c2e6cc2b2ca5be53c"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_jinkesi1",
+      "width": 128,
+      "height": 128,
+      "file": {
+        "path": "skill-jinx-1.png",
+        "bytes": 20585,
+        "sha256": "64246d665c2e9b733f919e818361f54b6ddb6ee57bf356f0f11abaa2416df240"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_jinkesi2",
+      "width": 128,
+      "height": 128,
+      "file": {
+        "path": "skill-jinx-2.png",
+        "bytes": 16526,
+        "sha256": "386fb89c1d753c7e74b8bba89953c30a24bf0b3166bd974e4c3b9538c21fa529"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_jinkesi3",
+      "width": 134,
+      "height": 134,
+      "file": {
+        "path": "skill-jinx-3.png",
+        "bytes": 18420,
+        "sha256": "550660ab7b8da1be4ccafe2681367c4c1ec2f472a72fcaa6e76a88e50c626de0"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_shandianqiu1",
+      "width": 128,
+      "height": 128,
+      "file": {
+        "path": "skill-lightning-1.png",
+        "bytes": 22248,
+        "sha256": "2c2c2d1772e147d79969007c2ea750fd5fc34981513d2a27e64e830ca3221e4a"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_shandianqiu2",
+      "width": 134,
+      "height": 133,
+      "file": {
+        "path": "skill-lightning-2.png",
+        "bytes": 24233,
+        "sha256": "292d164e3f6c0719d47289f8fb4403a85b852ac55c8d7bf29fc8e1c3faccd2c9"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorskillicon_2527cc6ae35a5bd50bbe9ba21a02ba6f",
+      "sourceObject": "icon_skill_shandianqiu3",
+      "width": 134,
+      "height": 134,
+      "file": {
+        "path": "skill-lightning-3.png",
+        "bytes": 19232,
+        "sha256": "6dd2e45e5abe3ae7acb3cf2307578e4e2c85823cb481f53ce7ad1c3d070185d2"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_quan",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-all.png",
+        "bytes": 2878,
+        "sha256": "7e42b81ce12d6bf22f1fcc8622de8779a4f3054d0ecc9783c7ce0cf10b02f25a"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_sheshou",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-ranger.png",
+        "bytes": 2933,
+        "sha256": "86c313ac03a1a7c50852ab4e19641a1e97f4072b185b7754b4aadc2185b75d31"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_fashi",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-mage.png",
+        "bytes": 2443,
+        "sha256": "f8cc3f079f65e2b08fc71345ffe2edfeace7f929465a2cd4c1f02740da929f46"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_zhanshi",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-warrior.png",
+        "bytes": 2389,
+        "sha256": "a287629156f935d220add5a00ca23dae4e3aa41ce916fe1ff64b72108c067464"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_zhaohuan",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-summon.png",
+        "bytes": 2985,
+        "sha256": "4d2567444428857359cd297b872c4514621677230cb9d4161f1df27a9667b661"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_duxi",
+      "width": 48,
+      "height": 47,
+      "file": {
+        "path": "hero-role-poison.png",
+        "bytes": 2949,
+        "sha256": "6438ff95569902f6029712b1ee32dd7e4955fc2274c7f15fa1a2fb7957d16f12"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_kongzhi",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-control.png",
+        "bytes": 3091,
+        "sha256": "decf28448c67d15f05809a134f7d6357db1d1ad287b548d99d9aba4e0a3d939b"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_warriorvocation_b709e8d3f93b9845a472af8a10b6cfc6",
+      "sourceObject": "Common_zhiye_fuzhu",
+      "width": 47,
+      "height": 47,
+      "file": {
+        "path": "hero-role-support.png",
+        "bytes": 2881,
+        "sha256": "8b1e7c07424917fb5ce132c0e3f25f0212f5edfa328a47df175db3ab4a0823be"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_swleechdom_903608687112c2701e45f491e79600f9",
+      "sourceObject": "Icon_item_zuanshi",
+      "width": 95,
+      "height": 80,
+      "file": {
+        "path": "hero-resource-crystal.png",
+        "bytes": 7511,
+        "sha256": "06ed8ebc3a47da6919fe1f46f89f49cafa0e73db3434910af08aa644eef90a25"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_swleechdom_903608687112c2701e45f491e79600f9",
+      "sourceObject": "Icon_item_jinbi",
+      "width": 84,
+      "height": 83,
+      "file": {
+        "path": "hero-resource-coin.png",
+        "bytes": 6516,
+        "sha256": "ca4fa753b105e32780a7a1100b8bf63ddc1ed97b75ed4b1b972668a9f674fa6d"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_iconitem_swleechdom_903608687112c2701e45f491e79600f9",
+      "sourceObject": "Icon_item_tili",
+      "width": 87,
+      "height": 83,
+      "file": {
+        "path": "hero-resource-stamina.png",
+        "bytes": 6941,
+        "sha256": "d132ac527bdc33094aba70e733eaf98798f1b72d50c44d6513656201f26dbcf1"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_commonimg_424035c415f59d9562bc82c009d3edd2",
+      "sourceObject": "Common_huobi_di",
+      "width": 92,
+      "height": 26,
+      "file": {
+        "path": "hero-resource-slot.png",
+        "bytes": 507,
+        "sha256": "8d4a79c375b9ad5d945001f2f4925014d07948259fd10413c8f3f823dbed7517"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_commonimg_424035c415f59d9562bc82c009d3edd2",
+      "sourceObject": "Common_jiahao",
+      "width": 21,
+      "height": 21,
+      "file": {
+        "path": "hero-resource-add.png",
+        "bytes": 709,
+        "sha256": "a310cccabda2e1e3c0e7a133788f2dd63cae4a3c2630854b542e83d035748c18"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_commonimg_424035c415f59d9562bc82c009d3edd2",
+      "sourceObject": "Hero_dengji_di",
+      "width": 39,
+      "height": 43,
+      "file": {
+        "path": "hero-card-level.png",
+        "bytes": 2179,
+        "sha256": "fa11deb7fcb6b568382a77e1da994931d7aa6f09531e837932124516cf25df72"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_commonimg_424035c415f59d9562bc82c009d3edd2",
+      "sourceObject": "Common_kapai_jingdu02",
+      "width": 122,
+      "height": 19,
+      "file": {
+        "path": "hero-card-progress.png",
+        "bytes": 306,
+        "sha256": "6a1c35dd41f105f2a2f33878e4ca5d0f8c58945a5d85e8fa0fb8cf058c615852"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_cardbg_987a417fc0f36079cfa8327d012a5065",
+      "sourceObject": "Common_kapai_cheng",
+      "width": 163,
+      "height": 207,
+      "file": {
+        "path": "hero-card-orange.png",
+        "bytes": 21891,
+        "sha256": "519ea5823449f6ea9d0f5a98efc2fc68ad394a54f0bdd62f0da565b14df15764"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_icon_bust_a2be0b233df195a88f52f6d37b21194d",
+      "sourceObject": "lihui_hero_25_xiaozi",
+      "width": 99,
+      "height": 137,
+      "file": {
+        "path": "lihui_hero_25_xiaozi.png",
+        "bytes": 18572,
+        "sha256": "0fde148fe28b56476a21571b2ed1f099c2c04ba14c41d29194b3e715209bd727"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_icon_bust_a2be0b233df195a88f52f6d37b21194d",
+      "sourceObject": "lihui_hero_23_timo",
+      "width": 122,
+      "height": 140,
+      "file": {
+        "path": "lihui_hero_23_timo.png",
+        "bytes": 26225,
+        "sha256": "0fafb4758e8f452da051a3eee396b026908213fdb27f7c09a4a14914b8c52571"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_icon_bust_a2be0b233df195a88f52f6d37b21194d",
+      "sourceObject": "lihui_hero_20_jinkesi",
+      "width": 167,
+      "height": 116,
+      "file": {
+        "path": "lihui_hero_20_jinkesi.png",
+        "bytes": 27199,
+        "sha256": "6d193c401a2e31d4064a3921fe2961ecdb43df2cc445251fab171ba00cdc91e7"
+      }
+    },
+    {
+      "sourceBundle": "gui_common_tex_icon_bust_a2be0b233df195a88f52f6d37b21194d",
+      "sourceObject": "lihui_hero_21_pikaqiu",
+      "width": 126,
+      "height": 132,
+      "file": {
+        "path": "lihui_hero_21_pikaqiu.png",
+        "bytes": 20756,
+        "sha256": "4e740b7b7dc74f46b45865797af4dac4e7ae52ca0bde51cf76889078e9d4e1f3"
+      }
+    }
+  ]
+}

@@ -148,6 +148,102 @@ def _read_dbc_dictionaries(
     return dictionaries
 
 
+def _read_dbc_int64_pools(
+    raw: bytes,
+    offset: int,
+    size: int,
+    count: int,
+) -> list[list[int]]:
+    section_end = offset + size
+    descriptors = []
+    for _ in range(count):
+        value_offset, value_count = struct.unpack_from("<II", raw, offset)
+        offset += 8
+        descriptors.append((value_offset, value_count))
+
+    values_start = offset
+    pools = []
+    for value_offset, value_count in descriptors:
+        values = [
+            struct.unpack_from("<q", raw, values_start + value_offset + index * 8)[0]
+            for index in range(value_count)
+        ]
+        pools.append(values)
+
+    if values_start + max(
+        (value_offset + value_count * 8 for value_offset, value_count in descriptors),
+        default=0,
+    ) != section_end:
+        raise ValueError("DBC int64 section size mismatch")
+    return pools
+
+
+def _read_dbc_lists(
+    raw: bytes,
+    offset: int,
+    size: int,
+    count: int,
+) -> list[list[int]]:
+    if count == 0:
+        if size != 0:
+            raise ValueError("DBC list section has data but no lists")
+        return []
+
+    section_end = offset + size
+    actual_count = struct.unpack_from("<I", raw, offset)[0]
+    offset += 4
+    if actual_count != count:
+        raise ValueError(
+            f"DBC list count mismatch: expected {count}, got {actual_count}"
+        )
+
+    descriptors = []
+    for _ in range(count):
+        value_offset, value_count = struct.unpack_from("<II", raw, offset)
+        offset += 8
+        descriptors.append((value_offset, value_count))
+
+    values_start = offset
+    values_size = section_end - values_start
+    populated_offsets = sorted({
+        value_offset
+        for value_offset, value_count in descriptors
+        if value_count > 0
+    })
+    lists = []
+    for value_offset, value_count in descriptors:
+        if value_count == 0:
+            lists.append([])
+            continue
+        value_end = next(
+            (
+                candidate
+                for candidate in populated_offsets
+                if candidate > value_offset
+            ),
+            values_size,
+        )
+        value_size = value_end - value_offset
+        value_width, remainder = divmod(value_size, value_count)
+        if remainder or value_width not in (1, 2, 4, 8):
+            raise ValueError(
+                f"Unsupported DBC list value width: {value_width}"
+            )
+        values = []
+        for index in range(value_count):
+            start = values_start + value_offset + index * value_width
+            values.append(int.from_bytes(
+                raw[start:start + value_width],
+                "little",
+                signed=True,
+            ))
+        lists.append(values)
+
+    if populated_offsets and max(populated_offsets) >= values_size:
+        raise ValueError("DBC list section size mismatch")
+    return lists
+
+
 def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
     if len(raw) < 108 or raw[:8] != DBC_MAGIC:
         raise ValueError("Unsupported DBC header")
@@ -166,6 +262,12 @@ def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
     field_count = header[11]
     row_count = header[12]
     row_size = header[13]
+    int64_offset = header[14]
+    int64_size = header[15]
+    int64_count = header[16]
+    list_offset = header[20]
+    list_size = header[21]
+    list_count = header[22]
 
     if data_offset != schema_end or data_size != row_count * row_size:
         raise ValueError("Inconsistent DBC row layout")
@@ -199,11 +301,23 @@ def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
         dictionary_size,
         dictionary_count,
     )
+    int64_pools = _read_dbc_int64_pools(
+        raw,
+        int64_offset,
+        int64_size,
+        int64_count,
+    )
     strings = _read_dbc_strings(
         raw,
         string_offset,
         string_size,
         string_count,
+    )
+    lists = _read_dbc_lists(
+        raw,
+        list_offset,
+        list_size,
+        list_count,
     )
 
     rows = []
@@ -219,6 +333,12 @@ def decode_dbc(raw: bytes) -> list[dict[str, Any]]:
             null_value = (1 << (field.width * 8)) - 1
             if encoded == null_value:
                 value: Any = None
+            elif field.flags & 0x20:
+                value = lists[encoded]
+                if field.value_type in (4, 5):
+                    value = [strings[item] for item in value]
+            elif field.value_type == 2 and field.flags & 0x40:
+                value = int64_pools[field.pool_index][encoded]
             elif field.flags & 0x40:
                 value = dictionaries[field.pool_index][encoded]
             elif field.value_type in (4, 5):

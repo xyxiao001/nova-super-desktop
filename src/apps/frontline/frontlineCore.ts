@@ -22,12 +22,13 @@ export type SpawnGroupConfig = {
   waitTimeMs: number;
   intervalMs: number;
   count: number;
+  coin: number;
   pathOffsetType: number;
   monster: {
     id: number;
     name: string;
     moveSpeed: number;
-    hpScale: number;
+    hp: number;
     crystalDamage: number;
   };
 };
@@ -43,14 +44,23 @@ export type WaveConfig = {
 export type BattleConfig = {
   levelId: string;
   path: Point[];
+  playerSlot: Point;
   towerSlots: Array<{
     index: number;
     state: "locked" | "deployable";
     priority: number;
     position: Point;
   }>;
+  lord: HeroConfig;
   heroes: HeroConfig[];
   waves: WaveConfig[];
+  economy: {
+    initialCoins: number;
+    baseHp: number;
+    summonCosts: number[];
+    strengthenCosts: number[];
+    strengthenUnlockSummons: number;
+  };
 };
 
 export type Enemy = {
@@ -61,6 +71,7 @@ export type Enemy = {
   hp: number;
   maxHp: number;
   moveSpeed: number;
+  coin: number;
   crystalDamage: number;
   distance: number;
   pathOffsetType: number;
@@ -70,7 +81,8 @@ export type Enemy = {
 
 export type Defender = {
   id: number;
-  slotIndex: number;
+  kind: "lord" | "hero";
+  slotIndex: number | null;
   actorId: string;
   name: string;
   attack: number;
@@ -83,6 +95,7 @@ export type Defender = {
   attackApplied: boolean;
   targetId: number | null;
   animation: ActorAnimation;
+  damageDealt: number;
 };
 
 export type BattleState = {
@@ -93,8 +106,12 @@ export type BattleState = {
   waveElapsed: number;
   groupSpawned: Record<number, number>;
   nextEnemyId: number;
+  nextDefenderId: number;
   enemies: Enemy[];
   defenders: Defender[];
+  coins: number;
+  summonCount: number;
+  strengthenLevel: number;
   baseHp: number;
   status: BattleStatus;
 };
@@ -132,42 +149,140 @@ export const pathPosition = (points: Point[], distance: number): Point => {
   return points.at(-1) ?? { x: 0, y: 0 };
 };
 
-export const createBattle = (config: BattleConfig): BattleState => {
-  const slots = config.towerSlots
-    .filter((slot) => slot.state === "deployable")
-    .sort((left, right) => left.priority - right.priority)
-    .slice(0, config.heroes.length);
-  if (slots.length < config.heroes.length) {
-    throw new Error("First-level manifest does not have enough deployable slots");
+export const pathDirection = (points: Point[], distance: number): Point => {
+  let remaining = Math.max(0, distance);
+  let lastDirection = { x: 0, y: 1 };
+  for (let index = 1; index < points.length; index += 1) {
+    const from = points[index - 1];
+    const to = points[index];
+    const x = to.x - from.x;
+    const y = to.y - from.y;
+    const segment = Math.hypot(x, y);
+    if (segment === 0) continue;
+    lastDirection = { x: x / segment, y: y / segment };
+    if (remaining <= segment) return lastDirection;
+    remaining -= segment;
   }
+  return lastDirection;
+};
+
+const createDefender = (
+  id: number,
+  hero: HeroConfig,
+  kind: Defender["kind"],
+  slotIndex: number | null,
+  strengthenLevel = 0,
+): Defender => ({
+  id,
+  kind,
+  slotIndex,
+  actorId: hero.id,
+  name: hero.name,
+  attack: hero.baseAttack
+    * hero.damageCoefficient / 100
+    * strengthenMultiplier(strengthenLevel),
+  range: hero.range,
+  cooldownSeconds: hero.cooldownMs / 1000,
+  cooldownRemaining: 0,
+  animationDurationSeconds: hero.animationDurationSeconds,
+  hitTimeSeconds: hero.hitTimeSeconds,
+  attackElapsed: 0,
+  attackApplied: false,
+  targetId: null,
+  animation: "stand",
+  damageDealt: 0,
+});
+
+const strengthenMultiplier = (level: number) => 1 + level * 0.1;
+
+const indexedCost = (costs: number[], count: number) => (
+  costs[Math.min(count, costs.length - 1)] ?? Number.POSITIVE_INFINITY
+);
+
+export const summonCost = (state: BattleState) => (
+  indexedCost(state.config.economy.summonCosts, state.summonCount)
+);
+
+export const strengthenCost = (state: BattleState) => (
+  indexedCost(state.config.economy.strengthenCosts, state.strengthenLevel)
+);
+
+export const createBattle = (config: BattleConfig): BattleState => ({
+  config,
+  tick: 0,
+  elapsed: 0,
+  waveIndex: 0,
+  waveElapsed: 0,
+  groupSpawned: {},
+  nextEnemyId: 1,
+  nextDefenderId: 2,
+  enemies: [],
+  defenders: [createDefender(1, config.lord, "lord", null)],
+  coins: config.economy.initialCoins,
+  summonCount: 0,
+  strengthenLevel: 0,
+  baseHp: config.economy.baseHp,
+  status: "active",
+});
+
+export const summonHero = (
+  current: BattleState,
+  heroId: string,
+): BattleState => {
+  if (current.status !== "active") return current;
+  const hero = current.config.heroes.find((candidate) => candidate.id === heroId);
+  const occupied = new Set(
+    current.defenders.flatMap((defender) => (
+      defender.slotIndex === null ? [] : [defender.slotIndex]
+    )),
+  );
+  const slot = current.config.towerSlots
+    .filter((candidate) => (
+      candidate.state === "deployable" && !occupied.has(candidate.index)
+    ))
+    .sort((left, right) => left.priority - right.priority)[0];
+  const cost = summonCost(current);
+  if (!hero || !slot || current.coins < cost) return current;
 
   return {
-    config,
-    tick: 0,
-    elapsed: 0,
-    waveIndex: 0,
-    waveElapsed: 0,
-    groupSpawned: {},
-    nextEnemyId: 1,
-    enemies: [],
-    defenders: config.heroes.map((hero, index) => ({
-      id: index + 1,
-      slotIndex: slots[index].index,
-      actorId: hero.id,
-      name: hero.name,
-      attack: hero.baseAttack * hero.damageCoefficient / 100,
-      range: hero.range,
-      cooldownSeconds: hero.cooldownMs / 1000,
-      cooldownRemaining: index * 0.12,
-      animationDurationSeconds: hero.animationDurationSeconds,
-      hitTimeSeconds: hero.hitTimeSeconds,
-      attackElapsed: 0,
-      attackApplied: false,
-      targetId: null,
-      animation: "stand",
+    ...current,
+    coins: current.coins - cost,
+    summonCount: current.summonCount + 1,
+    nextDefenderId: current.nextDefenderId + 1,
+    defenders: [
+      ...current.defenders,
+      createDefender(
+        current.nextDefenderId,
+        hero,
+        "hero",
+        slot.index,
+        current.strengthenLevel,
+      ),
+    ],
+  };
+};
+
+export const strengthenBattle = (current: BattleState): BattleState => {
+  if (
+    current.status !== "active"
+    || current.summonCount < current.config.economy.strengthenUnlockSummons
+  ) {
+    return current;
+  }
+  const cost = strengthenCost(current);
+  if (current.coins < cost) return current;
+  const nextLevel = current.strengthenLevel + 1;
+  const attackRatio = strengthenMultiplier(nextLevel)
+    / strengthenMultiplier(current.strengthenLevel);
+
+  return {
+    ...current,
+    coins: current.coins - cost,
+    strengthenLevel: nextLevel,
+    defenders: current.defenders.map((defender) => ({
+      ...defender,
+      attack: defender.attack * attackRatio,
     })),
-    baseHp: 10,
-    status: "active",
   };
 };
 
@@ -184,9 +299,10 @@ const spawnEnemy = (
     monsterId: group.monster.id,
     name: group.monster.name,
     actorId,
-    hp: group.monster.hpScale * 100,
-    maxHp: group.monster.hpScale * 100,
+    hp: group.monster.hp,
+    maxHp: group.monster.hp,
     moveSpeed: group.monster.moveSpeed,
+    coin: group.coin,
     crystalDamage: group.monster.crystalDamage,
     distance: 0,
     pathOffsetType: group.pathOffsetType,
@@ -228,7 +344,9 @@ const updateDefenders = (state: BattleState, seconds: number) => {
         && target
         && target.animation !== "dead"
       ) {
-        target.hp -= defender.attack;
+        const damage = Math.min(target.hp, defender.attack);
+        target.hp -= damage;
+        defender.damageDealt += damage;
         defender.attackApplied = true;
       }
       if (defender.attackElapsed >= defender.animationDurationSeconds) {
@@ -242,7 +360,10 @@ const updateDefenders = (state: BattleState, seconds: number) => {
     const slot = state.config.towerSlots.find(
       (candidate) => candidate.index === defender.slotIndex,
     );
-    if (!slot) continue;
+    const defenderPosition = defender.slotIndex === null
+      ? state.config.playerSlot
+      : slot?.position;
+    if (!defenderPosition) continue;
     const nextTarget = state.enemies
       .filter((enemy) => enemy.animation !== "dead")
       .map((enemy) => ({
@@ -250,8 +371,8 @@ const updateDefenders = (state: BattleState, seconds: number) => {
         position: pathPosition(state.config.path, enemy.distance),
       }))
       .filter(({ position }) => Math.hypot(
-        position.x - slot.position.x,
-        position.y - slot.position.y,
+        position.x - defenderPosition.x,
+        position.y - defenderPosition.y,
       ) <= defender.range)
       .sort((left, right) => right.enemy.distance - left.enemy.distance)[0]
       ?.enemy;
@@ -288,6 +409,7 @@ export const stepBattle = (
     if (enemy.hp <= 0 && enemy.animation !== "dead") {
       enemy.animation = "dead";
       enemy.deathRemaining = 0.1;
+      state.coins += enemy.coin;
     }
     if (enemy.animation === "dead") {
       enemy.deathRemaining -= seconds;
