@@ -29,7 +29,8 @@ self.NOVA_RESOURCE_PACKAGES = [
   {
     "id": "frontline",
     "pathPrefixes": [
-      "/assets/games/frontline/"
+      "/assets/games/frontline/",
+      "/games/frontline-native/"
     ],
     "exactPaths": [],
     "destinations": [],

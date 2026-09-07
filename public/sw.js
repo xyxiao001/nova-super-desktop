@@ -1,6 +1,6 @@
 importScripts("/resource-packages.generated.js");
 
-const VERSION = "nova-pwa-v26";
+const VERSION = "nova-pwa-v27";
 const CACHE_PREFIX = "nova-pwa-";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RESOURCE_CACHE_PREFIX = `${VERSION}:resource:`;

@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   resetAllGameData,
+  readGameRecords,
+  requestNewGame,
+  finishGame,
   saveGameProgress,
   subscribeGameRecords,
   subscribeGameReset,
@@ -49,6 +52,7 @@ describe("resetAllGameData", () => {
   it("clears records, progress, and mines auxiliary data while preserving unrelated settings", () => {
     const gameIds: GameId[] = ["mines", "chess", "gomoku", "tower", "youtd2", "wolfslot", "frontline"];
     for (const id of gameIds) saveGameProgress(id, { board: id });
+    localStorage.setItem("frontline-native-local-v1", JSON.stringify({maxpass:7}));
     localStorage.setItem("nova-mines-difficulty", "expert");
     localStorage.setItem("nova-mines-best", JSON.stringify({ expert: 42 }));
     localStorage.setItem("nova-game-coins", "120");
@@ -84,10 +88,27 @@ describe("resetAllGameData", () => {
     expect(localStorage.getItem("nova-game-coins")).toBeNull();
     expect(localStorage.getItem("nova-game-progress:removed-game")).toBeNull();
     expect(localStorage.getItem("nova-settings")).not.toBeNull();
+    expect(localStorage.getItem("frontline-native-local-v1")).toBeNull();
     expect(recordsListener).toHaveBeenCalled();
 
     unsubscribe.forEach((removeListener) => removeListener());
     unsubscribeRecreatingListener();
     unsubscribeRecords();
+  });
+});
+
+
+describe("native frontline saves", () => {
+  it("records victory without discarding the campaign save, and new game clears it", () => {
+    const save = JSON.stringify({maxpass: 7, selectedLevel: 8});
+    localStorage.setItem("frontline-native-local-v1", save);
+    expect(readGameRecords().frontline.hasProgress).toBe(true);
+    finishGame("frontline", "win");
+    expect(readGameRecords().frontline.wins).toBe(1);
+    expect(readGameRecords().frontline.hasProgress).toBe(true);
+    expect(localStorage.getItem("frontline-native-local-v1")).toBe(save);
+    requestNewGame("frontline");
+    expect(localStorage.getItem("frontline-native-local-v1")).toBeNull();
+    expect(readGameRecords().frontline.hasProgress).toBe(false);
   });
 });

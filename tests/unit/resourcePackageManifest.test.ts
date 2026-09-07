@@ -21,12 +21,23 @@ describe("resource package manifest", () => {
     expect(serviceWorkerResourcePackages().map((item) => item.id)).toEqual([
       "magic-tower",
       "youtd2",
+      "wolf-slot",
+      "frontline",
       "chess-engine",
       "books",
       "photos",
       "apps",
       "media",
     ]);
+  });
+
+  it("assigns native game files to their own removable resource package", () => {
+    const packages = serviceWorkerResourcePackages();
+    for (const file of ["index.html", "primary.wasm", "assets/TJCS/Boot.zip"]) {
+      const url = `/games/frontline-native/${file}`;
+      const resource = packages.find(item => item.pathPrefixes.some(prefix => url.startsWith(prefix)));
+      expect(resource?.id).toBe("frontline");
+    }
   });
 
   it("keeps the generated service worker configuration current", async () => {
