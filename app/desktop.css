@@ -500,7 +500,7 @@
 .task-app.games-app > span::before { content:""; width:6px; height:6px; border-radius:50%; background:#f3ca52; box-shadow:9px 0 #55aee9,0 9px #df6758,9px 9px #6cad70; transform:translate(-4.5px,-4.5px); }
 .task-app.wolfslot-app > span { background:url("/assets/games/wolf-slot/wolf-slot-icon-v2.png") center/cover no-repeat; font-size:0; }
 .wolfslot-preview-mark { width:62px; height:62px; background:url("/assets/games/wolf-slot/wolf-slot-icon-v2.png") center/contain no-repeat; font-size:0!important; opacity:.72!important; }
-.task-app.settings-app > span { background:#586976; color:#fff; }
+.task-app.settings-taskbar-app > span { background:#586976; color:#fff; }
 .task-app.folder-app > span { background: #eab526; }
 .task-app.recycle-app > span { background: linear-gradient(145deg, #dff6ff, #70bddd); color: #287392; }
 .task-app.mines-app > span { background: #59656e; color: #ffe664; }
@@ -739,3 +739,7 @@
 }
 .desktop-item.cut { opacity:.48; }
 .desktop-item.drop-target { border-radius:5px; background:#b8e0f08c; outline:2px solid #79c8e6; }
+
+.shortcut-icon.cybercity-shortcut,.task-app.cybercity-app > span,.app-glyph.cybercity-glyph { position:relative; overflow:hidden; background:radial-gradient(ellipse at 80% 20%,#742655,transparent 65%),linear-gradient(145deg,#173f52,#0c1325); border:1px solid #6acbcd77; font-size:0; }
+.shortcut-icon.cybercity-shortcut::before,.task-app.cybercity-app > span::before,.app-glyph.cybercity-glyph::before { content:""; position:absolute; left:21%; bottom:21%; width:17%; height:38%; border:1px solid #6debdc; background:repeating-linear-gradient(0deg,#5dcfc880 0 1px,transparent 1px 5px),#183345; box-shadow:9px -8px 0 -1px #ca729d,18px 1px 0 -1px #558cac; transform:skewY(-7deg); }
+.shortcut-icon.cybercity-shortcut::after,.task-app.cybercity-app > span::after,.app-glyph.cybercity-glyph::after { content:""; position:absolute; left:12%; right:12%; bottom:15%; height:1px; background:#8ce7df; box-shadow:0 2px 8px #72ecda; }

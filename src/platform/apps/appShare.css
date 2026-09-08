@@ -1,0 +1,17 @@
+.app-share-control { position:relative; flex:none; font:12px/1.5 "Inter","PingFang SC",sans-serif; }
+.app-share-control .app-share-trigger { width:auto; min-width:66px; padding:0 12px; font-size:11px; white-space:nowrap; }
+.windows-controls { position:relative; }
+.windows-controls .app-share-control { position:static; height:100%; }
+.windows-desktop .windows-controls .app-share-trigger { width:66px; height:100%; padding:0 10px; border:0; border-radius:0; background:transparent; color:inherit; box-shadow:none; font-size:11px; cursor:pointer; }
+.windows-desktop .windows-controls .app-share-trigger:hover { background:#8797a522; }
+.app-share-control .app-share-panel { position:absolute; z-index:120; top:calc(100% + 8px); right:0; width:min(340px,calc(100vw - 40px)); padding:18px; color:#dce8ec; background:#14232ef5; border:1px solid #63849180; border-radius:12px; box-shadow:0 16px 45px #0005; text-align:left; cursor:default; }
+.app-share-panel header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.app-share-panel header strong { font-size:14px; font-weight:600; }
+.app-share-control .app-share-panel button { width:auto; height:auto; min-width:0; border:1px solid #698590; padding:7px 12px; border-radius:5px; background:#294353; color:#e0edf1; font:12px/1.5 sans-serif; cursor:pointer; }
+.app-share-control .app-share-panel header button { border:0; padding:0 4px; background:none; font-size:23px; }
+.app-share-panel p { margin:10px 0 14px; font-size:12px; line-height:1.7; color:#9fb9c4; white-space:normal; }
+.app-share-panel input { width:100%; padding:10px; color:#e6f0f5; background:#0b1720; border:1px solid #526e7c; border-radius:5px; font:12px/1.5 monospace; }
+.app-share-panel footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
+.app-share-panel a { color:#9bd8dc; text-decoration:none; font-size:12px; }
+.app-share-panel small { display:block; margin-top:10px; color:#cee4d6; font-size:11px; white-space:normal; }
+.app-share-control :is(button,input,a):focus-visible { outline:2px solid #9bd8dc; outline-offset:2px; }

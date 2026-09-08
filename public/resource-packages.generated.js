@@ -18,6 +18,15 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
+    "id": "cybercity",
+    "pathPrefixes": [
+      "/assets/apps/cybercity/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
     "id": "wolf-slot",
     "pathPrefixes": [
       "/assets/games/wolf-slot/"

@@ -229,7 +229,7 @@ export default function DesktopTaskbar({
                 }}
               >
                 <button
-                  className={`task-app ${app.id === "photo" ? "photo-lab-app" : `${app.kind}-app`} ${state ? "active" : ""} ${state && focused === state.id && !state.minimized ? "selected" : ""}`}
+                  className={`task-app ${app.id === "photo" ? "photo-lab-app" : app.id === "settings" ? "settings-taskbar-app" : `${app.kind}-app`} ${state ? "active" : ""} ${state && focused === state.id && !state.minimized ? "selected" : ""}`}
                   onClick={() => {
                     onPreviewChange(null);
                     onActivate(app.id);

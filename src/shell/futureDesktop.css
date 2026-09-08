@@ -1,0 +1,231 @@
+.desktop-style-switch { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.desktop-style-switch button { display:grid; justify-items:start; gap:8px; padding:18px; border:1px solid #7794a650; border-radius:16px; background:#102332; color:#c5d4dc; text-align:left; cursor:pointer; }
+.desktop-style-switch button[aria-pressed="true"] { border-color:#9ee9df; background:linear-gradient(135deg,#24484c,#193039); box-shadow:inset 0 0 0 1px #9ee9df; }
+.desktop-style-switch button > span { font-size:25px; color:#c3f7ef; }
+.desktop-style-switch button strong { font-size:13px; color:#eefbff; }
+.desktop-style-switch button small { font-size:11px; line-height:1.6; }
+.desktop-style-switch button:focus-visible,.future-workspace button:focus-visible,.future-overview-toggle:focus-visible { outline:2px solid #79dfff; outline-offset:3px; }
+
+/* Spatial materials belong to the future shell only. */
+.future-workspace { position:absolute; z-index:3; inset:22px 5% 96px; display:flex; flex-direction:column; gap:28px; color:#e3efff; pointer-events:none; }
+.future-workspace-toolbar { display:flex; align-items:center; gap:18px; width:fit-content; max-width:100%; padding:8px 12px; border:1px solid #b9dfff3d; border-radius:20px; background:#0d1b30c9; box-shadow:inset 0 1px #d8efff1a,0 12px 40px #0003; backdrop-filter:blur(28px); pointer-events:auto; }
+.future-workspace-brand { color:#bdeeff; font-size:28px; line-height:1; }
+.future-workspace-toolbar nav { display:flex; gap:4px; }
+.future-workspace button { cursor:pointer; }
+.future-workspace-toolbar button { min-height:36px; padding:8px 12px; border:0; border-radius:12px; background:transparent; color:#acbfd7; font-size:12px; white-space:nowrap; }
+.future-workspace-toolbar button[aria-pressed="true"] { background:#c7eaff20; color:#e7f9ff; box-shadow:inset 0 1px #d7f4ff30; }
+.future-workspace-toolbar button:hover { background:#b9dfff18; color:#fff; }
+.future-workspace-toolbar nav button span { margin-left:5px; color:#7faccb; font-size:10px; }
+.future-workspace-search { border-left:1px solid #bddaff26!important; border-radius:0!important; }
+.future-workspace-toolbar .future-workspace-dismiss { font-size:24px; line-height:20px; }
+.future-workspace-body { width:min(100%,1060px); padding:0 4px 24px; overflow:auto; scrollbar-width:thin; scrollbar-color:#688eae55 transparent; pointer-events:auto; }
+.future-app-group + .future-app-group { margin-top:25px; }
+.future-app-group h2,.future-window-heading h2 { margin:0 0 14px; color:#aec4dd; font-size:12px; font-weight:500; letter-spacing:.1em; }
+.future-app-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.future-app-card { min-height:106px; display:flex; align-items:center; gap:14px; padding:18px 15px; border:1px solid #afd5ff30; border-radius:20px; background:linear-gradient(125deg,#203956af,#101d339e); color:#e5f1ff; text-align:left; box-shadow:inset 0 1px #e4f4ff12,0 12px 30px #0002; backdrop-filter:blur(20px); transition:translate .2s,border-color .2s,background .2s; }
+.future-app-card:hover { translate:0 -4px; border-color:#afeaff9c; background:linear-gradient(125deg,#304d6ad9,#21304fbd); }
+.future-app-card > i { flex:none; font-style:normal; }
+.future-app-card > span { min-width:0; }
+.future-app-card strong { display:block; font-size:12px; font-weight:550; line-height:1.5; }
+.future-app-card small { display:block; margin-top:7px; color:#93aeca; font-size:10px; }
+.future-app-card > b { margin-left:auto; color:#9ec8e1; font-size:15px; font-weight:400; }
+.windows-desktop.desktop-style-future .desktop-files { display:none; }
+.windows-desktop.desktop-style-future:has(.future-workspace[data-view="files"]) .desktop-files { display:block; top:96px; }
+.windows-desktop.desktop-style-future .desktop-files > .desktop-shortcut { display:none; }
+.future-workspace.is-overview { z-index:120; inset:0 0 84px; padding:24px 5%; background:#071120e8; backdrop-filter:blur(35px); pointer-events:auto; animation:futureOverviewIn .2s ease-out; }
+.future-workspace.is-overview .future-workspace-body { width:100%; }
+.future-window-heading { display:flex; align-items:baseline; gap:20px; margin-bottom:12px; }
+.future-window-heading > span { font-size:11px; color:#819bb6; }
+.future-window-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(235px,1fr)); gap:18px; }
+.future-window-card { overflow:hidden; border:1px solid #a5ceee3d; border-radius:20px; background:linear-gradient(140deg,#203b55c4,#152035db); box-shadow:inset 0 1px #d4f2ff1a,0 12px 30px #0003; }
+.future-window-card.is-focused { border-color:#b0eaffb8; box-shadow:0 0 28px #74bcff1c; }
+.future-window-resume { width:100%; min-height:195px; display:flex; flex-direction:column; align-items:center; gap:10px; padding:18px; border:0; color:#e7f2ff; background:radial-gradient(ellipse at 50% 75%,#77adff16,transparent 70%); }
+.future-window-resume:hover { background:#9ed5ff12; }
+.future-window-status { align-self:flex-start; color:#95bad6; font-size:10px; }
+.future-window-resume i { margin:8px 0 4px; font-style:normal; }
+.future-window-resume strong { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.future-window-resume small { color:#8ea9c5; font-size:10px; }
+.future-window-card footer { display:flex; gap:6px; padding:10px; border-top:1px solid #bddfff1c; }
+.future-window-card footer button { min-height:32px; padding:6px 9px; border:0; border-radius:8px; background:#bbdaff0c; color:#a9c8de; font-size:11px; }
+.future-window-card footer button:first-child { margin-right:auto; color:#c4f1ff; }
+.future-window-card footer button:hover { background:#b8daff22; color:#fff; }
+.future-window-card.is-pair-source { border-color:#a4ecdc; background:linear-gradient(140deg,#254e57,#182d40); }
+.future-pair-button { display:block; width:calc(100% - 20px); margin:0 10px 12px; padding:10px; border:1px solid #a3d9ff3a; border-radius:10px; background:#9eceff0c; color:#b7dff7; font-size:11px; }
+.future-pair-button:hover,.future-pair-button[aria-pressed="true"] { border-color:#a4ecdc; background:#a4ecdc18; color:#ddfff6; }
+.future-pair-prompt { display:flex; align-items:center; gap:16px; margin-bottom:20px; padding:16px; border:1px solid #a4ecdc42; border-radius:16px; background:#1b3c48b5; color:#b8d4e0; font-size:12px; line-height:1.6; }
+.future-pair-prompt strong { display:block; color:#e3fff7; }
+.future-pair-prompt > button { margin-left:auto; padding:8px 12px; flex:none; border:1px solid #a4ecdc42; border-radius:10px; background:transparent; color:#c6e8e5; }
+.future-pair-diagram { width:58px; height:38px; display:flex; gap:4px; padding:4px; flex:none; border:1px solid #a4ecdc50; border-radius:6px; }
+.future-pair-diagram i { flex:1; border-radius:2px; background:#a4ecdc80; }
+.future-pair-diagram i + i { background:transparent; border:1px dashed #a4ecdc65; }
+.future-resume-work { position:absolute; right:0; bottom:0; max-width:260px; display:flex; align-items:center; gap:14px; padding:14px 18px; border:1px solid #afdfff45; border-radius:18px; background:#162e45de; color:#d6edff; box-shadow:0 10px 30px #0004; backdrop-filter:blur(24px); text-align:left; pointer-events:auto; }
+.future-resume-work:hover { border-color:#b6e8ff; background:#264762; }
+.future-resume-work > span:first-child { font-size:25px; color:#b4e8fa; }
+.future-resume-work > span:last-child { min-width:0; }
+.future-resume-work strong { display:block; font-size:12px; font-weight:500; }
+.future-resume-work small { display:block; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:#8eafca; }
+.future-empty-windows { display:grid; justify-items:center; gap:14px; padding:60px 20px; color:#95b2ce; }
+.future-empty-windows > span { font-size:50px; color:#b1dbf4; }
+.future-empty-windows p { font-size:14px; }
+.future-empty-windows button { border:1px solid #acdfff42; border-radius:12px; padding:12px 18px; background:#badfff12; color:#d4edff; }
+.future-overview-toggle { position:absolute; z-index:121; left:20px; bottom:23px; height:44px; display:flex; align-items:center; gap:10px; padding:0 15px; border:1px solid #c1e9ff4a; border-radius:15px; background:#182c43db; color:#d3edff; box-shadow:inset 0 1px #e0f3ff1a,0 8px 24px #0004; backdrop-filter:blur(24px); cursor:pointer; font-size:11px; }
+.future-overview-toggle > span:first-child { font-size:23px; }
+.future-overview-toggle:hover,.future-overview-toggle[aria-expanded="true"] { border-color:#bdefff; background:#2c4965; }
+@keyframes futureOverviewIn { from { opacity:0; translate:0 10px; } to { opacity:1; translate:0 0; } }
+@media (max-width:1100px) {
+  .future-app-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .future-overview-toggle { left:10px; padding:0 10px; }
+  .future-overview-toggle > span:last-child { display:none; }
+}
+@media (max-width:680px),(max-width:932px) and (pointer:coarse) {
+  .future-pair-button,.future-pair-prompt { display:none; }
+  .future-workspace { inset:12px 12px 76px; gap:20px; }
+  .future-workspace-toolbar { gap:4px; padding:6px; border-radius:16px; }
+  .future-workspace-brand { display:none; }
+  .future-workspace-toolbar button { padding:8px; font-size:11px; }
+  .future-workspace-toolbar nav button span { display:none; }
+  .future-app-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .future-app-card { min-height:128px; padding:15px 10px; flex-direction:column; gap:12px; text-align:center; }
+  .future-app-card > b { display:none; }
+  .future-app-card small { margin-top:3px; }
+  .future-workspace.is-overview { bottom:68px; padding:12px; }
+  .future-window-heading { display:block; }
+  .future-window-heading > span { display:block; margin-bottom:16px; }
+  .future-window-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .future-window-card footer { flex-wrap:wrap; }
+  .future-window-card footer button:first-child { width:100%; text-align:left; }
+  .future-overview-toggle { bottom:12px; left:12px; }
+  .future-overview-toggle > span:last-child { display:block; }
+  .windows-desktop.desktop-style-future:has(.future-workspace[data-view="files"]) .desktop-files { display:grid; top:76px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .future-app-card { transition:none; }
+  .future-workspace.is-overview { animation:none; }
+}
+.desktop-style-future .future-space { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:radial-gradient(ellipse at 72% 40%,#1a394b80,transparent 50%),linear-gradient(120deg,#030a18f5,#0a182bdd 50%,#040917ed); }
+.future-space > span { position:absolute; right:32px; top:30px; color:#d7e8f4; font-size:12px; letter-spacing:.36em; }
+.future-space > span b { display:block; margin-top:8px; color:#93b4ca; font-size:9px; font-weight:400; letter-spacing:.5em; }
+.future-orbit { position:absolute; width:min(60vw,780px); aspect-ratio:1; left:40%; top:4%; border:1px solid #b3f7ff80; border-radius:50%; transform:translate3d(var(--space-x,0px),var(--space-y,0px),0) rotate(-24deg); background:radial-gradient(circle at 74% 22%,#e7fcff38,transparent 37%),radial-gradient(circle at 30% 85%,#5578ff26,transparent 55%),#030b1740; box-shadow:inset 3px 1px 4px #d0ffffb0,inset 18px 4px 38px #50d5fb36,inset -16px -26px 60px #000c,0 0 3px #b7faff,0 0 65px #48c8ff25,35px 45px 90px #0008; }
+.future-orbit::before { content:""; position:absolute; inset:8%; border:1px solid #9cd8ed26; border-radius:50%; background:radial-gradient(ellipse at 20% 20%,#63bdff12,transparent 60%); }
+.future-orbit::after { content:""; position:absolute; inset:40% -16%; border:1px solid #cffcffba; border-radius:50%; box-shadow:0 0 3px #d5ffff,0 0 15px #72bfff66,inset 0 2px 4px #b2b0ff38; }
+.future-orbit i { position:absolute; inset:20% -8%; border:1px solid #a2c1ff42; border-radius:50%; transform:rotate(65deg); }
+.future-orbit i:nth-child(2) { inset:34% -13%; transform:rotate(-12deg); border-color:#acb8ff6b; }
+.future-orbit i:nth-child(3) { inset:5%; transform:none; border:1px dashed #91d6e726; }
+.future-lattice { position:absolute; inset:40% -50% -50%; background-image:linear-gradient(#719fc817 1px,transparent 1px),linear-gradient(90deg,#719fc817 1px,transparent 1px); background-size:70px 70px; transform:perspective(500px) rotateX(65deg) translateX(var(--space-x,0px)); mask-image:linear-gradient(transparent,#000 45%,transparent); }
+.future-horizon { position:absolute; left:-30%; right:-30%; height:50%; bottom:-34%; border-top:1px solid #b7d9ff70; border-radius:50%; background:linear-gradient(#629fff24,transparent); box-shadow:0 -8px 35px #5987ff20,0 -38px 120px #677fff1c; }
+.windows-desktop.desktop-style-future .desktop-item,.windows-desktop.desktop-style-future .desktop-shortcut { border-radius:14px; transition:background .18s,box-shadow .18s; }
+.windows-desktop.desktop-style-future .desktop-item:hover,.windows-desktop.desktop-style-future .desktop-shortcut:hover { background:#adcdff12; border-color:#b5dfff3b; box-shadow:0 10px 25px #0004; }
+.windows-desktop.desktop-style-future .shortcut-icon { border:1px solid #caf3ff60; border-radius:15px; box-shadow:inset 0 1px 3px #ffffff70,0 8px 0 -5px #8fceff28,0 14px 22px #0006; transform:perspective(200px) rotateY(-9deg) rotateX(5deg); transition:transform .2s,box-shadow .2s; }
+.windows-desktop.desktop-style-future .desktop-shortcut:hover .shortcut-icon { transform:perspective(200px) translateY(-5px) rotateY(0deg); box-shadow:inset 0 1px 3px #ffffff80,0 0 25px #85cdff40,0 18px 24px #0006; }
+.windows-desktop.desktop-style-future .desktop-shortcut > strong,.windows-desktop.desktop-style-future .desktop-item > strong { color:#d7e6f7; font-size:11px; letter-spacing:.04em; }
+.windows-desktop.desktop-style-future .desktop-window { border-radius:18px; border-color:#b9ddff45; box-shadow:0 35px 100px #0009; }
+.windows-desktop.desktop-style-future .desktop-window.focused { border-color:#9fe3ffc0; box-shadow:0 35px 100px #000a,0 0 0 1px #b0b8ff38,0 0 32px #76b4ff20; }
+.windows-desktop.desktop-style-future .desktop-window.maximized { border-radius:0; }
+.windows-desktop.desktop-style-future .window-chrome { background:linear-gradient(110deg,#e8f6ffee,#e9eaffeb); border-bottom-color:#92a9c84d; }
+.windows-desktop.desktop-style-future.theme-dark .window-chrome { background:linear-gradient(110deg,#182a3ff2,#20223bed); border-bottom-color:#b6dfff26; }
+.windows-desktop.desktop-style-future .windows-taskbar { left:16px; right:16px; bottom:16px; height:58px; border:0; background:transparent; box-shadow:none; backdrop-filter:none; }
+.windows-desktop.desktop-style-future .taskbar-center { height:58px; padding:7px 10px; gap:6px; border:1px solid #c5eaff59; border-radius:20px; background:linear-gradient(135deg,#243b53d9,#141d35e6); box-shadow:inset 0 1px #e4f7ff33,0 14px 40px #0007,0 0 24px #80baff12; backdrop-filter:blur(32px); }
+.windows-desktop.desktop-style-future .taskbar-tray { height:48px; padding:0 12px; border:1px solid #b0d9ff36; border-radius:16px; background:#192b40c9; color:#d3e9fb; backdrop-filter:blur(24px); box-shadow:0 8px 25px #0004; }
+.windows-desktop.desktop-style-future .windows-taskbar button { border-radius:12px; color:#d3e9fb; }
+.windows-desktop.desktop-style-future .windows-taskbar button:hover,.windows-desktop.desktop-style-future .windows-taskbar button.selected { background:#b5dfff20; }
+.windows-desktop.desktop-style-future .start-button i { background:#c0ecff; box-shadow:0 0 9px #77cfff55; border-radius:2px; }
+.windows-desktop.desktop-style-future .task-app.active::after { background:#b9f4ff; box-shadow:0 0 8px #76cfff; height:2px; }
+.windows-desktop.desktop-style-future .taskbar-center > .taskbar-entry > button { transition:translate .18s,scale .18s,background .18s; }
+.windows-desktop.desktop-style-future .taskbar-center > .taskbar-entry:hover > button { translate:0 -8px; scale:1.12; }
+.windows-desktop.desktop-style-future .taskbar-entry:has(+ .taskbar-entry:hover) > button,.windows-desktop.desktop-style-future .taskbar-entry:hover + .taskbar-entry > button { translate:0 -3px; }
+.windows-desktop.desktop-style-future .start-menu { bottom:90px; border-radius:24px; border-color:#c1dfff8a; box-shadow:0 24px 90px #0008,0 0 40px #80baff15; backdrop-filter:blur(48px) saturate(120%); }
+.windows-desktop.desktop-style-future .start-search { border-radius:12px; }
+.windows-desktop.desktop-style-future .start-apps button { border-radius:14px; }
+.windows-desktop.desktop-style-future .system-panel { bottom:90px; border-radius:20px; }
+.windows-desktop.desktop-style-future.taskbar-auto-hide .windows-taskbar { bottom:0; }
+@media (min-width:933px) {
+  .windows-desktop.desktop-style-future .window-chrome { height:44px; }
+  .windows-desktop.desktop-style-future .window-content { height:calc(100% - 44px); }
+}
+@media (max-width:1100px) {
+  .windows-desktop.desktop-style-future .taskbar-tray { padding:0 4px; gap:4px; }
+  .windows-desktop.desktop-style-future .taskbar-center { gap:4px; padding:7px; }
+}
+@media (max-width:680px),(max-width:932px) and (pointer:coarse) {
+  .desktop-style-switch button { padding:8px 10px; font-size:11px; }
+  .future-orbit { width:90vw; left:30%; top:26%; }
+  .future-space > span { display:none; }
+  .windows-desktop.desktop-style-future .windows-taskbar { left:6px; right:6px; bottom:6px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .future-orbit { transform:rotate(-24deg); }
+  .future-lattice { transform:perspective(500px) rotateX(65deg); }
+  .windows-desktop.desktop-style-future .desktop-item,.windows-desktop.desktop-style-future .desktop-shortcut,.windows-desktop.desktop-style-future .shortcut-icon,.windows-desktop.desktop-style-future .taskbar-center > .taskbar-entry > button { transition:none; }
+}
+
+/* Shared timing keeps physical feedback faster than spatial navigation. */
+.desktop-style-future {
+  --motion-settle:cubic-bezier(.2,.8,.2,1);
+  --motion-lift:cubic-bezier(.16,1,.3,1);
+  --motion-quick:160ms;
+  --motion-surface:320ms;
+  --motion-enter:480ms;
+}
+.future-workspace-toolbar nav { position:relative; isolation:isolate; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.future-workspace-toolbar nav::before { content:""; position:absolute; z-index:-1; top:0; bottom:0; left:0; width:calc((100% - 8px)/3); border:1px solid #c3edff40; border-radius:12px; background:linear-gradient(120deg,#bceaff2b,#a6b9ff14); box-shadow:inset 0 1px #edffff35,0 4px 14px #0002; transition:translate var(--motion-surface) var(--motion-lift); }
+.future-workspace[data-view="files"] nav::before { translate:calc(100% + 4px) 0; }
+.future-workspace[data-view="windows"] nav::before { translate:calc(200% + 8px) 0; }
+.future-workspace-toolbar button[aria-pressed="true"] { background:transparent; box-shadow:none; }
+.future-workspace-toolbar button { transition:color var(--motion-quick),background var(--motion-quick),scale var(--motion-quick) var(--motion-settle); }
+.future-workspace-toolbar button:active { scale:.95; }
+.future-workspace-brand { transition:rotate var(--motion-enter) var(--motion-lift),color var(--motion-surface); }
+.future-workspace.is-overview .future-workspace-brand { rotate:90deg; color:#b9f5ec; }
+.future-workspace.is-overview { animation:futureOverviewIn var(--motion-enter) var(--motion-lift); }
+.future-workspace-body { animation:futureSurfaceIn var(--motion-enter) var(--motion-lift) both; }
+.future-app-group { animation:futureGroupIn 460ms var(--motion-lift) both; }
+.future-app-group:nth-child(2) { animation-delay:55ms; }
+.future-app-group:nth-child(3) { animation-delay:110ms; }
+.future-app-card,.future-window-card { position:relative; isolation:isolate; transition:translate var(--motion-surface) var(--motion-lift),transform var(--motion-surface) var(--motion-lift),scale var(--motion-quick) var(--motion-settle),box-shadow var(--motion-surface),border-color var(--motion-quick); }
+.future-app-card::before,.future-window-card::before { content:""; position:absolute; z-index:0; inset:0; border-radius:inherit; pointer-events:none; opacity:0; background:radial-gradient(240px circle at var(--card-light-x,50%) var(--card-light-y,30%),#c0f1ff2c,transparent 75%); transition:opacity var(--motion-surface); }
+.future-app-card > *,.future-window-card > * { position:relative; }
+.future-app-card:hover::before,.future-app-card:focus-visible::before,.future-window-card:hover::before,.future-window-card:focus-within::before { opacity:1; }
+.future-app-card:hover,.future-app-card:focus-visible { translate:0 -5px; box-shadow:inset 0 1px #efffff3d,0 18px 36px #0005,0 0 22px #94cfff12; }
+.future-app-card:active { translate:0 -1px; scale:.975; box-shadow:inset 0 1px #efffff22,0 5px 12px #0004; transition-duration:90ms; }
+.future-app-card > b { opacity:.55; transition:translate var(--motion-surface) var(--motion-lift),opacity var(--motion-quick); }
+.future-app-card:hover > b,.future-app-card:focus-visible > b { translate:3px -3px; opacity:1; }
+.windows-desktop.desktop-style-future .future-app-card > .shortcut-icon { transition:transform var(--motion-surface) var(--motion-lift),box-shadow var(--motion-surface); }
+.windows-desktop.desktop-style-future .future-app-card:hover > .shortcut-icon { transform:translateY(-2px) rotate(-3deg); box-shadow:inset 0 1px #ffffff80,0 8px 20px #0006; }
+.future-window-card { animation:futureGroupIn 420ms var(--motion-lift) backwards; }
+.future-window-card:nth-child(2) { animation-delay:35ms; }
+.future-window-card:nth-child(3) { animation-delay:70ms; }
+.future-window-card:nth-child(4) { animation-delay:105ms; }
+.future-window-card:hover,.future-window-card:focus-within { translate:0 -3px; border-color:#b9e8ff9c; box-shadow:0 18px 40px #0005; }
+.future-window-card.is-pair-source { box-shadow:inset 0 0 0 1px #a4ecdc70,0 0 32px #a4ecdc1a; }
+.future-window-card footer button,.future-pair-button,.future-pair-prompt > button { transition:background var(--motion-quick),color var(--motion-quick),scale var(--motion-quick) var(--motion-settle),border-color var(--motion-quick); }
+.future-window-card footer button:active,.future-pair-button:active,.future-pair-prompt > button:active { scale:.95; }
+.future-pair-prompt { animation:futureSurfaceIn 320ms var(--motion-lift); }
+.future-pair-diagram i { animation:futurePairSeat 380ms var(--motion-lift) both; }
+.future-pair-diagram i + i { animation-delay:90ms; }
+.future-resume-work { animation:futureSurfaceIn 420ms var(--motion-lift); transition:translate var(--motion-surface) var(--motion-lift),scale var(--motion-quick),border-color var(--motion-quick); }
+.future-resume-work:hover { translate:0 -3px; }
+.future-resume-work:active { scale:.97; }
+.future-overview-toggle { transition:translate var(--motion-surface) var(--motion-lift),scale var(--motion-quick),background var(--motion-quick),border-color var(--motion-quick); }
+.future-overview-toggle > span:first-child { transition:rotate var(--motion-surface) var(--motion-lift); }
+.future-overview-toggle[aria-expanded="true"] > span:first-child { rotate:180deg; }
+.future-overview-toggle:hover { translate:0 -2px; }
+.future-overview-toggle:active { translate:0 0; scale:.96; }
+.windows-desktop.desktop-style-future .desktop-window:not(.minimized):not(.taskbar-live-preview) { animation:futureWindowReveal 420ms var(--motion-lift); }
+.windows-desktop.desktop-style-future .desktop-window { transition:box-shadow var(--motion-surface),border-color var(--motion-surface); }
+.windows-desktop.desktop-style-future .windows-controls button { transition:background var(--motion-quick),color var(--motion-quick); }
+.windows-desktop.desktop-style-future:has(.future-workspace[data-view="files"]) .desktop-files { animation:futureSurfaceIn 400ms var(--motion-lift); }
+@media (hover:hover) and (pointer:fine) {
+  .future-app-card:hover { transform:perspective(850px) rotateX(var(--card-tilt-x,0deg)) rotateY(var(--card-tilt-y,0deg)); }
+  .future-app-card:active { transform:perspective(850px) rotateX(0deg) rotateY(0deg); }
+}
+@keyframes futureSurfaceIn { from { opacity:0; translate:0 12px; } to { opacity:1; translate:0 0; } }
+@keyframes futureGroupIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes futurePairSeat { from { opacity:0; translate:-6px 0; } to { opacity:1; translate:0 0; } }
+@keyframes futureWindowReveal { from { opacity:0; translate:0 18px; clip-path:inset(0 0 12% 0 round 18px); } to { opacity:1; translate:0 0; clip-path:inset(0 0 0 0 round 18px); } }
+@media (prefers-reduced-motion:reduce) {
+  .desktop-style-future { --motion-quick:0ms; --motion-surface:0ms; --motion-enter:0ms; }
+  .future-workspace.is-overview,.future-workspace-body,.future-app-group,.future-window-card,.future-pair-prompt,.future-pair-diagram i,.future-resume-work,
+  .windows-desktop.desktop-style-future .desktop-window:not(.minimized):not(.taskbar-live-preview),
+  .windows-desktop.desktop-style-future:has(.future-workspace[data-view="files"]) .desktop-files { animation:none; }
+  .future-app-card:hover,.future-app-card:active { transform:none; }
+  .future-app-card:active { transition:none; }
+}

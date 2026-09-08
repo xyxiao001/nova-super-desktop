@@ -1,9 +1,11 @@
 export type NovaTheme = "system"|"light"|"dark";
 export type NovaWallpaper = "nova"|"harbor"|"dawn"|"grove"|"dusk"|"graphite"|"starport"|"rain"|"abyss";
-export type NovaSettings = { theme:NovaTheme; wallpaper:NovaWallpaper; sound:boolean; volume:number };
+export type NovaDesktopStyle = "classic"|"future";
+export type NovaDesktopLook = "original"|"retro"|"cartoon"|"paper";
+export type NovaSettings = { desktopLook:NovaDesktopLook; desktopStyle:NovaDesktopStyle; theme:NovaTheme; wallpaper:NovaWallpaper; sound:boolean; volume:number };
 export type NovaSound = "open"|"close"|"move"|"success"|"error";
 
-export const DEFAULT_SETTINGS:NovaSettings={theme:"system",wallpaper:"nova",sound:true,volume:.45};
+export const DEFAULT_SETTINGS:NovaSettings={desktopLook:"original",desktopStyle:"classic",theme:"system",wallpaper:"nova",sound:true,volume:.45};
 const SETTINGS_KEY="nova-settings";
 export const CALENDAR_ALMANAC_KEY="nova-calendar-almanac-enabled";
 const SETTINGS_EVENT="nova-settings-change";

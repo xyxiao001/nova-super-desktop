@@ -87,3 +87,9 @@
 }
 
 .game-share-button{border:1px solid currentColor;border-radius:7px;padding:4px 8px;background:transparent;color:inherit;font:inherit;font-size:11px;cursor:pointer;white-space:nowrap}
+.game-share-manual { position:absolute; z-index:6; left:16px; right:16px; bottom:16px; max-width:560px; margin:auto; padding:16px; border:1px solid #647888; border-radius:12px; background:#1a2530; color:#edf5fa; box-shadow:0 12px 36px #0008; }
+.game-share-manual > div { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.game-share-manual strong { font-size:14px; }
+.game-share-manual button { width:32px; height:32px; border:0; border-radius:6px; background:#ffffff12; color:inherit; font-size:22px; cursor:pointer; }
+.game-share-manual p { margin:8px 0 12px; color:#b6c6d1; font-size:12px; line-height:1.6; }
+.game-share-manual input { width:100%; padding:11px; border:1px solid #8096a6; border-radius:6px; background:#101a23; color:#e5f5ff; font-size:14px; user-select:text; }

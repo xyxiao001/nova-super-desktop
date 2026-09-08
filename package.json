@@ -29,7 +29,8 @@
     "lunar-typescript": "1.8.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "react-pageflip-enhanced": "^2.2.3"
+    "react-pageflip-enhanced": "^2.2.3",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -41,6 +42,7 @@
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "drizzle-kit": "0.31.10",

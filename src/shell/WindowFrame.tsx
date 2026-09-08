@@ -11,6 +11,7 @@ import {
 } from "react";
 import AppLoadBoundary from "../../app/AppLoadBoundary";
 import { APP_REGISTRY } from "../platform/apps/appRegistry";
+import AppShareButton from "../platform/apps/AppShareButton";
 import { isCompactDesktopViewport } from "../../app/desktopIconInteraction";
 import type { WindowAppId } from "../platform/apps/appRegistry";
 import {
@@ -487,6 +488,7 @@ export default function WindowFrame({
           <strong>{title}</strong>
         </div>
         <div className="window-controls windows-controls">
+          <AppShareButton app={app}/>
           <button className="window-minimize" aria-label={`最小化${title}`} onClick={onMinimize}>
             —
           </button>

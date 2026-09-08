@@ -21,6 +21,7 @@ describe("resource package manifest", () => {
     expect(serviceWorkerResourcePackages().map((item) => item.id)).toEqual([
       "magic-tower",
       "youtd2",
+      "cybercity",
       "wolf-slot",
       "frontline",
       "chess-engine",

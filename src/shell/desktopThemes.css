@@ -1,0 +1,154 @@
+.desktop-theme-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.desktop-theme-options > button { overflow:hidden; padding:0; border:2px solid transparent; border-radius:16px; background:#142533; color:#edf5fa; text-align:left; cursor:pointer; }
+.desktop-theme-options > button[aria-pressed="true"] { border-color:#73d8d0; box-shadow:0 0 0 2px #73d8d026; }
+.desktop-theme-options > button:focus-visible { outline:2px solid #73d8d0; outline-offset:3px; }
+.desktop-theme-caption { display:block; padding:13px; }
+.desktop-theme-caption strong { display:flex; justify-content:space-between; font-size:12px; }
+.desktop-theme-caption b { color:#73d8d0; }
+.desktop-theme-caption small { display:block; margin-top:6px; color:#a9bac8; font-size:10px; line-height:1.5; }
+.desktop-theme-preview { position:relative; display:block; height:112px; overflow:hidden; }
+.desktop-theme-preview i { position:absolute; display:block; }
+.desktop-theme-preview i:nth-child(1) { left:16%; top:20%; width:53%; height:58%; border:1px solid #c9ecff80; border-radius:7px; background:#cceaff28; box-shadow:8px 8px 18px #0003; }
+.desktop-theme-preview i:nth-child(2) { left:16%; top:20%; width:53%; height:12px; border-bottom:1px solid #c9ecff80; }
+.desktop-theme-preview i:nth-child(3) { left:25%; right:25%; bottom:8px; height:9px; border:1px solid #c9ecff80; border-radius:5px; background:#d9eeff55; }
+.preview-original { background:radial-gradient(ellipse at 85% 25%,#466d9a,transparent 50%),linear-gradient(135deg,#11233d,#123940); }
+.preview-retro { background:repeating-linear-gradient(0deg,#0002 0 1px,transparent 1px 4px),#261d13; }
+.preview-retro i:nth-child(1) { border:2px solid #edb85c; border-radius:0; background:#362719; box-shadow:5px 5px 0 #a9783438; }
+.preview-retro i:nth-child(2) { background:#edb85c; border:0; }
+.preview-retro i:nth-child(3) { border-color:#edb85c; border-radius:0; background:#60401d; }
+.preview-cartoon { background:radial-gradient(ellipse at 85% 110%,#b4cec1 0 37%,transparent 38%),#f5dca0; }
+.preview-cartoon i:nth-child(1) { border:2px solid #453735; border-radius:12px; background:#fff4db; box-shadow:5px 5px 0 #453735; transform:rotate(-5deg); }
+.preview-cartoon i:nth-child(2) { background:#ee9eac; border:2px solid #453735; border-radius:12px 12px 0 0; transform:rotate(-5deg); }
+.preview-cartoon i:nth-child(3) { border:2px solid #453735; background:#d5c4e8; }
+.preview-paper { background:linear-gradient(#758baa20 1px,transparent 1px),linear-gradient(90deg,#758baa20 1px,transparent 1px),#eae4d5; background-size:14px 14px; }
+.preview-paper i:nth-child(1) { border:1px solid #847c6e; border-radius:2px; background:#fffbed; box-shadow:4px 5px 0 #75684a20; transform:rotate(3deg); }
+.preview-paper i:nth-child(2) { height:13px; background:#d8bba680; border:0; transform:rotate(3deg); }
+.preview-paper i:nth-child(3) { border-color:#847c6e; border-radius:2px; background:#fffbed; }
+
+.windows-desktop.desktop-look-retro { --scene-bg:#161711; --scene-panel:#24251e; --scene-panel-hover:#35372a; --scene-text:#f2c36c; --scene-muted:#c49f60; --scene-line:#c99a49; --scene-accent:#f2c36c; --scene-selected:#49412a; --scene-shadow:5px 5px 0 #0008; --scene-radius:2px; --motion-lift:steps(5,end); --motion-settle:steps(3,end); font-family:"Courier New","PingFang SC",monospace; }
+.windows-desktop.desktop-look-cartoon { --scene-bg:#f7dfa5; --scene-panel:#fff5dc; --scene-panel-hover:#fffaf0; --scene-text:#493c3e; --scene-muted:#80696c; --scene-line:#594449; --scene-accent:#8357a0; --scene-selected:#e8d3ef; --scene-shadow:5px 6px 0 #594449; --scene-radius:24px; --motion-lift:cubic-bezier(.2,1.4,.4,1); --motion-settle:cubic-bezier(.2,1.2,.4,1); }
+.windows-desktop.desktop-look-paper { --scene-bg:#eae5d8; --scene-panel:#fffcf2; --scene-panel-hover:#fffef8; --scene-text:#514d42; --scene-muted:#857e6b; --scene-line:#b5ad99; --scene-accent:#986f54; --scene-selected:#eee0c6; --scene-shadow:2px 5px 10px #51452322; --scene-radius:4px; --motion-enter:300ms; --motion-lift:cubic-bezier(.2,.7,.4,1); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-wallpaper { background:var(--scene-bg); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-wallpaper::before,
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-wallpaper::after,
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-wallpaper > i,
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-space { display:none; }
+.desktop-theme-scene { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.desktop-theme-scene i { position:absolute; display:block; }
+.desktop-look-retro .desktop-theme-scene { background:repeating-linear-gradient(0deg,#0002 0 1px,transparent 1px 4px),radial-gradient(ellipse at 70% 45%,#ad854817,transparent 65%); }
+.desktop-look-retro .desktop-theme-scene i:nth-child(1) { width:50vw; height:50vw; right:-10vw; top:8%; border:1px solid #d9a74b25; border-radius:50%; box-shadow:0 0 0 24px #d9a74b08,0 0 0 48px #d9a74b05; }
+.desktop-look-retro .desktop-theme-scene i:nth-child(2) { inset:55% -30% -45%; background-image:linear-gradient(#d9a74b16 1px,transparent 1px),linear-gradient(90deg,#d9a74b16 1px,transparent 1px); background-size:60px 60px; transform:perspective(450px) rotateX(55deg); }
+.desktop-look-cartoon .desktop-theme-scene i:nth-child(1) { width:190px; height:68px; top:13%; right:9%; background:#fff7e7; border:3px solid #594449; border-radius:80px; box-shadow:-65px 75px 0 -15px #fff7e7; }
+.desktop-look-cartoon .desktop-theme-scene i:nth-child(2) { width:75vw; height:40vh; bottom:-20vh; right:-10vw; border:3px solid #594449; border-radius:50%; background:#b9d2c0; transform:rotate(-12deg); }
+.desktop-look-cartoon .desktop-theme-scene i:nth-child(3) { width:68vw; height:37vh; bottom:-23vh; left:-16vw; border:3px solid #594449; border-radius:50%; background:#d5c3df; transform:rotate(9deg); }
+.desktop-look-paper .desktop-theme-scene { background-image:linear-gradient(#8393a41c 1px,transparent 1px),linear-gradient(90deg,#8393a41c 1px,transparent 1px); background-size:26px 26px; }
+.desktop-look-paper .desktop-theme-scene i:nth-child(1) { width:260px; height:320px; top:12%; right:5%; border:1px solid #bcb29a; background:#f7f0d8; box-shadow:3px 5px 12px #66563018; transform:rotate(12deg); }
+.desktop-look-paper .desktop-theme-scene i:nth-child(2) { width:100px; height:32px; top:11%; right:12%; background:#bba78855; transform:rotate(8deg); }
+
+/* Scene materials cover shell surfaces; application contents keep their own theme. */
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.future-workspace-toolbar,.future-app-card,.future-window-card,.future-resume-work,.future-overview-toggle,.taskbar-center,.start-menu,.system-panel,.desktop-menu,.taskbar-preview) { background:var(--scene-panel); border:1px solid var(--scene-line); border-radius:var(--scene-radius); color:var(--scene-text); box-shadow:var(--scene-shadow); backdrop-filter:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-workspace.is-overview { background:var(--scene-bg); backdrop-filter:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.future-workspace,.future-workspace-toolbar button,.future-window-resume,.future-window-resume strong,.future-app-card strong,.future-resume-work strong,.future-empty-windows,.start-apps button,.start-section-header,.start-all-app,.desktop-menu button) { color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.future-workspace-brand,.future-workspace-toolbar nav button span,.future-app-card > b,.future-app-card small,.future-window-resume small,.future-window-status,.future-app-group h2,.future-window-heading h2,.future-window-heading > span,.future-resume-work small) { color:var(--scene-muted); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.future-pair-prompt,.future-pair-button,.future-window-card footer button,.future-empty-windows button) { background:var(--scene-selected); border-color:var(--scene-line); color:var(--scene-text); box-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.future-pair-prompt strong,.future-pair-prompt > button,.future-window-card footer button:first-child) { color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.future-app-card:hover,.future-window-card:hover,.future-workspace-toolbar button:hover,.future-resume-work:hover,.future-overview-toggle:hover,.desktop-menu button:hover,.start-apps button:hover) { background:var(--scene-panel-hover); color:var(--scene-text); border-color:var(--scene-accent); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-window-card.is-pair-source { background:var(--scene-selected); border-color:var(--scene-accent); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-window { border:2px solid var(--scene-line); border-radius:var(--scene-radius); box-shadow:var(--scene-shadow); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-window.focused { border-color:var(--scene-accent); box-shadow:var(--scene-shadow); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-window .window-chrome { background:var(--scene-panel); border-bottom:1px solid var(--scene-line); color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.window-identity strong,.window-identity small,.windows-controls button) { color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-controls button:hover { background:var(--scene-selected); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-controls .window-close:hover { background:#bf534c; color:white; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-taskbar { background:var(--scene-panel); border-color:var(--scene-line); box-shadow:var(--scene-shadow); backdrop-filter:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper).desktop-style-future .windows-taskbar { background:transparent; box-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .taskbar-tray { color:var(--scene-text); background:var(--scene-panel); border-color:var(--scene-line); border-radius:var(--scene-radius); backdrop-filter:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-taskbar button { color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .windows-taskbar button:is(:hover,.selected) { background:var(--scene-selected); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .start-button i { background:var(--scene-accent); box-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .task-app.active::after { background:var(--scene-accent); box-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.desktop-item > strong,.desktop-shortcut > strong) { color:var(--scene-text); text-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .start-search { background:var(--scene-panel); border-color:var(--scene-line); color:var(--scene-muted); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .start-search input { color:var(--scene-text); }
+.windows-desktop.desktop-look-retro .shortcut-icon { border:1px solid var(--scene-line); border-radius:0; box-shadow:3px 3px 0 #0008; transform:none; }
+.windows-desktop.desktop-look-retro .future-app-card::before,.windows-desktop.desktop-look-paper .future-app-card::before { display:none; }
+.windows-desktop.desktop-look-cartoon :is(.future-app-card,.future-window-card,.future-workspace-toolbar) { border-width:2px; }
+.windows-desktop.desktop-look-cartoon .shortcut-icon { border:2px solid var(--scene-line); border-radius:16px; box-shadow:3px 3px 0 var(--scene-line); transform:rotate(-4deg); }
+.windows-desktop.desktop-look-cartoon .desktop-window .window-chrome { background:#ecd1dc; }
+.windows-desktop.desktop-look-cartoon .future-app-card:active { translate:3px 4px; box-shadow:1px 2px 0 var(--scene-line); }
+.windows-desktop.desktop-look-paper .shortcut-icon { border:1px solid var(--scene-line); border-radius:4px; box-shadow:2px 3px 0 #897b572e; transform:rotate(-3deg); }
+.windows-desktop.desktop-look-paper .future-app-card:hover { transform:rotate(-1deg); }
+.windows-desktop.desktop-look-retro .future-app-card:hover { transform:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-window.maximized { border-radius:0; }
+@media (max-width:680px),(max-width:932px) and (pointer:coarse) {
+  .desktop-theme-options { gap:10px; }
+  .desktop-theme-preview { height:90px; }
+  .desktop-theme-caption { padding:10px; }
+  .windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-window { border-radius:0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) { --motion-quick:0ms; --motion-surface:0ms; --motion-enter:0ms; }
+}
+
+/* Theme detail and tactile feedback. */
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-workspace-toolbar nav::before { background:var(--scene-selected); border-color:var(--scene-line); border-radius:var(--scene-radius); box-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .focus-shortcut { background:var(--scene-selected); color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.settings-app,.settings-app > header,.settings-scroll) { background:var(--scene-panel); color:var(--scene-text); border-color:var(--scene-line); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .settings-nav { background:var(--scene-bg); border-color:var(--scene-line); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.settings-nav button,.settings-section-heading strong,.settings-app > header strong) { color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.settings-section-heading span,.settings-nav button small,.settings-app > header span) { color:var(--scene-muted); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.settings-nav button.active,.settings-nav button:hover,.settings-nav button > i,.settings-app > header > b) { background:var(--scene-selected); border-color:var(--scene-line); color:var(--scene-text); box-shadow:none; }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .settings-nav button.active::before { background:var(--scene-accent); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .settings-section { border-color:var(--scene-line); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.desktop-style-switch button,.desktop-theme-options > button) { background:var(--scene-bg); border-color:var(--scene-line); border-radius:var(--scene-radius); color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.desktop-style-switch button > span,.desktop-style-switch button strong,.desktop-theme-caption strong,.desktop-theme-caption b) { color:var(--scene-text); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.desktop-style-switch button small,.desktop-theme-caption small) { color:var(--scene-muted); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) :is(.desktop-style-switch button,.desktop-theme-options > button)[aria-pressed="true"] { background:var(--scene-selected); border-color:var(--scene-accent); box-shadow:inset 0 0 0 1px var(--scene-accent); }
+.desktop-theme-options > button { transition:translate 180ms ease,box-shadow 180ms ease,border-color 180ms ease; }
+.desktop-theme-options > button:hover { translate:0 -3px; box-shadow:0 8px 20px #0002; }
+.desktop-theme-options > button:active { translate:0 1px; }
+.desktop-theme-preview i { transition:transform 350ms cubic-bezier(.2,.8,.2,1); }
+.desktop-theme-options > button:hover .preview-original i:first-child { transform:translateY(-4px); }
+.desktop-theme-options > button:hover .preview-retro i:first-child { transform:translate(3px,-3px); transition-timing-function:steps(3,end); }
+.desktop-theme-options > button:hover .preview-cartoon i:first-child { transform:rotate(4deg) translateY(-3px); }
+.desktop-theme-options > button:hover .preview-paper i:first-child { transform:rotate(-3deg) translateY(-3px); }
+.windows-desktop.desktop-look-retro .future-app-card { font-family:"Courier New","PingFang SC",monospace; }
+.windows-desktop.desktop-look-retro .shortcut-icon { filter:sepia(.55) saturate(.75); }
+.windows-desktop.desktop-look-retro .future-app-card:hover { translate:2px -2px; box-shadow:3px 5px 0 #0009,inset 3px 0 var(--scene-accent); }
+.windows-desktop.desktop-look-retro .future-app-card:active { translate:2px 2px; box-shadow:1px 1px 0 #0008; }
+.windows-desktop.desktop-look-retro .future-app-card::before { display:block; inset:0; border-radius:0; opacity:0; background:linear-gradient(transparent 44%,#eab35a15 49%,#f2c36c38 50%,transparent 56%); }
+.windows-desktop.desktop-look-retro .future-app-card:hover::before { animation:retroCardSweep 560ms steps(9,end); }
+.windows-desktop.desktop-look-retro .desktop-theme-scene i:nth-child(1) { transition:box-shadow 250ms steps(4,end),translate 400ms steps(5,end); translate:var(--space-x,0px) var(--space-y,0px); }
+.windows-desktop.desktop-look-retro:has(.future-app-card:hover,.desktop-shortcut:hover) .desktop-theme-scene i:nth-child(1) { box-shadow:0 0 0 24px #d9a74b14,0 0 0 48px #d9a74b09,0 0 80px #d9a74b12; }
+.windows-desktop.desktop-look-cartoon { --scene-shadow:4px 4px 0 #594449; }
+.windows-desktop.desktop-look-cartoon .future-app-card:nth-child(3n+2) { background:#f5e2ed; }
+.windows-desktop.desktop-look-cartoon .future-app-card:nth-child(3n+3) { background:#e1eedf; }
+.windows-desktop.desktop-look-cartoon .future-app-card:hover { transform:rotate(-1.2deg); translate:0 -5px; box-shadow:5px 8px 0 var(--scene-line); }
+.windows-desktop.desktop-look-cartoon .future-app-card:active { transform:rotate(0); translate:3px 3px; scale:.98; box-shadow:1px 1px 0 var(--scene-line); }
+.windows-desktop.desktop-look-cartoon :is(.future-app-card:hover,.desktop-shortcut:hover) > .shortcut-icon { animation:candyWiggle 430ms ease-out; }
+.windows-desktop.desktop-look-cartoon .desktop-theme-scene i:nth-child(1) { top:auto; bottom:14%; transition:translate 650ms cubic-bezier(.2,1.25,.4,1); translate:calc(var(--space-x,0px) * -1) var(--space-y,0px); }
+.windows-desktop.desktop-look-cartoon .desktop-theme-scene i:nth-child(1)::before { content:""; position:absolute; width:7px; height:9px; left:69px; top:28px; border-radius:50%; background:#594449; box-shadow:29px 0 #594449; }
+.windows-desktop.desktop-look-cartoon .desktop-theme-scene i:nth-child(1)::after { content:""; position:absolute; width:17px; height:8px; left:79px; top:42px; border:2px solid #594449; border-top:0; border-radius:0 0 15px 15px; }
+.windows-desktop.desktop-look-paper .future-app-card { border-bottom-width:2px; }
+.windows-desktop.desktop-look-paper .future-app-card::after { content:""; position:absolute; right:0; top:0; width:18px; height:18px; background:linear-gradient(45deg,#dacfb8 48%,#f6f0e1 50%); clip-path:polygon(0 0,100% 0,100% 100%); transform-origin:top right; transition:transform 300ms ease; pointer-events:none; }
+.windows-desktop.desktop-look-paper .future-app-card:hover::after { transform:rotate(-12deg) scale(1.25); }
+.windows-desktop.desktop-look-paper .future-app-card:hover { translate:0 -3px; box-shadow:3px 8px 12px #51452325; }
+.windows-desktop.desktop-look-paper .future-app-card:active { transform:rotate(0); translate:0 1px; scale:1; box-shadow:1px 2px 4px #51452320; }
+.windows-desktop.desktop-look-paper .desktop-theme-scene i:nth-child(1) { transition:rotate 650ms ease,translate 650ms ease; translate:calc(var(--space-x,0px) * .4) calc(var(--space-y,0px) * .4); }
+.windows-desktop.desktop-look-paper:has(.future-app-card:hover,.desktop-shortcut:hover) .desktop-theme-scene i:nth-child(1) { rotate:-2deg; }
+.windows-desktop.desktop-look-original .future-app-card:focus-visible { box-shadow:0 0 0 2px #bdeeff,0 0 30px #7bcfff28; }
+@keyframes retroCardSweep { from { opacity:0; transform:translateY(-30%); } 25% { opacity:1; } to { opacity:0; transform:translateY(30%); } }
+@keyframes candyWiggle { 0%,100% { transform:rotate(-4deg); } 30% { transform:rotate(8deg) translateY(-3px); } 65% { transform:rotate(-7deg); } }
+@media (prefers-reduced-motion:reduce) {
+  .desktop-theme-options > button,.desktop-theme-preview i,
+  .windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-theme-scene i,
+  .windows-desktop.desktop-look-paper .future-app-card::after { transition:none; }
+  .windows-desktop.desktop-look-retro .future-app-card:hover::before,
+  .windows-desktop.desktop-look-cartoon :is(.future-app-card:hover,.desktop-shortcut:hover) > .shortcut-icon { animation:none; }
+  .windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .desktop-theme-scene i { translate:0 0; rotate:0deg; }
+}
+
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-pair-diagram { border-color:var(--scene-accent); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-pair-diagram i { background:var(--scene-accent); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-pair-diagram i + i { background:transparent; border-color:var(--scene-accent); }
+.windows-desktop:is(.desktop-look-retro,.desktop-look-cartoon,.desktop-look-paper) .future-workspace-toolbar nav button[aria-pressed="true"]:hover { background:transparent; }

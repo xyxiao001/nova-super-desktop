@@ -30,6 +30,8 @@ import {
 import { useAppLaunchIntent } from "../../platform/launch/LaunchRuntime";
 import { useSettingsRuntime } from "../../platform/settings/SettingsRuntime";
 import AiConnectionSettings from "./AiConnectionSettings";
+import DesktopThemePicker from "../../shell/DesktopThemePicker";
+import DesktopStyleSwitch from "../../shell/DesktopStyleSwitch";
 import PetSettings from "./PetSettings";
 
 const THEMES:{id:NovaTheme;label:string;sample:string}[]=[
@@ -232,8 +234,16 @@ export default function SettingsApp(){
       <nav className="settings-nav" aria-label="设置分类">{SETTINGS_PANES.map((pane)=><button key={pane.id} className={activePane===pane.id?"active":""} aria-current={activePane===pane.id?"page":undefined} onClick={()=>setActivePane(pane.id)}><i aria-hidden="true">{pane.icon}</i><span><strong>{pane.label}</strong><small>{pane.detail}</small></span><b aria-hidden="true">›</b></button>)}</nav>
       <div className="settings-scroll">
         {activePane==="appearance"&&<>
+          <section className="settings-section">
+            <div className="settings-section-heading"><strong>桌面风格</strong><span>经典桌面或未来空间，即时切换</span></div>
+            <DesktopStyleSwitch value={settings.desktopStyle} onChange={(desktopStyle)=>update({desktopStyle})}/>
+          </section>
+          <section className="settings-section">
+            <div className="settings-section-heading"><strong>场景主题</strong><span>经典桌面与未来空间都可以换装</span></div>
+            <DesktopThemePicker value={settings.desktopLook} onChange={(desktopLook)=>update({desktopLook})}/>
+          </section>
           <section className={sectionClass("theme")} data-settings-section="theme">
-            <div className="settings-section-heading"><strong>桌面壁纸</strong><span>选择一套本地生成的几何场景</span></div>
+            <div className="settings-section-heading"><strong>桌面壁纸</strong><span>原生主题下使用的几何场景</span></div>
             <div className="wallpaper-options" role="radiogroup" aria-label="桌面壁纸">{WALLPAPERS.map((wallpaper)=><button key={wallpaper.id} role="radio" aria-checked={settings.wallpaper===wallpaper.id} className={settings.wallpaper===wallpaper.id?"active":""} onClick={()=>update({wallpaper:wallpaper.id})}><i className={`wallpaper-preview ${wallpaper.id}`} aria-hidden="true"><span/><span/><span/></i><span><strong>{wallpaper.label}</strong><small>{wallpaper.detail}</small></span></button>)}</div>
           </section>
           <section className="settings-section">

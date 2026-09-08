@@ -12,6 +12,9 @@ export { GAME_CATALOG } from "./gameCatalog";
 
 export type GameAppId = GameId;
 
+import { copyShareLink as copyGameShareLink } from "../../platform/apps/appShare";
+export { copyGameShareLink };
+
 export default function GameHall(){
   const {isAppOpen,openApp}=useWindowRuntime();
   const running=Object.fromEntries(GAME_CATALOG.map((game)=>[game.id,isAppOpen(game.id)])) as Record<GameAppId,boolean>;
@@ -19,6 +22,7 @@ export default function GameHall(){
   const [records,setRecords]=useState<GameRecords>(readGameRecords);
   const [coins,setCoins]=useState(readGameCoins);
   const [copiedGame,setCopiedGame]=useState<GameId|null>(null);
+  const [manualShareLink,setManualShareLink]=useState<string|null>(null);
   const [resetConfirm,setResetConfirm]=useState(false);
   useEffect(()=>subscribeGameRecords(()=>setRecords(readGameRecords())),[]);
   useEffect(()=>subscribeGameCoins(()=>setCoins(readGameCoins())),[]);
@@ -44,11 +48,16 @@ export default function GameHall(){
         <div className="game-tile-info">
           <header><strong>{game.label}</strong>{running[game.id]&&<span>运行中</span>}</header>
           <small>{game.meta}</small>
-          <footer><div className="game-tile-record"><span>{record.played} 局</span><span>{record.wins} 胜</span><span>{record.losses} 负</span>{record.draws>0&&<span>{record.draws} 和</span>}</div><div className="game-tile-actions"><button className="game-share-button" aria-label={`复制${game.label}分享链接`} onClick={async(event)=>{event.stopPropagation();await navigator.clipboard.writeText(new URL(gameSharePath(game.id),location.origin).href);setCopiedGame(game.id)}}>{copiedGame===game.id?"已复制":"分享"}</button>{record.hasProgress&&<button className="new-game-button" aria-label={`新开${game.label}`} title="新游戏" onClick={(event)=>{event.stopPropagation();newGame(game.id)}}>↻</button>}<span className="game-tile-action">{launchLabel}<i aria-hidden="true">→</i></span></div></footer>
+          <footer><div className="game-tile-record"><span>{record.played} 局</span><span>{record.wins} 胜</span><span>{record.losses} 负</span>{record.draws>0&&<span>{record.draws} 和</span>}</div><div className="game-tile-actions"><button className="game-share-button" aria-label={`复制${game.label}分享链接`} onClick={async(event)=>{event.stopPropagation();const url=new URL(gameSharePath(game.id),location.origin).href;const result=await copyGameShareLink(url);if(result==="copied")setCopiedGame(game.id);else setManualShareLink(url)}}>{copiedGame===game.id?"已复制":"分享"}</button>{record.hasProgress&&<button className="new-game-button" aria-label={`新开${game.label}`} title="新游戏" onClick={(event)=>{event.stopPropagation();newGame(game.id)}}>↻</button>}<span className="game-tile-action">{launchLabel}<i aria-hidden="true">→</i></span></div></footer>
         </div>
       </article>})}
     </section>
     <footer className="game-hall-footer"><span>{GAME_CATALOG.length} 款本机游戏</span><span>离线运行</span></footer>
+    {manualShareLink&&<section className="game-share-manual" aria-label="手动复制分享链接">
+      <div><strong>复制分享链接</strong><button type="button" aria-label="关闭分享链接" onClick={()=>setManualShareLink(null)}>×</button></div>
+      <p>选中下方链接，按 Ctrl/Cmd+C，或长按选择复制。</p>
+      <input aria-label="游戏分享链接" readOnly autoFocus value={manualShareLink} onFocus={(event)=>event.currentTarget.select()} onClick={(event)=>event.currentTarget.select()}/>
+    </section>}
     {resetConfirm&&<div className="game-coins-confirm-layer"><section role="dialog" aria-modal="true" aria-label="确认重置全局金币"><strong>重置全局金币？</strong><p>大厅金币将恢复为 500，正在游戏中的机内积分不会改变。</p><div><button type="button" onClick={()=>setResetConfirm(false)}>取消</button><button className="confirm" type="button" onClick={()=>{resetGameCoins();setResetConfirm(false)}}>确认重置</button></div></section></div>}
   </main>
 }
