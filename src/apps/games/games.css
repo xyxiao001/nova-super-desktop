@@ -85,3 +85,5 @@
 @media (prefers-reduced-motion:reduce) {
   .game-tile,.game-tile-visual img,.game-play-cue,.game-tile-action i { transition:none; }
 }
+
+.game-share-button{border:1px solid currentColor;border-radius:7px;padding:4px 8px;background:transparent;color:inherit;font:inherit;font-size:11px;cursor:pointer;white-space:nowrap}

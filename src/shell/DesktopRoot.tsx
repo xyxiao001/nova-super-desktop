@@ -1,6 +1,6 @@
 "use client";
 
-import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent, lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { notifyWindowClosing, windowIsActive, WindowRuntimeProvider } from "../platform/windows/WindowRuntime";
 import StartMenu from "../../app/StartMenu";
 import {
@@ -131,7 +131,10 @@ const SETTINGS_SEARCH_ENTRIES=[
 ];
 const readBrowserFile=(file:File,mode:"text"|"data")=>new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result??""));reader.onerror=()=>reject(reader.error);if(mode==="text")reader.readAsText(file);else reader.readAsDataURL(file)});
 
-export default function DesktopRoot() {
+const GameLanding = lazy(() => import("../apps/games/GameLanding"));
+
+export default function DesktopRoot({landingGame}: {landingGame?: import("../apps/games/shared/gameStorage").GameId}) {
+  const [showGameLanding,setShowGameLanding]=useState(true);
   const [items,setItems]=useState<DesktopItem[]>([]),[positions,setPositions]=useState<Record<string,IconPosition>>({}),[desktopObjects,setDesktopObjects]=useState<DesktopObjectMap>({}),[storageState,setStorageState]=useState<"loading"|"ready"|"error">("loading"),[selectedIds,setSelectedIds]=useState<string[]>([]);
   const [windowManager,dispatchWindow]=useReducer(windowInstanceReducer,undefined,createInitialWindowInstanceManagerState),windowInstances=windowManager.instances,focused=windowManager.focused;
   const [photoSourceId,setPhotoSourceId]=useState<string|null>(null);
@@ -415,5 +418,5 @@ export default function DesktopRoot() {
     {systemPanelOpen&&<DesktopSystemPanel calendarTitle={calendarTitle} calendarGrid={calendarGrid} notifications={notifications} visibleItems={visibleItems} onPreviousMonth={()=>setCalendarMonth((current)=>new Date(current.getFullYear(),current.getMonth()-1,1))} onCurrentMonth={()=>setCalendarMonth(new Date(new Date().getFullYear(),new Date().getMonth(),1))} onNextMonth={()=>setCalendarMonth((current)=>new Date(current.getFullYear(),current.getMonth()+1,1))} onClearNotifications={()=>setNotifications([])} onLocateItem={(target)=>launchTarget({app:"explorer",kind:"file",itemId:target.id,parentId:target.parentId})}/>}
     <DesktopTaskbar apps={taskbarApps} instances={windowInstances} focused={focused} clock={clock} notificationCount={notifications.length} startOpen={startOpen} previewApp={taskbarPreview} menu={taskbarMenu} menuApp={taskbarMenuApp} labelFor={taskbarLabel} onPreviewChange={setTaskbarPreview} onMenuChange={setTaskbarMenu} onRevealChange={setTaskbarRevealed} onToggleStart={()=>{setTaskbarPreview(null);setStartMode("launcher");setStartOpen(!startOpen);setSystemPanelOpen(false);setSearchQuery("");setSearchIndex(0);setContextMenu(null);setTaskbarMenu(null)}} onActivate={activateFromTaskbar} onActivateInstance={(id)=>{focusWindow(id);setTaskbarMenu(null)}} onOpen={openWindow} onNewWindow={openNewWindow} onMinimize={minimizeWindow} onToggleMaximize={(id)=>{if(windowInstances[id]?.minimized)focusWindow(id);toggleMaximizeWindow(id);setTaskbarMenu(null)}} onClose={closeWindow} onCloseAll={closeAppWindows} onOpenCalendar={()=>openWindow("calendar")} canHide={!startOpen&&!taskbarMenu&&!systemPanelOpen}/>
     <DesktopOverlays renameItemId={renameItemId} renameValue={renameValue} pendingFileOperation={pendingFileOperation} draggingFiles={draggingFiles} toast={toast} booting={booting} onRenameValueChange={setRenameValue} onCancelRename={()=>setRenameItemId(null)} onFinishRename={finishRename} onCancelFileOperation={()=>setPendingFileOperation(null)} onPerformFileOperation={performFileOperation}/>
-  </main></WorkspaceRuntimeProvider></SettingsRuntimeProvider></LaunchRuntimeProvider></WindowRuntimeProvider></PetRuntimeProvider>
+  </main>{showGameLanding&&landingGame&&<Suspense fallback={null}><GameLanding gameId={landingGame} onStart={()=>{setShowGameLanding(false);openWindow(landingGame)}}/></Suspense>}</WorkspaceRuntimeProvider></SettingsRuntimeProvider></LaunchRuntimeProvider></WindowRuntimeProvider></PetRuntimeProvider>
 }

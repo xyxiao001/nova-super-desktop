@@ -1,0 +1,9 @@
+.game-landing{position:fixed;inset:0;z-index:10000;overflow:auto;background:#111b2d;color:#eef3fb;padding:clamp(24px,5vw,72px);font-family:inherit}
+.game-landing-brand{display:inline-flex;gap:14px;align-items:center;color:inherit;text-decoration:none;font-size:22px;font-weight:800;letter-spacing:2px}
+.game-landing-brand span{font-size:13px;font-weight:400;letter-spacing:0;color:#b1bfd1}
+.game-landing-card{max-width:1000px;margin:8vh auto;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;border:1px solid #ffffff24;border-radius:26px;background:#1b2a40;box-shadow:0 24px 80px #0004}
+.game-landing-cover{width:100%;height:100%;min-height:420px;object-fit:cover}
+.game-landing-content{padding:clamp(28px,4vw,58px);align-self:center}
+.game-landing-category{color:#aec6ff;font-size:13px;letter-spacing:2px}.game-landing h1{font-size:clamp(30px,4vw,46px);line-height:1.2;margin:20px 0}.game-landing-meta{color:#bcc9db;line-height:1.8}
+.game-landing-content button{width:100%;display:flex;justify-content:space-between;padding:17px 22px;margin-top:36px;border:0;border-radius:12px;background:#c5dbff;color:#152940;font-size:17px;font-weight:700;cursor:pointer}.game-landing-content button:hover{background:#e0ebff}.game-landing-note{font-size:12px;line-height:1.8;color:#a7b7cd;margin:18px 0 26px}.game-landing-content a{color:#c4d5ed;font-size:13px}
+@media(max-width:650px){.game-landing-card{grid-template-columns:1fr;margin:28px auto}.game-landing-cover{min-height:0;height:220px}.game-landing-content{padding:26px}.game-landing-content button{margin-top:24px}}
