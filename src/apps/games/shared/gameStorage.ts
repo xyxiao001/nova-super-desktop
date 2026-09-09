@@ -1,4 +1,4 @@
-export type GameId = "mines"|"chess"|"gomoku"|"tower"|"youtd2"|"wolfslot"|"frontline"|"fanren";
+export type GameId = "mines"|"chess"|"gomoku"|"tower"|"youtd2"|"wolfslot"|"frontline"|"fanren"|"doupo";
 export type GameResult = "win"|"loss"|"draw";
 export type GameRecord = {
   played:number;
@@ -11,14 +11,15 @@ export type GameRecord = {
 };
 export type GameRecords = Record<GameId,GameRecord>;
 
+const DOUPO_NATIVE_SAVE_KEY="nova-game-doupo-save";
 const FANREN_NATIVE_SAVE_KEY="nova-fanren-local-v1";
 const FRONTLINE_NATIVE_SAVE_KEY="frontline-native-local-v1";
 const RECORDS_KEY="nova-game-records";
 const PROGRESS_PREFIX="nova-game-progress:";
 const CHANGE_EVENT="nova-game-records-change";
 const RESET_EVENT="nova-game-reset";
-const GAME_AUXILIARY_KEYS=["nova-mines-difficulty","nova-mines-best","nova-game-coins",FRONTLINE_NATIVE_SAVE_KEY,FANREN_NATIVE_SAVE_KEY];
-const GAME_IDS:GameId[]=["mines","chess","gomoku","tower","youtd2","wolfslot","frontline","fanren"];
+const GAME_AUXILIARY_KEYS=["nova-mines-difficulty","nova-mines-best","nova-game-coins",FRONTLINE_NATIVE_SAVE_KEY,FANREN_NATIVE_SAVE_KEY,DOUPO_NATIVE_SAVE_KEY];
+const GAME_IDS:GameId[]=["mines","chess","gomoku","tower","youtd2","wolfslot","frontline","fanren","doupo"];
 const emptyRecord=():GameRecord=>({played:0,wins:0,losses:0,draws:0,lastPlayed:null,lastResult:null,hasProgress:false});
 
 export const readGameRecords=():GameRecords=>{
@@ -26,7 +27,7 @@ export const readGameRecords=():GameRecords=>{
   if(typeof window==="undefined")return defaults;
   try{
     const saved=JSON.parse(localStorage.getItem(RECORDS_KEY)??"{}") as Partial<GameRecords>;
-    for(const id of GAME_IDS)defaults[id]={...defaults[id],...saved[id],hasProgress:localStorage.getItem(id==="frontline"?FRONTLINE_NATIVE_SAVE_KEY:id==="fanren"?FANREN_NATIVE_SAVE_KEY:`${PROGRESS_PREFIX}${id}`)!==null};
+    for(const id of GAME_IDS)defaults[id]={...defaults[id],...saved[id],hasProgress:localStorage.getItem(id==="frontline"?FRONTLINE_NATIVE_SAVE_KEY:id==="fanren"?FANREN_NATIVE_SAVE_KEY:id==="doupo"?DOUPO_NATIVE_SAVE_KEY:`${PROGRESS_PREFIX}${id}`)!==null};
   }catch{return defaults}
   return defaults;
 };
@@ -50,6 +51,7 @@ export const loadGameProgress=<T,>(id:GameId):T|null=>{
 };
 export const clearGameProgress=(id:GameId)=>{
   if(id==="frontline")localStorage.removeItem(FRONTLINE_NATIVE_SAVE_KEY);
+  if(id==="doupo")localStorage.removeItem(DOUPO_NATIVE_SAVE_KEY);
   if(id==="fanren")localStorage.removeItem(FANREN_NATIVE_SAVE_KEY);
   localStorage.removeItem(`${PROGRESS_PREFIX}${id}`);
   updateRecord(id,(record)=>({...record,hasProgress:false}));

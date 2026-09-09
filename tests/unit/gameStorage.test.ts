@@ -50,13 +50,14 @@ afterEach(() => {
 
 describe("resetAllGameData", () => {
   it("clears records, progress, and mines auxiliary data while preserving unrelated settings", () => {
-    const gameIds: GameId[] = ["mines", "chess", "gomoku", "tower", "youtd2", "wolfslot", "frontline", "fanren"];
+    const gameIds: GameId[] = ["mines", "chess", "gomoku", "tower", "youtd2", "wolfslot", "frontline", "fanren", "doupo"];
     for (const id of gameIds) saveGameProgress(id, { board: id });
     localStorage.setItem("nova-fanren-local-v1", JSON.stringify({crafts:3}));
     localStorage.setItem("frontline-native-local-v1", JSON.stringify({maxpass:7}));
     localStorage.setItem("nova-mines-difficulty", "expert");
     localStorage.setItem("nova-mines-best", JSON.stringify({ expert: 42 }));
     localStorage.setItem("nova-game-coins", "120");
+    localStorage.setItem("nova-game-doupo-save", JSON.stringify({ current: 10102 }));
     localStorage.setItem("nova-game-progress:removed-game", JSON.stringify({ board: "stale" }));
     localStorage.setItem("nova-settings", JSON.stringify({ theme: "dark" }));
 
@@ -69,6 +70,7 @@ describe("resetAllGameData", () => {
       wolfslot: vi.fn<() => void>(),
       frontline: vi.fn<() => void>(),
       fanren: vi.fn<() => void>(),
+      doupo: vi.fn<() => void>(),
     } satisfies Record<GameId, () => void>;
     const unsubscribe = gameIds.map((id) => subscribeGameReset(id, resetListeners[id]));
     const unsubscribeRecreatingListener = subscribeGameReset("mines", () => {
@@ -80,6 +82,7 @@ describe("resetAllGameData", () => {
 
     resetAllGameData();
 
+    expect(localStorage.getItem("nova-game-doupo-save")).toBeNull();
     expect(localStorage.getItem("nova-fanren-local-v1")).toBeNull();
     expect(localStorage.getItem("nova-game-records")).toBeNull();
     for (const id of gameIds) {
@@ -128,6 +131,21 @@ describe("native fanren saves", () => {
     requestNewGame("fanren");
     expect(readGameRecords().fanren.hasProgress).toBe(false);
     expect(localStorage.getItem("nova-fanren-local-v1")).toBeNull();
+    expect(localStorage.getItem("frontline-native-local-v1")).toBe("unchanged");
+  });
+});
+
+describe("native doupo saves", () => {
+  it("preserves campaign progress after a victory and resets only this game's save", () => {
+    const save = JSON.stringify({current:10102,pass:10101,level:7});
+    localStorage.setItem("nova-game-doupo-save", save);
+    localStorage.setItem("frontline-native-local-v1", "unchanged");
+    finishGame("doupo", "win");
+    expect(readGameRecords().doupo.hasProgress).toBe(true);
+    expect(localStorage.getItem("nova-game-doupo-save")).toBe(save);
+    requestNewGame("doupo");
+    expect(readGameRecords().doupo.hasProgress).toBe(false);
+    expect(localStorage.getItem("nova-game-doupo-save")).toBeNull();
     expect(localStorage.getItem("frontline-native-local-v1")).toBe("unchanged");
   });
 });

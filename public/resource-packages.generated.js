@@ -55,6 +55,15 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
+    "id": "doupo",
+    "pathPrefixes": [
+      "/games/doupo-native/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
     "id": "chess-engine",
     "pathPrefixes": [
       "/stockfish/"
