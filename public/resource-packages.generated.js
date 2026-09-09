@@ -46,6 +46,15 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
+    "id": "fanren",
+    "pathPrefixes": [
+      "/games/fanren-native/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
     "id": "chess-engine",
     "pathPrefixes": [
       "/stockfish/"

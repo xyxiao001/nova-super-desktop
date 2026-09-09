@@ -21,6 +21,7 @@ const encoder = new TextEncoder();
 export const localStorageCategory = (key: string): LocalCategoryId => {
   if (
     key.startsWith("nova-game-")
+    || key === "nova-fanren-local-v1"
     || key.startsWith("nova-mines-")
     || key.startsWith(MAGIC_TOWER_STORAGE_PREFIX)
   ) return "games";

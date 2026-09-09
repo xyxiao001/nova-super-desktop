@@ -24,6 +24,7 @@ describe("resource package manifest", () => {
       "cybercity",
       "wolf-slot",
       "frontline",
+      "fanren",
       "chess-engine",
       "books",
       "photos",
@@ -34,10 +35,10 @@ describe("resource package manifest", () => {
 
   it("assigns native game files to their own removable resource package", () => {
     const packages = serviceWorkerResourcePackages();
-    for (const file of ["index.html", "primary.wasm", "assets/TJCS/Boot.zip"]) {
-      const url = `/games/frontline-native/${file}`;
+    for (const [game,file] of [["frontline","primary.wasm"],["frontline","assets/TJCS/Boot.zip"],["fanren","index.html"],["fanren","engine.js"],["fanren","assets/res/d3/partner/partner_006/stand.lani"]]) {
+      const url = `/games/${game}-native/${file}`;
       const resource = packages.find(item => item.pathPrefixes.some(prefix => url.startsWith(prefix)));
-      expect(resource?.id).toBe("frontline");
+      expect(resource?.id).toBe(game);
     }
   });
 
