@@ -90,6 +90,7 @@
 @keyframes petThinking { 0%,100%{opacity:.45;transform:scale(.8)}50%{opacity:1;transform:scale(1.12)} }
 
 @media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
+  .windows-desktop.mobile-window-open .desktop-pet-layer { display:none; }
   .desktop-pet-layer:not(.compact) { display:none; }
   .desktop-pet-layer.compact { position:fixed; right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom)); }
   .desktop-pet-status { width:44px; height:44px; border-radius:10px; }
