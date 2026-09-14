@@ -8,7 +8,7 @@ describe("standalone Cyber City", () => {
   it("routes a shared city link without selecting a desktop theme", () => {
     expect(standaloneAppRoute("?app=cybercity")).toBe("cybercity");
     expect(standaloneAppRoute("?desktop=cyberpunk")).toBeNull();
-    expect(standaloneAppRoute("?game=frontline")).toBeNull();
+    expect(standaloneAppRoute("?game=mines")).toBeNull();
   });
   it("is a launchable singleton app with a lazy entry and its own removable art package", () => {
     expect(APP_REGISTRY.cybercity).toMatchObject({label:"赛博城市",launcher:true,window:{instancePolicy:"singleton"}});

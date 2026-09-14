@@ -23,9 +23,9 @@ describe("resource cache client", () => {
       "books",
       "chess-engine",
       "magic-tower",
+      "cybercity",
       "youtd2",
       "wolf-slot",
-      "frontline",
       "media",
     ]);
     expect(packages.every((item) => item.entries === 0 && item.bytes === 0)).toBe(true);

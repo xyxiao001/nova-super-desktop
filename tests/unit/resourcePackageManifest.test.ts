@@ -23,24 +23,12 @@ describe("resource package manifest", () => {
       "youtd2",
       "cybercity",
       "wolf-slot",
-      "frontline",
-      "fanren",
-      "doupo",
       "chess-engine",
       "books",
       "photos",
       "apps",
       "media",
     ]);
-  });
-
-  it("assigns native game files to their own removable resource package", () => {
-    const packages = serviceWorkerResourcePackages();
-    for (const [game,file] of [["doupo","primary.wasm"],["doupo","assets/StreamingAssets/lua/a.assetbundle"],["frontline","primary.wasm"],["frontline","assets/TJCS/Boot.zip"],["fanren","index.html"],["fanren","engine.js"],["fanren","assets/res/d3/partner/partner_006/stand.lani"]]) {
-      const url = `/games/${game}-native/${file}`;
-      const resource = packages.find(item => item.pathPrefixes.some(prefix => url.startsWith(prefix)));
-      expect(resource?.id).toBe(game);
-    }
   });
 
   it("keeps the generated service worker configuration current", async () => {

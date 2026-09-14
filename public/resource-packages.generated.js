@@ -36,34 +36,6 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
-    "id": "frontline",
-    "pathPrefixes": [
-      "/assets/games/frontline/",
-      "/games/frontline-native/"
-    ],
-    "exactPaths": [],
-    "destinations": [],
-    "extensions": []
-  },
-  {
-    "id": "fanren",
-    "pathPrefixes": [
-      "/games/fanren-native/"
-    ],
-    "exactPaths": [],
-    "destinations": [],
-    "extensions": []
-  },
-  {
-    "id": "doupo",
-    "pathPrefixes": [
-      "/games/doupo-native/"
-    ],
-    "exactPaths": [],
-    "destinations": [],
-    "extensions": []
-  },
-  {
     "id": "chess-engine",
     "pathPrefixes": [
       "/stockfish/"

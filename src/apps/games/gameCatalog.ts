@@ -5,9 +5,6 @@ export const GAME_CATALOG = [
   {id:"tower",label:"魔塔",category:"角色扮演",meta:"77 层 · 完整剧情",artwork:"/assets/game-covers/tower.jpg"},
   {id:"youtd2",label:"YouTD 2",category:"塔防",meta:"200+ 防御塔 · 300+ 物品",artwork:"/assets/game-covers/youtd2.jpg"},
   {id:"wolfslot",label:"童年老虎机",category:"街机",meta:"开火车 · 大三元 · 猜大小",artwork:"/assets/games/wolf-slot/wolf-slot-icon-v2.png"},
-  {id:"frontline",label:"王国大作战：前线",category:"塔防",meta:"原版战斗 · 招募养成 · 本地存档",artwork:"/assets/games/frontline/world-map.png"},
-  {id:"doupo",label:"斗破苍穹",category:"角色扮演",meta:"原版回合战斗 · 免费招募 · 本地修改器",artwork:"/games/doupo-native/assets/StreamingAssets/loading/bg_loading_uhd.jpg"},
-  {id:"fanren",label:"凡人修仙传：星海飞驰",category:"角色扮演",meta:"御剑战斗 · 虚天鼎炼器 · 本地存档",artwork:"/games/fanren-native/assets/res/art/map/49010/49010.jpg"},
 ] as const;
 
 

@@ -14,7 +14,7 @@ describe("application sharing", () => {
     expect(state.focused).toBe(`${app}:main`);
   });
   it("keeps ordinary desktop visits empty and respects existing game routes", () => {
-    for (const query of ["", "?game=frontline", "?app=unknown", "?app=toString"]) {
+    for (const query of ["", "?game=mines", "?app=unknown", "?app=toString"]) {
       expect(standaloneAppRoute(query)).toBeNull();
       expect(sharedAppWindowState(standaloneAppRoute(query)).instances).toEqual({});
     }
