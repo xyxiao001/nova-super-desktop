@@ -7,6 +7,25 @@ export const DESKTOP_OBJECT_STORAGE_KEY = "nova-desktop-objects";
 
 export type DesktopObjectKind = "photo-card" | "note-card";
 
+export const DESKTOP_OBJECT_THEMES = {
+  "note-card": [
+    { value: undefined, label: "暖纸" },
+    { value: "sage", label: "苔绿" },
+    { value: "rose", label: "樱粉" },
+    { value: "sky", label: "晴空" },
+    { value: "midnight", label: "午夜" },
+  ],
+  "photo-card": [
+    { value: undefined, label: "经典" },
+    { value: "instant", label: "拍立得" },
+    { value: "wood", label: "原木" },
+    { value: "film", label: "胶片" },
+    { value: "glass", label: "玻璃" },
+  ],
+} as const;
+
+export type DesktopObjectTheme = typeof DESKTOP_OBJECT_THEMES[DesktopObjectKind][number]["value"];
+
 export type DesktopObject = {
   itemId: string;
   kind: DesktopObjectKind;
@@ -14,6 +33,7 @@ export type DesktopObject = {
   y: number;
   width?: number;
   height?: number;
+  theme?: DesktopObjectTheme;
   createdAt: number;
 };
 
@@ -106,6 +126,15 @@ export const resizeDesktopObject = (
     [itemId]: { ...object, width: size.width, height: size.height },
   };
 };
+
+export const setDesktopObjectTheme = (
+  objects: DesktopObjectMap,
+  itemId: string,
+  theme: DesktopObjectTheme,
+): DesktopObjectMap => ({
+  ...objects,
+  [itemId]: { ...objects[itemId], theme },
+});
 
 export const removeDesktopObjects = (
   objects: DesktopObjectMap,

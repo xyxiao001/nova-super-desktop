@@ -218,6 +218,7 @@ function DesktopCreativeObject({
       ref={objectRef}
       type="button"
       className={`desktop-creative-object ${object.kind} ${selected ? "selected" : ""} ${drag.current ? "dragging" : ""}`}
+      data-object-theme={object.theme}
       style={{ left: position.x, top: position.y, width: size.width, height: size.height }}
       aria-label={`${item.name}，${object.kind === "photo-card" ? "照片卡片" : "文字便笺"}`}
       onPointerDown={start}

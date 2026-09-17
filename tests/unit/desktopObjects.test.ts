@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DESKTOP_OBJECT_STORAGE_KEY,
+  DESKTOP_OBJECT_THEMES,
   clampDesktopObjectPosition,
   createDesktopObject,
   desktopObjectSize,
@@ -11,6 +12,7 @@ import {
   removeDesktopObjects,
   resizeDesktopObject,
   saveDesktopObjects,
+  setDesktopObjectTheme,
   visibleDesktopObjects,
   type DesktopObjectMap,
 } from "../../app/desktopObjects";
@@ -101,6 +103,41 @@ describe("desktop creative objects", () => {
     const resized = resizeDesktopObject(objects, image.id, { width: 320, height: 240 });
     expect(desktopObjectSize(resized[image.id])).toEqual({ width: 320, height: 240 });
     expect(resized[image.id]).toMatchObject({ x: 12, y: 24, width: 320, height: 240 });
+  });
+
+  it("changes each card theme independently without changing geometry or source files", () => {
+    const objects = createDesktopObject(
+      resizeDesktopObject(createDesktopObject({}, image, { x: 12, y: 24 }, 100), image.id, { width: 320, height: 240 }),
+      note,
+      { x: 400, y: 60 },
+      101,
+    );
+    const themed = setDesktopObjectTheme(setDesktopObjectTheme(objects, note.id, "midnight"), image.id, "film");
+
+    expect(themed[note.id]).toEqual({ ...objects[note.id], theme: "midnight" });
+    expect(themed[image.id]).toEqual({ ...objects[image.id], theme: "film" });
+    expect(objects[note.id].theme).toBeUndefined();
+    expect(visibleDesktopObjects(themed, [image, note]).map(({ item }) => item)).toEqual([image, note]);
+    expect(parseDesktopObjects(JSON.stringify(themed))).toEqual(themed);
+  });
+
+  it("persists every offered theme and can return to the original appearance", () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    };
+    const objects = createDesktopObject(createDesktopObject({}, image, { x: 12, y: 24 }, 100), note, { x: 220, y: 24 }, 101);
+    for (const item of [image, note]) {
+      for (const { value } of DESKTOP_OBJECT_THEMES[objects[item.id].kind]) {
+        saveDesktopObjects(setDesktopObjectTheme(objects, item.id, value), storage);
+        expect(readDesktopObjects(storage)[item.id].theme).toBe(value);
+      }
+      const selectedTheme = DESKTOP_OBJECT_THEMES[objects[item.id].kind][1].value;
+      const reset = setDesktopObjectTheme(setDesktopObjectTheme(objects, item.id, selectedTheme), item.id, undefined);
+      saveDesktopObjects(reset, storage);
+      expect(readDesktopObjects(storage)).toEqual(objects);
+    }
   });
 
   it("keeps moved files visible, hides recycled files, and reads current content", () => {
