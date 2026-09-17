@@ -119,7 +119,20 @@ describe("novaBackup", () => {
     expect(result.providers.settings).toEqual({
       localStorage: { "nova-settings": "{}" },
     });
-    expect(result.providers.games).toEqual({ localStorage: {}, magicTower: [] });
+    expect(result.providers.games).toEqual({ localStorage: {}, magicTower: [], youTd2: [] });
+  });
+
+  it("round-trips excerpt metadata through the current backup version", async () => {
+    const note = {
+      id: "excerpt", type: "text", name: "摘录.txt", content: "选中文段", parentId: null, createdAt: 1,
+      readerSource: { bookId: "book", bookTitle: "书籍", bookVersion: "local", chapterId: "chapter:0", chapterTitle: "第一章", paragraphIndex: 1, characterOffset: 2 },
+    };
+    storageMocks.loadDesktopItems.mockResolvedValue([note]);
+    const backup = await createNovaBackup();
+    const parsed = await parseNovaBackup(JSON.stringify(backup));
+    await restoreNovaBackup(parsed);
+    expect(parsed.version).toBe(3);
+    expect(storageMocks.replaceDesktopItems).toHaveBeenCalledWith([note]);
   });
 
   it("restores NOVA data without deleting unrelated localStorage", async () => {

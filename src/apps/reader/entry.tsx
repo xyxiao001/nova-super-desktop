@@ -48,6 +48,8 @@ import {
   publishNovaActivityEvent,
   readingMilestoneForProgress,
 } from "../../../app/activityEvents";
+import { captureReaderExcerpt, excerptLocation } from "./readerExcerpt";
+import type { ReaderExcerptSource } from "../../../app/readerExcerptSource";
 import ReaderFlipBook from "./ReaderFlipBook";
 import ReaderWorker from "./reader.worker?worker";
 import { useAppLaunchIntent } from "../../platform/launch/LaunchRuntime";
@@ -110,7 +112,7 @@ export default function ReaderApp() {
   const [locationJumpToken, setLocationJumpToken] = useState(0);
   const [turn, setTurn] = useState<{ direction: "forward" | "back"; token: number }>({ direction: "forward", token: 0 });
   const [message, setMessage] = useState("");
-  const [selectedExcerpt, setSelectedExcerpt] = useState("");
+  const [selectedExcerpt, setSelectedExcerpt] = useState<ReturnType<typeof captureReaderExcerpt>>(null);
   const [preferences, setPreferences] = useState<ReaderPreferences>(readReaderPreferences);
   const [clock, setClock] = useState(() => new Date());
   const [battery, setBattery] = useState<BatteryState | null>(null);
@@ -269,6 +271,7 @@ export default function ReaderApp() {
   const chapterContent = useMemo(() => activeBook && chapter ? activeBook.content.slice(chapter.start, chapter.end) : "", [activeBook, chapter]);
   const paragraphs = useMemo(() => chapter ? chapterParagraphs(activeBook?.content ?? "", chapter) : [], [activeBook, chapter]);
   const nextFlipChapter = useMemo(() => followingChapter ? {
+    id: followingChapter.id,
     title: followingChapter.title,
     paragraphs: chapterParagraphs(activeBook?.content ?? "", followingChapter),
   } : null, [activeBook, followingChapter]);
@@ -419,8 +422,17 @@ export default function ReaderApp() {
     pendingLocationRef.current = null;
   }, [activeBook, chapter, chapterIndex, locationJumpToken, preferences.fontSize, preferences.lineHeight, preferences.readingMode]);
 
-  const activateBook = (book: StoredBook, parsed: ReaderChapter[]) => {
-    const position = readReaderLocation(book.id, parsed);
+  const activateBook = (book: StoredBook, parsed: ReaderChapter[], source?: ReaderExcerptSource) => {
+    const position = source ? excerptLocation(book, parsed, source) : readReaderLocation(book.id, parsed);
+    if (!position) {
+      setMessage("摘录来源位置已失效，原文稿仍保留；请从书架手动查找。");
+      return;
+    }
+    if (source) {
+      setPreferences((current) => ({ ...current, readingMode: "scroll" }));
+      setLocationJumpToken((current) => current + 1);
+    }
+    setSelectedExcerpt(null);
     const compact = hasCompactReaderViewport();
     semanticLocationRef.current = {
       paragraphIndex: position.paragraphIndex,
@@ -447,7 +459,7 @@ export default function ReaderApp() {
     });
   };
 
-  const openBook = async (book: StoredBook | StoredBookSummary) => {
+  const openBook = async (book: StoredBook | StoredBookSummary, source?: ReaderExcerptSource) => {
     requestedBookRef.current = book.id;
     setOpeningBookId(book.id);
     setMessage("");
@@ -471,7 +483,7 @@ export default function ReaderApp() {
           setLocalBooks((current) => current.map((item) => item.id === prepared.id ? summary : item));
         }
       }
-      if (requestedBookRef.current === book.id) activateBook(prepared, parsed);
+      if (requestedBookRef.current === book.id) activateBook(prepared, parsed, source);
     } catch {
       setMessage(`“${book.title}”解析失败`);
     } finally {
@@ -487,7 +499,7 @@ export default function ReaderApp() {
       try {
         const book = await getStoredBook(launchIntent.bookId);
         if (cancelled) return;
-        if (book) await openBook(book);
+        if (book) await openBook(book, launchIntent.source);
         else setMessage("这本书已不在本地书库中");
       } catch {
         if (!cancelled) setMessage("本地书库读取失败");
@@ -817,12 +829,12 @@ export default function ReaderApp() {
   const finishPageGesture = (event: React.PointerEvent<HTMLElement>) => {
     const start = pagePointerRef.current;
     pagePointerRef.current = null;
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed && pageRef.current?.contains(selection.anchorNode)) {
-      setSelectedExcerpt(selection.toString().trim());
+    const excerpt = activeBook ? captureReaderExcerpt(window.getSelection(), stageRef.current, activeBook, chapters) : null;
+    if (excerpt) {
+      setSelectedExcerpt(excerpt);
       return;
     }
-    setSelectedExcerpt("");
+    setSelectedExcerpt(null);
     if (!start) return;
     const horizontal = event.clientX - start.x;
     const vertical = event.clientY - start.y;
@@ -842,10 +854,10 @@ export default function ReaderApp() {
     else previousPage();
   };
   const createExcerpt = () => {
-    if (!activeBook || !chapter || !selectedExcerpt) return;
-    onCreateExcerpt(readerExcerpt(activeBook.title, chapter.title, selectedExcerpt));
+    if (!activeBook || !selectedExcerpt || selectedExcerpt.source.bookId !== activeBook.id) return;
+    onCreateExcerpt(readerExcerpt(selectedExcerpt.source.bookTitle, selectedExcerpt.source.chapterTitle, selectedExcerpt.text, selectedExcerpt.source));
     window.getSelection()?.removeAllRanges();
-    setSelectedExcerpt("");
+    setSelectedExcerpt(null);
   };
   const jumpToLocation = (target: Pick<ReaderLocation, "chapterId" | "paragraphIndex" | "characterOffset">) => {
     const index = chapters.findIndex((item) => item.id === target.chapterId);
@@ -1020,6 +1032,7 @@ export default function ReaderApp() {
       <main key={`${activeBook.id}-${preferences.readingMode}`} ref={stageRef} className={`reader-stage reader-stage-${preferences.readingMode} ${pageFlipEnabled ? "reader-stage-flip" : ""}`} onScroll={updateScrollProgress} onPointerDown={beginPageGesture} onPointerUp={finishPageGesture} onPointerCancel={() => { pagePointerRef.current = null; }}>
         <article
           ref={pageRef}
+          data-reader-chapter={chapter?.id}
           className={`reader-page ${pageFlipEnabled ? "reader-page-measure" : ""}`}
           style={{
             "--reader-font-size": `${preferences.fontSize}px`,
@@ -1028,7 +1041,7 @@ export default function ReaderApp() {
         >
           <header><span>{activeBook.title}</span><span>{chapter?.title}</span></header>
           {preferences.readingMode === "scroll" && <h1>{chapter?.title}</h1>}
-          {preferences.readingMode === "scroll" ? <div className="reader-content">{paragraphSegments.map((segment, segmentIndex) => <section className="reader-paragraph-segment" data-reader-segment={segmentIndex} key={segmentIndex}>{segment.map((paragraph) => <p key={paragraph.index} data-reader-paragraph={paragraph.index}>{paragraph.text}</p>)}</section>)}</div> : <div className="reader-page-viewport" ref={pageViewportRef}><div className="reader-page-flow" ref={pageFlowRef} style={{ columnWidth: pageWidth || undefined, columnGap: PAGE_GAP }}><h1>{chapter?.title}</h1>{paragraphs.map((paragraph) => <p key={paragraph.index}>{paragraph.text}</p>)}</div></div>}
+          {preferences.readingMode === "scroll" ? <div className="reader-content">{paragraphSegments.map((segment, segmentIndex) => <section className="reader-paragraph-segment" data-reader-segment={segmentIndex} key={segmentIndex}>{segment.map((paragraph) => <p key={paragraph.index} data-reader-paragraph={paragraph.index}>{paragraph.text}</p>)}</section>)}</div> : <div className="reader-page-viewport" ref={pageViewportRef}><div className="reader-page-flow" ref={pageFlowRef} style={{ columnWidth: pageWidth || undefined, columnGap: PAGE_GAP }}><h1>{chapter?.title}</h1>{paragraphs.map((paragraph) => <p key={paragraph.index} data-reader-paragraph={paragraph.index}>{paragraph.text}</p>)}</div></div>}
           {preferences.readingMode === "scroll" && <nav className="reader-chapter-navigation" aria-label="章节切换"><button disabled={chapterIndex === 0} onClick={previousChapter}>← 上一章</button><span>第 {chapterIndex + 1} / {chapters.length} 章</span><button disabled={chapterIndex === chapters.length - 1} onClick={nextChapter}>下一章 →</button></nav>}
           <footer><span>{activeBook.author}</span><span>{preferences.readingMode === "scroll" ? `总进度 ${progress}%` : `${safePageIndex + 1} / ${pageCount} · 总进度 ${progress}%`}</span></footer>
         </article>
@@ -1037,6 +1050,7 @@ export default function ReaderApp() {
           title={activeBook.title}
           author={activeBook.author}
           chapterTitle={chapter?.title ?? ""}
+          chapterId={chapter?.id ?? ""}
           paragraphs={paragraphs}
           pageIndex={safePageIndex}
           pageCount={pageCount}
@@ -1064,5 +1078,6 @@ export default function ReaderApp() {
       <button aria-label="添加书签" onClick={addBookmark}><span aria-hidden="true">☆</span><small>书签</small></button>
       <button aria-label="阅读设置" aria-expanded={settingsOpen} onClick={toggleSettings}><span aria-hidden="true">Aa</span><small>设置</small></button>
     </nav>
+    {message && <div className="reader-message" role="status">{message}</div>}
   </div>;
 }

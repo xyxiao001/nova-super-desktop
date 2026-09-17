@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useCallback, useContext, type ReactNode } from "react";
 import {
   launchIntentFor,
   type AppLaunchIntent,
@@ -33,8 +33,12 @@ export function LaunchRuntimeProvider({
 export function useAppLaunchIntent<TApp extends AppLaunchTarget["app"]>(app: TApp) {
   const runtime = useContext(LaunchRuntimeContext)!;
   const instance = useWindowInstance();
+  const markHandled = runtime.markHandled;
+  const onLaunchHandled = useCallback((requestId: number) => {
+    markHandled(instance.id, requestId);
+  }, [instance.id, markHandled]);
   return {
     launchIntent: launchIntentFor(runtime.intents[instance.id] ?? null, app),
-    onLaunchHandled: (requestId: number) => runtime.markHandled(instance.id, requestId),
+    onLaunchHandled,
   };
 }

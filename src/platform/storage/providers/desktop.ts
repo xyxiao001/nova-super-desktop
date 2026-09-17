@@ -1,3 +1,4 @@
+import { isReaderExcerptSource } from "../../../../app/readerExcerptSource";
 import type { DesktopItem } from "../../../../app/desktopFiles";
 import {
   deleteDesktopItems,
@@ -16,6 +17,7 @@ const isDesktopItem = (value: unknown): value is DesktopItem => {
     && typeof item.content === "string"
     && (item.parentId === null || typeof item.parentId === "string")
     && typeof item.createdAt === "number"
+    && (item.readerSource === undefined || (item.type === "text" && isReaderExcerptSource(item.readerSource)))
   );
 };
 

@@ -1,3 +1,5 @@
+import type { ReaderExcerptSource } from "../../../app/readerExcerptSource";
+
 export type CatalogBook = {
   id: string;
   title: string;
@@ -84,11 +86,13 @@ export function readerExcerpt(
   bookTitle: string,
   chapterTitle: string,
   text: string,
+  readerSource?: ReaderExcerptSource,
 ) {
   const excerpt = text.trim();
   return {
     title: `${bookTitle} 摘录`,
     content: `${excerpt}\n\n摘自《${bookTitle}》 · ${chapterTitle}`,
+    ...(readerSource ? { readerSource } : {}),
   };
 }
 

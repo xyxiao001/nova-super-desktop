@@ -1,3 +1,5 @@
+import type { ReaderExcerptSource } from "./readerExcerptSource";
+
 export type DesktopItem = {
   id: string;
   type: "folder" | "text" | "image";
@@ -7,6 +9,7 @@ export type DesktopItem = {
   createdAt: number;
   lastOpenedAt?: number;
   deletedAt?: number;
+  readerSource?: ReaderExcerptSource;
 };
 
 export type FileOperationMode = "copy" | "move";

@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction } from "idb";
 
 import type { DesktopItem } from "./desktopFiles";
+import { readerSourcesMatch } from "./readerExcerptSource";
 
 const DATABASE_NAME = "nova-desktop";
 const DATABASE_VERSION = 2;
@@ -205,6 +206,7 @@ const metadataMatches = (left: DesktopItem, right: DesktopItem) => (
   && left.createdAt === right.createdAt
   && left.lastOpenedAt === right.lastOpenedAt
   && left.deletedAt === right.deletedAt
+  && readerSourcesMatch(left.readerSource, right.readerSource)
 );
 
 async function persistDesktopChanges(previous: DesktopItem[], next: DesktopItem[]) {
@@ -238,14 +240,39 @@ async function persistDesktopChanges(previous: DesktopItem[], next: DesktopItem[
   }
 }
 
-export function createDesktopSyncQueue(initialItems: DesktopItem[]) {
+export type DesktopSaveStatus = "saving" | "saved" | "error";
+
+export function createDesktopSyncQueue(
+  initialItems: DesktopItem[],
+  onStatusChange: () => void = () => {},
+) {
   let committedItems = initialItems;
+  let failedItems: DesktopItem[] | null = null;
+  let latestRequest = 0;
+  const matches = (left: DesktopItem, right: DesktopItem) =>
+    metadataMatches(left, right) && left.content === right.content;
 
   return {
+    getItemStatus(item: DesktopItem): DesktopSaveStatus {
+      const committed = committedItems.find((entry) => entry.id === item.id);
+      if (committed && matches(committed, item)) return "saved";
+      const failed = failedItems?.find((entry) => entry.id === item.id);
+      return failed && matches(failed, item) ? "error" : "saving";
+    },
     enqueue(nextItems: DesktopItem[]) {
+      const request = ++latestRequest;
+      failedItems = null;
+      onStatusChange();
       return serializeDesktopWrite(async () => {
-        await persistDesktopChanges(committedItems, nextItems);
-        committedItems = nextItems;
+        try {
+          await persistDesktopChanges(committedItems, nextItems);
+          committedItems = nextItems;
+        } catch (error) {
+          if (request === latestRequest) failedItems = nextItems;
+          throw error;
+        } finally {
+          onStatusChange();
+        }
       });
     },
   };

@@ -1,5 +1,8 @@
+import type { ReaderExcerptSource } from "./readerExcerptSource";
+
 export type AppLaunchTarget =
-  | { app: "reader"; kind: "book"; bookId: string }
+  | { app: "reader"; kind: "book"; bookId: string; source?: ReaderExcerptSource }
+  | { app: "notes"; kind: "text"; itemId: string; selection?: { start: number; end: number; query?: string } }
   | { app: "settings"; kind: "section"; sectionId: string }
   | { app: "explorer"; kind: "file"; itemId: string; parentId: string | null };
 

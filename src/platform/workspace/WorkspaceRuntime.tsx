@@ -7,6 +7,7 @@ import type {
   FileOperationMode,
 } from "../../../app/desktopFiles";
 import type { FileOpenApp } from "../../../app/fileAssociations";
+import type { DesktopSaveStatus } from "../../../app/desktopStorage";
 import type { WindowInstanceId } from "../windows/windowInstanceState";
 
 export type WorkspacePhotoSource = {
@@ -18,6 +19,8 @@ export type WorkspacePhotoSource = {
 export type WorkspaceRuntimeValue = {
   items: DesktopItem[];
   visibleItems: DesktopItem[];
+  getSaveStatus: (item: DesktopItem) => DesktopSaveStatus;
+  downloadItem: (item: DesktopItem) => void;
   clipboard: FileClipboard | null;
   canUndo: boolean;
   photoEditorSource: WorkspacePhotoSource | null;
@@ -54,7 +57,8 @@ export type WorkspaceRuntimeValue = {
     name: string,
     content: string,
   ) => boolean;
-  createReaderExcerpt: (excerpt: { title: string; content: string }) => void;
+  createReaderExcerpt: (excerpt: { title: string; content: string; readerSource?: DesktopItem["readerSource"] }) => void;
+  openReaderSource: (source: NonNullable<DesktopItem["readerSource"]>) => void;
 };
 
 const WorkspaceRuntimeContext = createContext<WorkspaceRuntimeValue | null>(null);

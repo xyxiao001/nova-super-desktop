@@ -4,7 +4,44 @@
 .note-search { height:32px; margin:0 10px 9px; padding:0 8px; flex:none; display:flex; align-items:center; gap:6px; border:1px solid #ccd3d8; border-radius:5px; background:#fafbfc; color:#7e8990; }.note-search input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#283138; font-size:10px; }.note-search input::placeholder { color:#929ba1; }
 .note-list { min-height:0; flex:1; overflow:auto; padding:0 7px 9px; }.note-list > button { position:relative; width:100%; height:73px; padding:10px 11px; border:0; border-bottom:1px solid #d9dee2; border-radius:4px; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto 1fr; column-gap:8px; background:transparent; color:#263038; text-align:left; }.note-list > button:hover { background:#e2e7ea; }.note-list > button.active { background:#fff; box-shadow:0 2px 8px #35444e14; }.note-list > button.active::before { content:""; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:#2582bc; }.note-list strong { overflow:hidden; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }.note-list p { grid-column:1 / -1; margin:5px 0 0; overflow:hidden; color:#737f87; font-size:9px; line-height:1.45; text-overflow:ellipsis; white-space:nowrap; }.note-list span { color:#929ba1; font-size:8px; }.note-list-empty { min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; color:#87929a; }.note-list-empty span { font-size:24px; }.note-list-empty strong { font-size:10px; font-weight:500; }
 .note-workspace { min-width:0; min-height:0; display:flex; flex-direction:column; background:#fff; }.note-editor-header { height:52px; padding:0 14px 0 21px; flex:none; display:flex; align-items:center; gap:12px; border-bottom:1px solid #e1e5e8; background:#fafbfc; }.note-editor-header > input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#222a30; font-size:13px; font-weight:650; }.note-editor-header > div { display:flex; align-items:center; gap:9px; }.note-editor-header span { color:#7c878e; font-size:9px; }.note-editor-header button { width:30px; height:28px; padding:0; border:1px solid #ccd3d7; border-radius:4px; background:#fff; color:#66747c; font-size:14px; }.note-editor-header button:hover { border-color:#c65c53; color:#ad342d; }.note-editor-header button.confirm { width:43px; border-color:#b23a32; background:#b23a32; color:#fff; font-size:9px; }
+.note-editor-header .note-find-button { flex:none; }
+.note-find-bar { flex:none; min-height:42px; padding:5px 14px; display:flex; align-items:center; gap:6px; border-bottom:1px solid #dce2e5; background:#f6f8f9; }
+.note-find-bar label { min-width:120px; flex:1; display:flex; align-items:center; gap:6px; padding:0 8px; border:1px solid #c9d2d8; border-radius:4px; background:#fff; color:#78858d; }
+.note-find-bar input { min-width:0; height:30px; flex:1; border:0; outline:0; background:transparent; color:#273138; font-size:12px; }
+.note-find-bar output { min-width:42px; color:#6d7980; text-align:center; font-size:10px; }
+.note-find-bar button { width:30px; height:30px; padding:0; border:1px solid #c9d2d8; border-radius:4px; background:#fff; color:#56656e; }
+.note-find-bar button:disabled { opacity:.4; }
+.windows-desktop.theme-dark .note-find-bar { border-color:#343e45; background:#1c2328; }.windows-desktop.theme-dark .note-find-bar label,.windows-desktop.theme-dark .note-find-bar button { border-color:#465159; background:#2a3238; color:#dce5ea; }.windows-desktop.theme-dark .note-find-bar input { color:#edf1f3; }
+.note-view-toggle { padding:2px; display:flex; gap:1px!important; border:1px solid #ccd3d7; border-radius:5px; background:#eef1f3; }
+.note-editor-header .note-view-toggle button { width:auto; height:23px; padding:0 8px; border:0; border-radius:3px; background:transparent; color:#65737c; font-size:9px; }
+.note-editor-header .note-view-toggle button:hover { color:#245f89; }
+.note-editor-header .note-view-toggle button.active { background:#fff; color:#245f89; box-shadow:0 1px 3px #34444f20; }
+.note-markdown-preview,.note-markdown-loading,.note-markdown-empty { min-height:0; flex:1; overflow:auto; padding:28px clamp(24px,5vw,58px); background:#fff; color:#22272b; }
+.note-markdown-preview { font:15px/1.75 "Segoe UI","PingFang SC",sans-serif; overflow-wrap:anywhere; }
+.note-markdown-preview > :first-child { margin-top:0; }.note-markdown-preview > :last-child { margin-bottom:0; }
+.note-markdown-preview h1 { font-size:28px; }.note-markdown-preview h2 { font-size:23px; }.note-markdown-preview h3 { font-size:19px; }.note-markdown-preview h4,.note-markdown-preview h5,.note-markdown-preview h6 { font-size:16px; }
+.note-markdown-preview h1,.note-markdown-preview h2,.note-markdown-preview h3,.note-markdown-preview h4,.note-markdown-preview h5,.note-markdown-preview h6 { margin:1.2em 0 .45em; line-height:1.35; }
+.note-markdown-preview p,.note-markdown-preview ul,.note-markdown-preview ol,.note-markdown-preview blockquote,.note-markdown-preview pre { margin:.7em 0; }
+.note-markdown-preview blockquote { padding:4px 14px; border-left:3px solid #7aa6bf; color:#536772; }
+.note-markdown-preview code { padding:.12em .35em; border-radius:3px; background:#eef1f3; font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+.note-markdown-preview pre { overflow:auto; padding:14px; border:1px solid #dce1e4; border-radius:5px; background:#f3f5f6; }.note-markdown-preview pre code { padding:0; background:transparent; }
+.note-markdown-preview a { color:#176fa5; }.note-markdown-preview hr { border:0; border-top:1px solid #d8dee2; margin:1.5em 0; }
+.note-markdown-preview li { margin:.25em 0; }.note-markdown-preview .task-list-item { list-style:none; display:flex; align-items:flex-start; gap:7px; }.note-markdown-preview .task-list-item input { margin-top:.45em; }
+.note-markdown-image { display:inline-block; padding:2px 6px; border:1px dashed #aeb9bf; border-radius:3px; color:#6f7b82; font-size:12px; }
+.note-markdown-loading,.note-markdown-empty { display:grid; place-items:center; color:#7b878e; font-size:12px; }
+.windows-desktop.theme-dark .note-view-toggle { border-color:#465159; background:#20272c; }.windows-desktop.theme-dark .note-editor-header .note-view-toggle button.active { background:#354049; color:#edf4f7; }
+.windows-desktop.theme-dark .note-markdown-preview,.windows-desktop.theme-dark .note-markdown-loading,.windows-desktop.theme-dark .note-markdown-empty { background:#171d21; color:#dfe5e8; }.windows-desktop.theme-dark .note-markdown-preview blockquote { color:#b4c2c9; }.windows-desktop.theme-dark .note-markdown-preview code { background:#293238; }.windows-desktop.theme-dark .note-markdown-preview pre { border-color:#39434a; background:#20272c; }
 .note-mobile-back { display:none; }
+.note-reader-source { flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 16px; border-bottom:1px solid #e1e5e8; color:#536772; font-size:12px; }
+.note-reader-source span { min-width:0; overflow-wrap:anywhere; }
+.note-reader-source button { flex:none; min-height:32px; border:1px solid #ccd3d7; border-radius:4px; background:transparent; color:inherit; padding:4px 10px; cursor:pointer; }
+.windows-desktop.theme-dark .note-reader-source { border-color:#343e45; color:#dce5ea; }
+.note-save-error { flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; background:#fff2e1; color:#874416; font-size:12px; }
+.note-save-error button { flex:none; min-height:32px; padding:4px 10px; border:1px solid currentColor; border-radius:4px; background:transparent; color:inherit; cursor:pointer; }
+.note-editor-header .note-save-status { display:inline; white-space:nowrap; }
+.note-editor-header .note-save-status[data-state="error"] { color:#ad342d; }
+.windows-desktop.theme-dark .note-save-error { background:#392d21; color:#f1c99c; }
+.windows-desktop.theme-dark .note-editor-header .note-save-status[data-state="error"] { color:#f0a8a0; }
 .note-workspace > textarea { min-height:0; flex:1; width:100%; resize:none; border:0; outline:0; padding:28px clamp(24px,5vw,58px); background:#fff; color:#22272b; caret-color:#237eb7; font:15px/1.75 "Segoe UI","PingFang SC",sans-serif; }.note-workspace > textarea::placeholder { color:#a9b0b5; }.note-workspace > footer { height:31px; padding:0 16px; flex:none; display:flex; align-items:center; justify-content:flex-end; gap:14px; border-top:1px solid #edf0f2; color:#8a949a; font-size:8px; }.note-welcome { height:100%; padding:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }.note-welcome > span { width:54px; height:54px; display:grid; place-items:center; border:1px solid #cbd4da; border-radius:8px; background:#f2f5f7; color:#4c7896; font-size:24px; }.note-welcome strong { margin-top:16px; font-size:15px; }.note-welcome p { max-width:320px; margin:8px 0 19px; color:#758189; font-size:10px; line-height:1.6; }.note-welcome button { height:33px; padding:0 13px; border:1px solid #247dad; border-radius:5px; background:#247dad; color:#fff; font-size:10px; }
 
 .windows-desktop.theme-dark .notepad-app { color:#e4e9ec; background:#171d21; }
@@ -47,9 +84,15 @@
   .note-editor-header > input { font-size:16px; }
   .note-editor-header > div { gap:3px; }
   .note-editor-header > div > button { width:40px; height:40px; border:0; background:transparent; }
+  .note-editor-header .note-view-toggle { flex:none; gap:1px; }
+  .note-editor-header .note-view-toggle button { width:auto; height:34px; padding-inline:9px; }
   .note-editor-header > div > button.confirm { width:48px; font-size:10px; }
-  .note-workspace > textarea { padding:22px 19px calc(24px + env(safe-area-inset-bottom)); font-size:16px; line-height:1.72; }
-  .note-editor-header span,.note-workspace > footer { display:none; }
+  .note-find-bar { padding:5px 8px; }
+  .note-find-bar label { min-width:0; }
+  .note-find-bar button { width:36px; height:36px; flex:none; }
+  .note-find-bar output { min-width:38px; }
+  .note-workspace > textarea,.note-markdown-preview,.note-markdown-loading,.note-markdown-empty { padding:22px 19px calc(24px + env(safe-area-inset-bottom)); font-size:16px; line-height:1.72; }
+  .note-editor-header .note-save-status,.note-workspace > footer { display:none; }
 }
 
 @media (max-width: 680px) and (prefers-reduced-motion: reduce), (max-width: 932px) and (pointer: coarse) and (prefers-reduced-motion: reduce) {

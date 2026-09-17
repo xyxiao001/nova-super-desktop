@@ -35,6 +35,7 @@ const createStorage = (legacy: string | null = null) => {
 };
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await deleteDB(DATABASE_NAME);
 });
 
@@ -177,6 +178,56 @@ describe("desktopStorage", () => {
     await deleteDesktopItems(["first", "third"]);
 
     await expect(loadDesktopItems(createStorage())).resolves.toEqual([item("second")]);
+  });
+
+  it("reports per-file status against committed content and names", async () => {
+    const first = item("first", "v1");
+    const second = item("second", "unchanged");
+    await replaceDesktopItems([first, second]);
+    const changed = vi.fn();
+    const sync = createDesktopSyncQueue([first, second], changed);
+    const edited = { ...first, content: "v2" };
+    expect(sync.getItemStatus(edited)).toBe("saving");
+    const write = sync.enqueue([edited, second]);
+    expect(sync.getItemStatus(second)).toBe("saved");
+    expect(sync.getItemStatus(edited)).toBe("saving");
+    await write;
+    expect(sync.getItemStatus(edited)).toBe("saved");
+    expect(sync.getItemStatus({ ...edited, name: "renamed.txt" })).toBe("saving");
+    expect(changed).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not mark a newer edit saved when an older snapshot finishes", async () => {
+    const sync = createDesktopSyncQueue([]);
+    const first = item("draft", "first");
+    const latest = { ...first, content: "latest" };
+    const firstWrite = sync.enqueue([first]);
+    const latestWrite = sync.enqueue([latest]);
+    await firstWrite;
+    expect(sync.getItemStatus(latest)).toBe("saving");
+    await latestWrite;
+    expect(sync.getItemStatus(latest)).toBe("saved");
+  });
+
+  it("keeps failed edits in memory without retrying or marking other files failed", async () => {
+    const original = item("draft", "original");
+    const unchanged = item("other", "untouched");
+    await replaceDesktopItems([original, unchanged]);
+    const sync = createDesktopSyncQueue([original, unchanged]);
+    const edited = { ...original, content: "unsaved" };
+    const open = vi.spyOn(indexedDB, "open").mockImplementationOnce(() => {
+      throw new DOMException("Storage unavailable", "QuotaExceededError");
+    });
+    await expect(sync.enqueue([edited, unchanged])).rejects.toThrow("Storage unavailable");
+    expect(sync.getItemStatus(edited)).toBe("error");
+    expect(sync.getItemStatus(unchanged)).toBe("saved");
+    expect(edited.content).toBe("unsaved");
+    expect(open).toHaveBeenCalledTimes(1);
+    open.mockRestore();
+    await expect(loadDesktopFile(original.id, createStorage())).resolves.toEqual(original);
+    const nextEdit = { ...edited, content: "user edited again" };
+    await sync.enqueue([nextEdit, unchanged]);
+    expect(sync.getItemStatus(nextEdit)).toBe("saved");
   });
 
   it("serializes a full restore after previously queued incremental writes", async () => {
