@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "./icons";
 import {
@@ -22,6 +22,8 @@ import { importMusic } from "./importMusic";
 import { catalogTrackInLibrary } from "./deduplication";
 import { lyricExtensions, parseLyrics } from "./lyrics";
 import { usePlayer } from "./usePlayer";
+import { useMusicShortcuts } from "./useMusicShortcuts";
+import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import { FloatingLyrics, LyricView } from "./LyricViews";
 import { PosterStudio } from "./PosterStudio";
 import { ImmersiveStage } from "./ImmersiveStage";
@@ -76,6 +78,7 @@ const modeLabels = {
   shuffle: "随机播放",
 };
 export default function MusicApp() {
+  const { isAppActive } = useWindowRuntime();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loose, setLoose] = useState<LooseLyric[]>([]);
   const [prefs, setPrefs] = useState(initialPreferences);
@@ -103,6 +106,7 @@ export default function MusicApp() {
   const notify = useCallback((text: string) => setMessage(text), []);
   const player = usePlayer(tracks, prefs, notify);
   const current = tracks.find((t) => t.id === player.id);
+  const ambientCoverUrl = useBlobUrl(current?.cover);
   const parsed = useMemo(
     () => parseLyrics(current?.lyrics ?? "", current?.duration),
     [current?.lyrics, current?.duration],
@@ -160,6 +164,8 @@ export default function MusicApp() {
       notify(`设置保存失败：${e.message}`),
     );
   };
+  useMusicShortcuts(isAppActive("music") && !!current && !editId, player, prefs.volume,
+    (volume) => updatePrefs({ ...prefs, volume }));
   const updateTrack = async (track: Track) => {
     await saveTracks([track]);
     setTracks((items) => items.map((t) => (t.id === track.id ? track : t)));
@@ -336,7 +342,10 @@ export default function MusicApp() {
   ];
   return (
     <div
-      className={`nova-music nm-${prefs.theme}`}
+      className={`nova-music nm-${prefs.theme} nm-glass`}
+      style={{
+        "--nm-cover-image": ambientCoverUrl ? `url("${ambientCoverUrl}")` : "none",
+      } as CSSProperties}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();
       }}
@@ -345,14 +354,6 @@ export default function MusicApp() {
           e.preventDefault();
           e.stopPropagation();
           if (!busy) void importFiles(Array.from(e.dataTransfer.files));
-        }
-      }}
-      onKeyDown={(e) => {
-        if ((e.target as HTMLElement).matches("input,textarea,select,button"))
-          return;
-        if (e.code === "Space") {
-          e.preventDefault();
-          player.toggle();
         }
       }}
     >
@@ -457,9 +458,12 @@ export default function MusicApp() {
               <button
                 key={theme}
                 aria-label={`切换${["浅色", "深色", "玫瑰"][i]}皮肤`}
+                aria-pressed={prefs.theme === theme}
                 className={`swatch-${theme} ${prefs.theme === theme ? "active" : ""}`}
                 onClick={() => updatePrefs({ ...prefs, theme })}
-              />
+              >
+                {prefs.theme === theme && <Icon name="check" size={11} />}
+              </button>
             ))}
           </div>
           <small>你的音乐，留在你的设备。</small>
@@ -813,6 +817,7 @@ export default function MusicApp() {
             >
               <div className="nm-now">
                 <div className="nm-now-art">
+                  <span className="nm-now-eyebrow">正在聆听</span>
                   <Artwork track={current} size="large" />
                   <h1>{current.title}</h1>
                   <p>
@@ -827,7 +832,7 @@ export default function MusicApp() {
                       编辑歌词
                     </button>
                     <label className="nm-offset">
-                      偏移（秒）
+                      歌词偏移
                       <input
                         aria-label="歌词偏移秒数"
                         type="number"
@@ -840,11 +845,12 @@ export default function MusicApp() {
                           }).catch((e) => notify(e.message))
                         }
                       />
+                      秒
                     </label>
                   </div>
                   <small>
                     {parsed.lines.some((l) => l.words.length)
-                      ? "逐字同步 · KARAOKE"
+                      ? "逐字同步"
                       : parsed.timed
                         ? "逐行同步"
                         : "纯文本歌词"}{" "}
@@ -966,6 +972,8 @@ export default function MusicApp() {
             <button
               className="nm-play-button"
               aria-label={player.playing ? "暂停" : "播放"}
+              aria-keyshortcuts="Space"
+              title="播放 / 暂停（空格）；← → 跳转 5 秒；↑ ↓ 调整音量"
               disabled={!current}
               onClick={player.toggle}
             >

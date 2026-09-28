@@ -96,7 +96,7 @@ export function ImmersiveStage({
       <div className="nm-spectrum">
         <div>
           <span className={playing ? "nm-live-dot active" : "nm-live-dot"} />
-          <small>{playing ? "LIVE SPECTRUM" : "SPECTRUM · PAUSED"}</small>
+          <small>{playing ? "正在播放" : "已暂停"}</small>
           <button
             type="button"
             className="nm-spectrum-toggle"
