@@ -164,7 +164,7 @@ npm install
 npm run dev
 ```
 
-开发服务默认运行在 [http://localhost:3000](http://localhost:3000)。
+开发服务固定运行在 [http://localhost:3000](http://localhost:3000)。vinext 与 Vercel 静态页面的 Vite 开发、预览配置均使用 3000 端口；端口被占用时启动失败，不会自动切换端口。
 
 ## 测试与构建
 

@@ -76,13 +76,15 @@ export default defineConfig(async () => {
 
   return {
     server: {
+      port: 3000,
+      strictPort: true,
       host: "0.0.0.0",
       headers: crossOriginIsolationHeaders,
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),
     },
-    preview: { headers: crossOriginIsolationHeaders },
+    preview: { port: 3000, strictPort: true, headers: crossOriginIsolationHeaders },
     plugins: [
       crossOriginIsolation(),
       vinext(),

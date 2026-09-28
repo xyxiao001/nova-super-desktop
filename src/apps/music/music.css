@@ -1130,7 +1130,8 @@
   width: 700px;
   max-width: 100%;
   height: 100%;
-  max-height: 560px;
+  max-height: 700px;
+  overflow-y: auto;
   background: var(--nm-bg);
   border: 1px solid var(--nm-line);
   box-shadow: 0 20px 70px #0004;
@@ -1166,6 +1167,7 @@
 .nm-editor textarea {
   flex: 1;
   min-height: 80px;
+  flex-shrink: 0;
   width: 100%;
   resize: none;
   background: var(--nm-panel);
@@ -1189,6 +1191,66 @@
 }
 .nm-editor-footer button {
   font-size: 11px !important;
+}
+.nm-lyric-search {
+  flex-shrink: 0;
+}
+.nm-lyric-search form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.nm-lyric-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--nm-line);
+  border-radius: 7px;
+  background: var(--nm-panel);
+}
+.nm-lyric-search small,
+.nm-lyric-search p {
+  color: var(--nm-muted);
+  font-size: 11px;
+}
+.nm-lyric-search p {
+  margin: 8px 0;
+}
+.nm-lyric-search-results {
+  max-height: 150px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nm-lyric-search-results li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--nm-line);
+}
+.nm-lyric-search-results li > div:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.nm-lyric-search-results strong,
+.nm-lyric-search-results small {
+  display: block;
+}
+.nm-lyric-search-results strong {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.nm-lyric-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--nm-accent);
 }
 @media (max-width: 850px) {
   .nova-music {

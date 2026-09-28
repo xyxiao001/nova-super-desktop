@@ -20,11 +20,12 @@ import {
 } from "./storage";
 import { importMusic } from "./importMusic";
 import { catalogTrackInLibrary } from "./deduplication";
-import { lyricExtensions, parseLyrics } from "./lyrics";
+import { lyricExtensions, lyricTypeLabel, parseLyrics } from "./lyrics";
 import { usePlayer } from "./usePlayer";
 import { useMusicShortcuts } from "./useMusicShortcuts";
 import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import { FloatingLyrics, LyricView } from "./LyricViews";
+import { LyricSearch } from "./LyricSearch";
 import { PosterStudio } from "./PosterStudio";
 import { ImmersiveStage } from "./ImmersiveStage";
 import { MonthlyReport } from "./MonthlyReport";
@@ -112,6 +113,7 @@ export default function MusicApp() {
     [current?.lyrics, current?.duration],
   );
   const lyricTime = player.time + parsed.offset + (current?.offset ?? 0);
+  const parsedDraft = useMemo(() => parseLyrics(draft), [draft]);
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
@@ -829,7 +831,7 @@ export default function MusicApp() {
                       onClick={() => openEditor(current)}
                     >
                       <Icon name="edit" size={16} />
-                      编辑歌词
+                      搜索 / 替换歌词
                     </button>
                     <label className="nm-offset">
                       歌词偏移
@@ -1119,6 +1121,12 @@ export default function MusicApp() {
                 <Icon name="close" />
               </button>
             </header>
+            <LyricSearch
+              key={editId}
+              title={tracks.find((t) => t.id === editId)!.title}
+              artist={tracks.find((t) => t.id === editId)!.artist}
+              onPreview={setDraft}
+            />
             <label>
               关联已导入的歌词
               <select
@@ -1145,7 +1153,7 @@ export default function MusicApp() {
             />
             <div className="nm-editor-footer">
               <small>
-                {parseLyrics(draft).lines.length} 行 ·
+                {lyricTypeLabel(parsedDraft)} · {parsedDraft.lines.length} 行 ·
                 保留原始时间戳，无长度截断
               </small>
               <button

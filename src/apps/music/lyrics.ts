@@ -153,6 +153,13 @@ export function activeLine(lines: LyricLine[], time: number) {
   }
   return found;
 }
+export function lyricTypeLabel(lyrics: Lyrics) {
+  return lyrics.lines.some((line) => line.words.length)
+    ? "逐字歌词"
+    : lyrics.timed
+      ? "逐行歌词"
+      : "纯文本歌词";
+}
 export function wordProgress(word: LyricWord, time: number) {
   return time <= word.start
     ? 0
