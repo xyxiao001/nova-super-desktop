@@ -1,0 +1,57 @@
+[
+  {
+    "id": "nova-chongbai",
+    "title": "崇拜",
+    "artist": "薛之谦",
+    "album": "崇拜",
+    "audio": "/music/chongbai.mp3",
+    "lyrics": "/music/chongbai.lrc",
+    "cover": "/music/chongbai.png",
+    "bytes": 12169966,
+    "audioHash": "c8bcab791323f5c4ea5add3440e9a5c68ede7532f84381acb455c7c03e696e89"
+  },
+  {
+    "id": "nova-gangganghao",
+    "title": "刚刚好",
+    "artist": "薛之谦",
+    "album": "初学者",
+    "audio": "/music/gangganghao.mp3",
+    "lyrics": "/music/gangganghao.lrc",
+    "cover": "/music/gangganghao.jpg",
+    "bytes": 10055774,
+    "audioHash": "ae3b3cd33c7df5d2e7715b3a7b3d2aada4a5c28480a0cd51b5ca80238fcda0dc"
+  },
+  {
+    "id": "nova-geng",
+    "title": "耿",
+    "artist": "汪苏泷",
+    "album": "耿",
+    "audio": "/music/geng.mp3",
+    "lyrics": "/music/geng.lrc",
+    "cover": "/music/geng.png",
+    "bytes": 11074599,
+    "audioHash": "f87b9e809b784f3b03cfc3be777a1fbf2ca316770f068192cae2e18a4d7c524a"
+  },
+  {
+    "id": "nova-xiangxiangzhizhong",
+    "title": "想象之中",
+    "artist": "许嵩",
+    "album": "苏格拉没有底",
+    "audio": "/music/xiangxiangzhizhong.mp3",
+    "lyrics": "/music/xiangxiangzhizhong.lrc",
+    "cover": "/music/xiangxiangzhizhong.jpg",
+    "bytes": 10022902,
+    "audioHash": "07e2646497eb3c1dc014a43e342ec29fc418f621171a6207364f1b1c72fb9682"
+  },
+  {
+    "id": "nova-chaidongqiang",
+    "title": "拆东墙",
+    "artist": "许嵩",
+    "album": "苏格拉没有底",
+    "audio": "/music/chaidongqiang.mp3",
+    "lyrics": "/music/chaidongqiang.lrc",
+    "cover": "/music/chaidongqiang.jpg",
+    "bytes": 10404288,
+    "audioHash": "032863c0c597c06624ab86ce9cfacad244674c57a2bee88156b0b6ce7aed73af"
+  }
+]

@@ -807,3 +807,9 @@
 .shortcut-icon.cybercity-shortcut,.task-app.cybercity-app > span,.app-glyph.cybercity-glyph { position:relative; overflow:hidden; background:radial-gradient(ellipse at 80% 20%,#742655,transparent 65%),linear-gradient(145deg,#173f52,#0c1325); border:1px solid #6acbcd77; font-size:0; }
 .shortcut-icon.cybercity-shortcut::before,.task-app.cybercity-app > span::before,.app-glyph.cybercity-glyph::before { content:""; position:absolute; left:21%; bottom:21%; width:17%; height:38%; border:1px solid #6debdc; background:repeating-linear-gradient(0deg,#5dcfc880 0 1px,transparent 1px 5px),#183345; box-shadow:9px -8px 0 -1px #ca729d,18px 1px 0 -1px #558cac; transform:skewY(-7deg); }
 .shortcut-icon.cybercity-shortcut::after,.task-app.cybercity-app > span::after,.app-glyph.cybercity-glyph::after { content:""; position:absolute; left:12%; right:12%; bottom:15%; height:1px; background:#8ce7df; box-shadow:0 2px 8px #72ecda; }
+
+/* NOVA Music: a coral enamel note, shared by desktop, Start and taskbar. */
+.music-shortcut,.music-glyph,.start-music,.task-app.music-app > span { color:#fff; background:linear-gradient(145deg,#ff828c 0%,#f2476b 52%,#d92d58 100%); font-family:Georgia,serif; font-weight:700; text-shadow:0 1px 2px #8b163530; box-shadow:inset 0 1px 1px #ffffff80,0 5px 12px #d5295525; }
+.music-shortcut { font-size:35px; line-height:1; border-radius:15px; }
+.music-glyph,.start-music { font-size:23px; }
+.task-app.music-app > span { font-size:21px; }

@@ -54,6 +54,15 @@ self.NOVA_RESOURCE_PACKAGES = [
     "extensions": []
   },
   {
+    "id": "music",
+    "pathPrefixes": [
+      "/music/"
+    ],
+    "exactPaths": [],
+    "destinations": [],
+    "extensions": []
+  },
+  {
     "id": "photos",
     "pathPrefixes": [
       "/photos/"
