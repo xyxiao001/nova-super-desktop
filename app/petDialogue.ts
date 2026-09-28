@@ -61,8 +61,8 @@ export function createLocalPetReply(
     if (context.energy >= 70) return { text: "我精力很足，可以陪你继续做事。" };
     return { text: "我的精力还不错，适合做一件不太长的事。" };
   }
-  if (/会什么|能做什么|帮助|帮我|功能/.test(normalized)) {
-    return { text: "我能陪你聊天，也能带你去记事、阅读、看照片、画画、专注、整理文件或放松。" };
+  if (/会什么|能[做干]什么|可以[做干]什么|帮助|帮我|功能/.test(normalized)) {
+    return { text: "我能陪你聊天，也能打开桌面的 NOVA 音乐、记事本、阅读器、照片、画板、专注时钟，帮你整理文件或玩游戏。想听歌，直接说「我要听音乐」；播放器支持本地音乐、同步歌词、歌词海报和私人听歌月报。" };
   }
   if (/谢谢|谢了|感谢/.test(normalized)) {
     return { text: "不用客气，我就在桌面上。" };

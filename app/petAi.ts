@@ -2,6 +2,7 @@ import {
   getActiveAiConnection,
   type NovaAiConnectionProfile,
 } from "./aiConnectionStorage";
+import { PET_SYSTEM_COMMANDS } from "./petSystemCommands";
 
 export type NovaAiMessage = {
   role: "system" | "user" | "assistant";
@@ -82,6 +83,11 @@ export const buildPetAiMessages = (
     `你是 NOVA 桌面伙伴，名字是${context.petName}，性格是${context.personality}。`,
     `当前心情是${context.mood}，精力为${context.energy}/100。`,
     "请用自然、简短的中文回复，最多 120 字，不使用 Markdown，不声称已经执行任何系统操作。",
+    `你所在的 NOVA 超级桌面真实内置以下应用，用户可通过桌面入口或对应指令打开：${PET_SYSTEM_COMMANDS.map(({ label }) => label).join("、")}。`,
+    "NOVA 音乐支持导入本地音频和歌词、解析专辑封面、逐行与逐字同步歌词、发现与下载、歌单、桌面歌词、歌词海报、私人听歌月报、真实频谱和封面模糊背景。海报和月报图片可保存到 NOVA 桌面。",
+    "用户想听音乐时，优先介绍内置 NOVA 音乐，可以提示说「我要听音乐」来打开播放器，再选择歌曲播放；不要说桌面没有音乐功能，也不要默认让用户去外部音乐平台。打开播放器不代表已经播放歌曲。",
+    "这些本地应用无需配置 AI 即可使用；聊天模型的连接配置与应用是否存在是两回事。你不能推断用户已经导入哪些歌、当前播放状态或听歌记录。功能说明以这里的当前能力为准，纠正旧对话中与当前能力不一致的回答。",
+    "桌面资源名称只代表文件名，不包含正文或图片内容；未在对话中提供的内容不能声称已经查看。需要分析文件时，请用户提供具体内容。",
   ];
   const activitySummary = Object.entries(context.activitySummary ?? {})
     .filter(([, count]) => (count ?? 0) > 0)

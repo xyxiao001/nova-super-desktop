@@ -12,6 +12,11 @@ const context = {
 
 describe("local pet dialogue", () => {
   it.each([
+    ["我要听音乐", "music", "打开 NOVA 音乐"],
+    ["我想听歌", "music", "打开 NOVA 音乐"],
+    ["给我放首歌", "music", "打开 NOVA 音乐"],
+    ["打开 NOVA 音乐", "music", "打开 NOVA 音乐"],
+    ["请帮我打开音乐播放器", "music", "打开 NOVA 音乐"],
     ["帮我打开记事本", "notes", "打开记事本"],
     ["我想读一会儿书", "reader", "打开 NOVA 阅读"],
     ["看看照片", "viewer", "打开照片"],
@@ -62,6 +67,10 @@ describe("local pet dialogue", () => {
     "五子棋真难",
     "这本书很好看",
     "系统设置很多",
+    "我不想听音乐",
+    "听歌有什么好处",
+    "你可以播放音乐吗",
+    "这首歌很好听",
   ])("does not launch an app for ordinary discussion: %s", (message) => {
     expect(createLocalPetReply(message, context).action).toBeUndefined();
   });
@@ -84,6 +93,8 @@ describe("local pet dialogue", () => {
     expect(reply.action).toBeUndefined();
     expect(reply.text).toContain("记事");
     expect(reply.text).toContain("整理文件");
+    expect(reply.text).toContain("我要听音乐");
+    expect(createLocalPetReply("你可以干什么", context).text).toContain("NOVA");
   });
 
   it("uses personality-specific fallback without echoing arbitrary input", () => {

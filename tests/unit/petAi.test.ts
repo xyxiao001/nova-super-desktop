@@ -47,6 +47,10 @@ describe("OpenAI-compatible pet AI adapter", () => {
 
     expect(withoutOptionalContext[0].content).not.toContain("本地活动摘要");
     expect(withoutOptionalContext[0].content).not.toContain("本地笔记.txt");
+    expect(withoutOptionalContext[0].content).toContain("打开 NOVA 音乐");
+    expect(withoutOptionalContext[0].content).toContain("逐行与逐字同步歌词");
+    expect(withoutOptionalContext[0].content).toContain("打开播放器不代表已经播放歌曲");
+    expect(withoutOptionalContext[0].content).toContain("无需配置 AI");
     expect(withOptionalContext[0].content).toContain("app-activated:2");
     expect(withOptionalContext[0].content).toContain("本地笔记.txt");
     expect(withOptionalContext.at(-1)).toEqual({
