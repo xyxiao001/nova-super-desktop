@@ -32,6 +32,9 @@ import { musicShareUrl, shareableSong } from "./sharing";
 import { copyShareLink } from "../../platform/apps/appShare";
 import { PosterStudio } from "./PosterStudio";
 import { ImmersiveStage } from "./ImmersiveStage";
+import { ListeningStudio } from "./ListeningStudio";
+import { ShowStudio } from "./ShowStudio";
+import { openingView, readSharedStage, type StageScore } from "./performance";
 import { MonthlyReport } from "./MonthlyReport";
 import "./music.css";
 function useBlobUrl(blob: Blob | null | undefined) {
@@ -74,6 +77,7 @@ type Page =
   | "report"
   | "poster"
   | "lyrics"
+  | "show"
   | `playlist:${string}`;
 const modes: Preferences["mode"][] = ["order", "repeat", "one", "shuffle"];
 const modeLabels = {
@@ -96,6 +100,9 @@ export default function MusicApp() {
   const [copyResult, setCopyResult] = useState<"copied" | "manual" | null>(null);
   const [catalogError, setCatalogError] = useState("");
   const [page, setPage] = useState<Page>("library");
+  const [concert, setConcert] = useState(false);
+  const [stageScore, setStageScore] = useState<StageScore>({ view: openingView });
+  const [shareStage, setShareStage] = useState<StageScore | undefined>();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("added");
   const [message, setMessage] = useState("");
@@ -129,10 +136,21 @@ export default function MusicApp() {
     [current?.lyrics, current?.duration],
   );
   const lyricTime = player.time + parsed.offset + (current?.offset ?? 0);
+  useEffect(() => {
+    if (!current) return;
+    const linkedStage = readSharedStage(location.hash);
+    const isSharedTrack = current.audioHash === catalog.find((item) => item.id === sharedSongId)?.audioHash;
+    setStageScore(isSharedTrack && linkedStage ? linkedStage : current.performance ? { view: current.performance.view } : { view: openingView });
+  }, [current?.id]);
   const parsedDraft = useMemo(() => parseLyrics(draft), [draft]);
   useEffect(() => {
     let active = true;
     const songId = new URLSearchParams(location.search).get("song");
+    const linkedStage = readSharedStage(location.hash);
+    if (songId && linkedStage) {
+      setStageScore(linkedStage);
+      setConcert(true);
+    }
     setSharedSongId(songId);
     if (songId) setPage("now");
     const controller = new AbortController();
@@ -343,8 +361,9 @@ export default function MusicApp() {
       void download(sharedSong);
     }
   }, [ready, sharedSong, tracks]);
-  const openSongShare = (song: CatalogTrack) => {
+  const openSongShare = (song: CatalogTrack, stage?: StageScore) => {
     setShareSong(song);
+    setShareStage(stage);
     setCopyResult(null);
   };
   const toggleFavorite = (track: Track) => {
@@ -412,11 +431,12 @@ export default function MusicApp() {
     { page: "catalog", icon: "download", label: "发现与下载" },
     { page: "lyrics", icon: "lyrics", label: "歌词管理" },
     { page: "poster", icon: "poster", label: "歌词海报" },
+    { page: "show", icon: "queue", label: "歌单演出" },
     { page: "report", icon: "chart", label: "私人听歌月报" },
   ];
   return (
     <div
-      className={`nova-music nm-${prefs.theme} nm-glass${page === "now" ? " nm-page-now" : ""}`}
+      className={`nova-music nm-${prefs.theme} nm-glass${page === "now" ? " nm-page-now" : ""}${page === "now" && concert && current ? " nm-stage-mode" : ""}`}
       style={{
         "--nm-cover-image": ambientCoverUrl ? `url("${ambientCoverUrl}")` : "none",
       } as CSSProperties}
@@ -549,14 +569,29 @@ export default function MusicApp() {
             {page === "now" ? "正在播放" : "聆听你的世界"}
             <i> / </i>NOVA MUSIC
           </span>
-          <button
-            className="nm-secondary"
-            disabled={busy || !ready}
-            onClick={() => input.current?.click()}
-          >
-            <Icon name="plus" size={17} />
-            {busy ? "正在导入…" : "导入音乐 / 歌词"}
-          </button>
+          <div className="nm-topbar-actions">
+            {page === "now" && current && (
+              <button
+                type="button"
+                className="nm-secondary nm-concert-entry"
+                aria-pressed={concert}
+                onClick={() => setConcert(!concert)}
+              >
+                {concert ? "返回歌词" : "夜场演唱会"}
+              </button>
+            )}
+            {page === "now" && concert && currentShareSong && (
+              <button className="nm-secondary" onClick={() => openSongShare(currentShareSong, stageScore)}>分享舞台 ↗</button>
+            )}
+            <button
+              className="nm-secondary nm-import-action"
+              disabled={busy || !ready}
+              onClick={() => input.current?.click()}
+            >
+              <Icon name="plus" size={17} />
+              {busy ? "正在导入…" : "导入音乐 / 歌词"}
+            </button>
+          </div>
         </header>
         {message && (
           <div className="nm-notice" role="status">
@@ -868,6 +903,26 @@ export default function MusicApp() {
             </>
           )}
           {page === "now" && current && (
+            concert ? <ListeningStudio
+              key={current.id}
+              analyser={player.analyser}
+              playing={player.playing}
+              track={current}
+              cover={ambientCoverUrl}
+              lyrics={parsed}
+              time={lyricTime}
+              songTime={player.time}
+              score={stageScore}
+              onChange={setStageScore}
+              onSave={() => void updateTrack({ ...current, performance: stageScore }).then(() => notify("这首歌的场景已保存")).catch((error) => notify(error.message))}
+              sound={player.sound}
+              onSoundChange={player.setSound}
+              rainVolume={player.rainVolume}
+              onRainChange={player.setRainVolume}
+              show={player.show}
+              showFinished={player.showFinished}
+              onStopShow={player.stopShow}
+            /> :
             <ImmersiveStage
               analyser={player.analyser}
               playing={player.playing}
@@ -935,6 +990,12 @@ export default function MusicApp() {
           {page === "report" && (
             <MonthlyReport flush={player.flushListening} onError={notify} />
           )}
+          {page === "show" && <ShowStudio playlists={prefs.playlists} tracks={tracks}
+            onSave={(playlist) => {
+              updatePrefs({ ...prefs, playlists: prefs.playlists.map((item) => item.id === playlist.id ? playlist : item) });
+            }}
+            onStart={(show) => { setConcert(true); setPage("now"); player.startShow(show); }}
+          />}
           {page === "now" && !current && sharedSongId && (
             <div className="nm-empty" role="status">
               <Icon name="music" size={50} />
@@ -1186,9 +1247,9 @@ export default function MusicApp() {
           <section className="nm-editor nm-share-dialog" role="dialog" aria-modal="true" aria-label="分享歌曲">
             <header><h2>把这首歌分享给你</h2><button aria-label="关闭歌曲分享" onClick={() => setShareSong(null)}><Icon name="close" /></button></header>
             <strong>{shareSong.title} · {shareSong.artist}</strong>
-            <p>打开链接，直接进入这首歌的歌词播放页。</p>
-            <input aria-label="歌曲分享链接" autoFocus readOnly value={musicShareUrl(shareSong.id, location.origin)} onFocus={(event) => event.currentTarget.select()} />
-            <button className="nm-primary" onClick={() => void copyShareLink(musicShareUrl(shareSong.id, location.origin)).then(setCopyResult).catch((error) => notify(error.message))}>复制歌曲链接</button>
+            <p>{shareStage ? "打开链接，进入这首歌的专属舞台，保留场景、机位和灯色。" : "打开链接，直接进入这首歌的歌词播放页。"}</p>
+            <input aria-label="歌曲分享链接" autoFocus readOnly value={musicShareUrl(shareSong.id, location.origin, shareStage)} onFocus={(event) => event.currentTarget.select()} />
+            <button className="nm-primary" onClick={() => void copyShareLink(musicShareUrl(shareSong.id, location.origin, shareStage)).then(setCopyResult).catch((error) => notify(error.message))}>复制歌曲链接</button>
             {copyResult && <small role="status">{copyResult === "copied" ? "链接已复制" : "请选择上方链接，按 Ctrl / ⌘ + C 复制。"}</small>}
           </section>
         </div>

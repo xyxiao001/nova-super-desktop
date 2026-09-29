@@ -1,3 +1,5 @@
+import type { StageScore } from "./performance";
+import type { PlaylistShow } from "./show";
 export type Track = {
   id: string;
   title: string;
@@ -14,9 +16,10 @@ export type Track = {
   favorite: boolean;
   source: "local" | "catalog";
   offset: number;
+  performance?: StageScore;
 };
 export type LooseLyric = { id: string; name: string; text: string };
-export type Playlist = { id: string; name: string; tracks: string[] };
+export type Playlist = { id: string; name: string; tracks: string[]; show?: PlaylistShow };
 export type Preferences = {
   volume: number;
   mode: "order" | "repeat" | "one" | "shuffle";

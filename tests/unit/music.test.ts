@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import {
@@ -21,6 +21,7 @@ import {
   removeTrack,
 } from "../../src/apps/music/storage";
 import provider from "../../src/apps/music/storageProvider";
+afterEach(() => vi.unstubAllGlobals());
 import {
   catalogTrackInLibrary,
   audioFingerprint,
@@ -183,6 +184,20 @@ describe("persistent music library", () => {
     expect((await readLibrary()).prefs.spectrumVisible).toBe(false);
     await removeTrack("song");
     expect((await readLibrary()).tracks).toHaveLength(0);
+  });
+  it("backs up and restores authored performances and playlist shows in the existing music store", async () => {
+    vi.stubGlobal("window", new EventTarget());
+    const performance = { view: { scene: "concert" as const, camera: "front" as const, palette: "rose" as const } };
+    const show = { title: "周五夜场", transition: "fade" as const, roles: { song: "encore" as const } };
+    await saveTracks([{ ...track, performance }]);
+    await savePreferences({ ...initialPreferences, playlists: [{ id:"show",name:"夜场",tracks:[track.id],show }] });
+    const backup = await provider.exportData();
+    await provider.clear();
+    expect((await readLibrary()).tracks).toHaveLength(0);
+    await provider.restoreData(backup);
+    const restored = await readLibrary();
+    expect(restored.tracks[0].performance).toEqual(performance);
+    expect(restored.prefs.playlists[0].show).toEqual(show);
   });
   it("merges existing local/catalog duplicates and preserves lyrics, favorites and playlist references", async () => {
     await replaceLibrary({

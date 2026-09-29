@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Preferences, Track } from "./model";
 import { connectMediaSession, publishMediaTrack } from "./mediaSession";
+import { createListeningEffects, type SoundPreset } from "./listeningEffects";
+import { scheduleShowGain, type ActiveShow } from "./show";
 import {
   addListeningTime,
   ListeningMeter,
@@ -20,9 +22,38 @@ export function usePlayer(
   const graph = useRef<{
     context: AudioContext;
     gain: GainNode;
+    fade: GainNode;
     analyser: AnalyserNode;
+    source: MediaElementAudioSourceNode;
+    effects: ReturnType<typeof createListeningEffects> | null;
   } | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [sound, setSound] = useState<SoundPreset>("original");
+  const [rainVolume, setRainVolume] = useState(0);
+  const [show, setShow] = useState<ActiveShow | null>(null);
+  const [showFinished, setShowFinished] = useState(false);
+  const showRef = useRef<ActiveShow | null>(null);
+  const intervalTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearIntervalTimer = () => {
+    if (intervalTimer.current !== null) clearTimeout(intervalTimer.current);
+    intervalTimer.current = null;
+  };
+  const stopShow = () => {
+    clearIntervalTimer();
+    showRef.current = null;
+    setShow(null);
+    setShowFinished(false);
+    if (graph.current) {
+      graph.current.fade.gain.cancelScheduledValues(graph.current.context.currentTime);
+      graph.current.fade.gain.setValueAtTime(1, graph.current.context.currentTime);
+    }
+  };
+  const scheduleEnvelope = () => {
+    if (graph.current && audio.current && showRef.current) {
+      scheduleShowGain(graph.current.fade.gain, audio.current.currentTime, audio.current.duration,
+        graph.current.context.currentTime, showRef.current.transition, !audio.current.paused);
+    }
+  };
   const pendingListening = useRef<ListeningDay[]>([]);
   const persistListening = useRef<Promise<void>>(Promise.resolve());
   const sampleListening = useRef<() => void>(() => {});
@@ -46,11 +77,14 @@ export function usePlayer(
   const [queue, setQueue] = useState<string[]>([]);
   const latest = useRef({ tracks, prefs, queue });
   latest.current = { tracks, prefs, queue };
-  async function play(trackId: string, ids?: string[]) {
+  async function play(trackId: string, ids?: string[], fromShow = false) {
     const a = audio.current;
     if (!a) return;
     const track = latest.current.tracks.find((t) => t.id === trackId);
     if (!track) return;
+    clearIntervalTimer();
+    if (ids && !fromShow) stopShow();
+    setShowFinished(false);
     if (ids) setQueue(ids);
     const token = ++intent.current;
     if (current.current !== trackId) {
@@ -68,14 +102,16 @@ export function usePlayer(
         const context = new AudioContext();
         const source = context.createMediaElementSource(a);
         const gain = context.createGain();
+        const fade = context.createGain();
         gain.gain.value = latest.current.prefs.volume;
         const analyser = context.createAnalyser();
         analyser.fftSize = 256;
         analyser.smoothingTimeConstant = 0.78;
-        source.connect(gain);
+        source.connect(fade);
+        fade.connect(gain);
         gain.connect(analyser);
         analyser.connect(context.destination);
-        graph.current = { context, gain, analyser };
+        graph.current = { context, gain, fade, analyser, source, effects: null };
         setAnalyser(analyser);
       }
       await graph.current.context.resume();
@@ -87,16 +123,20 @@ export function usePlayer(
     }
   }
   function seek(value: number) {
+    clearIntervalTimer();
+    setShowFinished(false);
     if (audio.current) {
       audio.current.currentTime = value;
       setTime(value);
     }
   }
   function pause() {
+    clearIntervalTimer();
     ++intent.current;
     audio.current?.pause();
   }
   function stop() {
+    stopShow();
     pause();
     current.current = null;
     setId(null);
@@ -112,6 +152,22 @@ export function usePlayer(
     }
   }
   function step(direction: number, ended = false) {
+    clearIntervalTimer();
+    const performance = showRef.current;
+    if (performance) {
+      const next = performance.tracks.indexOf(current.current!) + direction;
+      if (next >= performance.tracks.length) {
+        pause();
+        setShowFinished(true);
+      } else if (next < 0) {
+        seek(0);
+      } else if (ended && performance.transition === "pause") {
+        intervalTimer.current = setTimeout(() => { void actionRef.current.play(performance.tracks[next]); }, 2000);
+      } else {
+        void play(performance.tracks[next]);
+      }
+      return;
+    }
     const { queue: ids, prefs: p } = latest.current;
     const index = ids.indexOf(current.current ?? "");
     if (!ids.length) return;
@@ -174,11 +230,13 @@ export function usePlayer(
       );
     };
     const halt = () => {
+      if (graph.current) graph.current.fade.gain.cancelAndHoldAtTime(graph.current.context.currentTime);
       capture();
       advancing = false;
       persist();
     };
     a.onplaying = () => {
+      scheduleEnvelope();
       meter.reset(Date.now(), a.currentTime);
       advancing = true;
     };
@@ -221,6 +279,7 @@ export function usePlayer(
     };
     a.onloadedmetadata = () => setDuration(a.duration);
     a.onseeked = () => {
+      scheduleEnvelope();
       setTime(a.currentTime);
       meter.reset(Date.now(), a.currentTime);
       advancing = !a.paused;
@@ -235,6 +294,7 @@ export function usePlayer(
       a.pause();
     });
     return () => {
+      clearIntervalTimer();
       unsubscribe();
       halt();
       sampleListening.current = () => {};
@@ -260,6 +320,7 @@ export function usePlayer(
       if (url.current) URL.revokeObjectURL(url.current);
       current.current = null;
       if (graph.current) {
+        graph.current.effects?.dispose();
         void graph.current.context.close();
         graph.current = null;
       }
@@ -272,9 +333,29 @@ export function usePlayer(
         graph.current.context.currentTime,
       );
   }, [prefs.volume]);
+  useEffect(() => {
+    const nodes = graph.current;
+    if (!nodes) return;
+    if (!nodes.effects && (sound !== "original" || rainVolume > 0)) {
+      nodes.effects = createListeningEffects(nodes.context);
+      nodes.source.disconnect(nodes.fade);
+      nodes.source.connect(nodes.effects.input);
+      nodes.effects.output.connect(nodes.fade);
+    }
+    nodes.effects?.setSound(sound);
+    nodes.effects?.setRain(rainVolume, playing);
+  }, [sound, rainVolume, playing, analyser]);
   return {
     id,
     analyser,
+    sound, setSound, rainVolume, setRainVolume,
+    show, showFinished, stopShow,
+    startShow: (value: ActiveShow) => {
+      showRef.current = value;
+      setShow(value);
+      seek(0);
+      void play(value.tracks[0], value.tracks, true);
+    },
     flushListening,
     playing,
     time,

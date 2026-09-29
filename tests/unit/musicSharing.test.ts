@@ -2,8 +2,16 @@ import { describe, expect, it } from "vitest";
 import { standaloneAppRoute } from "../../app/standaloneAppRoute";
 import { musicShareUrl, shareableSong } from "../../src/apps/music/sharing";
 import type { CatalogTrack, Track } from "../../src/apps/music/model";
+import { openingView, readSharedStage } from "../../src/apps/music/performance";
 
 describe("online song sharing", () => {
+  it("round trips the stage without changing the shared catalog identity", () => {
+    const stage = { view: { ...openingView, camera: "front" as const } };
+    const url = new URL(musicShareUrl("online-song", "https://nova.example", stage));
+    expect(url.searchParams.get("song")).toBe("online-song");
+    expect(readSharedStage(url.hash)).toEqual(stage);
+    expect(readSharedStage("")).toBeNull();
+  });
   it("opens the music app and preserves the exact catalog identity", () => {
     const id = "七里香 & live/1";
     const url = new URL(musicShareUrl(id, "https://nova.example/?file=private#draft"));
