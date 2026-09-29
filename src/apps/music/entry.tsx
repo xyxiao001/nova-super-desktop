@@ -348,6 +348,9 @@ export default function MusicApp() {
       });
     }
   }
+  const downloadableTracks = catalog.filter(
+    (item) => !catalogTrackInLibrary(item, tracks) && downloads[item.id] === undefined,
+  );
   const sharedSong = catalog.find((item) => item.id === sharedSongId);
   useEffect(() => {
     if (!ready || !sharedSong || sharedPlaybackStarted.current) return;
@@ -834,6 +837,14 @@ export default function MusicApp() {
                 <span className="nm-eyebrow">CURATED FOR YOUR MOMENTS</span>
                 <h1>好音乐，值得留下。</h1>
                 <p>精选音乐与原始歌词，一起下载。离线也能完整聆听。</p>
+                <button
+                  className="nm-primary"
+                  disabled={!downloadableTracks.length}
+                  onClick={() => downloadableTracks.forEach((item) => void download(item))}
+                >
+                  <Icon name="download" size={17} />
+                  下载全部
+                </button>
               </div>
               {catalogError && <p role="alert">{catalogError}</p>}
               <div className="nm-catalog-grid">
@@ -940,32 +951,34 @@ export default function MusicApp() {
                   <p>
                     {current.artist} <span>· {current.album}</span>
                   </p>
-                  <div>
+                  <div className="nm-now-actions">
                     <FavoriteButton title={current.title} favorite={current.favorite} onToggle={() => toggleFavorite(current)} />
-                    {currentShareSong && <button className="nm-secondary" onClick={() => openSongShare(currentShareSong)}>分享歌曲 ↗</button>}
-                    <button
-                      className="nm-secondary"
-                      onClick={() => openEditor(current)}
-                    >
-                      <Icon name="edit" size={16} />
-                      搜索 / 替换歌词
-                    </button>
-                    <label className="nm-offset">
-                      歌词偏移
-                      <input
-                        aria-label="歌词偏移秒数"
-                        type="number"
-                        step="0.1"
-                        value={current.offset}
-                        onChange={(e) =>
-                          void updateTrack({
-                            ...current,
-                            offset: +e.target.value,
-                          }).catch((e) => notify(e.message))
-                        }
-                      />
-                      秒
-                    </label>
+                    <details className="nm-now-more">
+                      <summary aria-label="歌曲更多操作">••• 更多</summary>
+                      <div className="nm-song-menu">
+                        {currentShareSong && <button onClick={() => openSongShare(currentShareSong)}>分享歌曲 ↗</button>}
+                        <button onClick={() => openEditor(current)}>
+                          <Icon name="edit" size={16} />
+                          搜索 / 替换歌词
+                        </button>
+                        <label className="nm-offset">
+                          歌词偏移
+                          <input
+                            aria-label="歌词偏移秒数"
+                            type="number"
+                            step="0.1"
+                            value={current.offset}
+                            onChange={(e) =>
+                              void updateTrack({
+                                ...current,
+                                offset: +e.target.value,
+                              }).catch((e) => notify(e.message))
+                            }
+                          />
+                          秒
+                        </label>
+                      </div>
+                    </details>
                   </div>
                   <small>
                     {parsed.lines.some((l) => l.words.length)
