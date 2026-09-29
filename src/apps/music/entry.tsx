@@ -27,6 +27,9 @@ import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import { FloatingLyrics, LyricView } from "./LyricViews";
 import { LyricSearch } from "./LyricSearch";
 import { findTrackLyrics } from "./lrclib";
+import { FavoriteButton } from "./FavoriteButton";
+import { musicShareUrl, shareableSong } from "./sharing";
+import { copyShareLink } from "../../platform/apps/appShare";
 import { PosterStudio } from "./PosterStudio";
 import { ImmersiveStage } from "./ImmersiveStage";
 import { MonthlyReport } from "./MonthlyReport";
@@ -86,6 +89,11 @@ export default function MusicApp() {
   const [prefs, setPrefs] = useState(initialPreferences);
   const [ready, setReady] = useState(false);
   const [catalog, setCatalog] = useState<CatalogTrack[]>([]);
+  const [sharedSongId, setSharedSongId] = useState<string | null>(null);
+  const sharedDownloadStarted = useRef(false);
+  const sharedPlaybackStarted = useRef(false);
+  const [shareSong, setShareSong] = useState<CatalogTrack | null>(null);
+  const [copyResult, setCopyResult] = useState<"copied" | "manual" | null>(null);
   const [catalogError, setCatalogError] = useState("");
   const [page, setPage] = useState<Page>("library");
   const [query, setQuery] = useState("");
@@ -124,6 +132,9 @@ export default function MusicApp() {
   const parsedDraft = useMemo(() => parseLyrics(draft), [draft]);
   useEffect(() => {
     let active = true;
+    const songId = new URLSearchParams(location.search).get("song");
+    setSharedSongId(songId);
+    if (songId) setPage("now");
     const controller = new AbortController();
     void readLibrary()
       .then((d) => {
@@ -131,7 +142,7 @@ export default function MusicApp() {
           setTracks(d.tracks);
           setLoose(d.lyrics);
           setPrefs(d.prefs);
-          setPage(d.tracks.length ? "library" : "catalog");
+          setPage(songId ? "now" : d.tracks.length ? "library" : "catalog");
           setReady(true);
         }
       })
@@ -175,7 +186,7 @@ export default function MusicApp() {
       notify(`设置保存失败：${e.message}`),
     );
   };
-  useMusicShortcuts(isAppActive("music") && !!current && !editId, player, prefs.volume,
+  useMusicShortcuts(isAppActive("music") && !!current && !editId && !shareSong, player, prefs.volume,
     (volume) => updatePrefs({ ...prefs, volume }));
   const updateTrack = async (track: Track) => {
     await saveTracks([track]);
@@ -319,6 +330,27 @@ export default function MusicApp() {
       });
     }
   }
+  const sharedSong = catalog.find((item) => item.id === sharedSongId);
+  useEffect(() => {
+    if (!ready || !sharedSong || sharedPlaybackStarted.current) return;
+    const local = catalogTrackInLibrary(sharedSong, tracks);
+    if (local) {
+      sharedPlaybackStarted.current = true;
+      setPage("now");
+      void player.play(local.id, [local.id]);
+    } else if (!sharedDownloadStarted.current) {
+      sharedDownloadStarted.current = true;
+      void download(sharedSong);
+    }
+  }, [ready, sharedSong, tracks]);
+  const openSongShare = (song: CatalogTrack) => {
+    setShareSong(song);
+    setCopyResult(null);
+  };
+  const toggleFavorite = (track: Track) => {
+    void updateTrack({ ...track, favorite: !track.favorite }).catch((error) => notify(error.message));
+  };
+  const currentShareSong = current && shareableSong(current, catalog);
   const selectedPlaylist = prefs.playlists.find(
     (p) => page === `playlist:${p.id}`,
   );
@@ -655,23 +687,13 @@ export default function MusicApp() {
                     <span className="nm-album-cell">{t.album || "—"}</span>
                     <small>{timeLabel(t.duration)}</small>
                     <div className="nm-row-actions">
-                      <button
-                        aria-label={`${t.favorite ? "取消喜欢" : "喜欢"} ${t.title}`}
-                        className={t.favorite ? "selected" : ""}
-                        onClick={() =>
-                          void updateTrack({
-                            ...t,
-                            favorite: !t.favorite,
-                          }).catch((e) => notify(e.message))
-                        }
-                      >
-                        <Icon name="heart" size={17} />
-                      </button>
+                      <FavoriteButton title={t.title} favorite={t.favorite} onToggle={() => toggleFavorite(t)} />
                       <details>
                         <summary aria-label={`${t.title} 更多操作`}>
                           •••
                         </summary>
                         <div className="nm-song-menu">
+                          {shareableSong(t, catalog) && <button onClick={() => openSongShare(shareableSong(t, catalog)!)}>分享歌曲 ↗</button>}
                           <button onClick={() => openEditor(t)}>
                             编辑 / 关联歌词
                           </button>
@@ -795,6 +817,7 @@ export default function MusicApp() {
                         音频 + 逐字歌词 ·{" "}
                         {(t.bytes / 1024 / 1024).toFixed(1)} MB
                       </small>
+                      <div className="nm-catalog-actions">
                       {exists ? (
                         <button
                           className="nm-secondary"
@@ -830,6 +853,8 @@ export default function MusicApp() {
                           下载到资料库
                         </button>
                       )}
+                      <button className="nm-secondary" aria-label={`分享 ${t.title}`} onClick={() => openSongShare(t)}>↗</button>
+                      </div>
                     </article>
                   );
                 })}
@@ -861,6 +886,8 @@ export default function MusicApp() {
                     {current.artist} <span>· {current.album}</span>
                   </p>
                   <div>
+                    <FavoriteButton title={current.title} favorite={current.favorite} onToggle={() => toggleFavorite(current)} />
+                    {currentShareSong && <button className="nm-secondary" onClick={() => openSongShare(currentShareSong)}>分享歌曲 ↗</button>}
                     <button
                       className="nm-secondary"
                       onClick={() => openEditor(current)}
@@ -908,7 +935,18 @@ export default function MusicApp() {
           {page === "report" && (
             <MonthlyReport flush={player.flushListening} onError={notify} />
           )}
-          {(page === "now" || page === "poster") && !current && (
+          {page === "now" && !current && sharedSongId && (
+            <div className="nm-empty" role="status">
+              <Icon name="music" size={50} />
+              <h2>{sharedSong?.title ?? "分享的歌曲"}</h2>
+              <p>{sharedSong?.artist}</p>
+              <p>{catalogError || (sharedSong && downloads[sharedSong.id] !== undefined
+                ? `歌曲与歌词加载中 · ${downloads[sharedSong.id]}%`
+                : "正在准备歌曲与歌词…")}</p>
+              <small>加载完成后自动播放；若浏览器限制自动播放，请点击播放按钮。</small>
+            </div>
+          )}
+          {(page === "now" || page === "poster") && !current && !(page === "now" && sharedSongId) && (
             <div className="nm-empty">
               <Icon name={page === "poster" ? "poster" : "lyrics"} size={50} />
               <h2>先选一首歌吧。</h2>
@@ -1143,6 +1181,18 @@ export default function MusicApp() {
           </div>,
           document.body,
         )}
+      {shareSong && (
+        <div className="nm-modal-backdrop" onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); setShareSong(null); } }}>
+          <section className="nm-editor nm-share-dialog" role="dialog" aria-modal="true" aria-label="分享歌曲">
+            <header><h2>把这首歌分享给你</h2><button aria-label="关闭歌曲分享" onClick={() => setShareSong(null)}><Icon name="close" /></button></header>
+            <strong>{shareSong.title} · {shareSong.artist}</strong>
+            <p>打开链接，直接进入这首歌的歌词播放页。</p>
+            <input aria-label="歌曲分享链接" autoFocus readOnly value={musicShareUrl(shareSong.id, location.origin)} onFocus={(event) => event.currentTarget.select()} />
+            <button className="nm-primary" onClick={() => void copyShareLink(musicShareUrl(shareSong.id, location.origin)).then(setCopyResult).catch((error) => notify(error.message))}>复制歌曲链接</button>
+            {copyResult && <small role="status">{copyResult === "copied" ? "链接已复制" : "请选择上方链接，按 Ctrl / ⌘ + C 复制。"}</small>}
+          </section>
+        </div>
+      )}
       {editId && (
         <div className="nm-modal-backdrop">
           <section
