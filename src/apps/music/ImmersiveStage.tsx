@@ -49,7 +49,9 @@ export function ImmersiveStage({
     const root = stage.current!;
     const data = new Uint8Array(analyser?.frequencyBinCount ?? 128);
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const compact = matchMedia("(max-width: 680px), (max-width: 932px) and (pointer: coarse)");
     let frame = 0;
+    let lastPaint = 0;
     const draw = (live: boolean) => {
       if (live && analyser) analyser.getByteFrequencyData(data);
       else data.fill(0);
@@ -70,20 +72,26 @@ export function ImmersiveStage({
       }
       root.style.setProperty("--nm-energy", String(energy));
     };
-    const tick = () => {
-      draw(true);
+    const tick = (now: number) => {
+      if (!compact.matches || now - lastPaint >= 50) {
+        draw(true);
+        lastPaint = now;
+      }
       frame = requestAnimationFrame(tick);
     };
     const update = () => {
       cancelAnimationFrame(frame);
-      if (playing && analyser && !motion.matches) tick();
-      else if (!playing || motion.matches) draw(false);
+      if (playing && analyser && !motion.matches && (!compact.matches || spectrumVisible))
+        frame = requestAnimationFrame(tick);
+      else draw(false);
     };
     update();
     motion.addEventListener("change", update);
+    compact.addEventListener("change", update);
     return () => {
       cancelAnimationFrame(frame);
       motion.removeEventListener("change", update);
+      compact.removeEventListener("change", update);
       root.style.setProperty("--nm-energy", "0");
     };
   }, [analyser, playing, spectrumVisible]);

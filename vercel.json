@@ -5,6 +5,10 @@
   "outputDirectory": "dist-vercel",
   "rewrites": [
     {
+      "source": "/books/:path*",
+      "destination": "https://nova-books.pages.dev/books/:path*"
+    },
+    {
       "source": "/games/youtd2/index.pck",
       "destination": "https://media.githubusercontent.com/media/xyxiao001/nova-super-desktop/main/public/games/youtd2/index.pck"
     },

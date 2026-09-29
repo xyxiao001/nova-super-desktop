@@ -1,15 +1,26 @@
 {
   "books": [
     {
-      "id": "fortress-besieged",
-      "title": "围城",
-      "author": "钱钟书",
-      "description": "在机锋与讽刺之间，观察婚姻、知识分子与人生困局。",
+      "id": "coiling-dragon",
+      "title": "盘龙",
+      "author": "我吃西红柿",
+      "description": "少年林雷从乌山镇出发，在魔法与斗气的世界中追寻强者之路。",
       "cover": "jade",
-      "file": "fortress-besieged.txt",
-      "url": "/books/fortress-besieged.txt",
-      "size": 655239,
-      "version": "e0f2bf1a27f4"
+      "file": "coiling-dragon.txt",
+      "url": "/books/coiling-dragon.txt",
+      "size": 6340106,
+      "version": "c05d3ba1771b"
+    },
+    {
+      "id": "global-martial-arts",
+      "title": "全球高武",
+      "author": "老鹰吃小鸡",
+      "description": "地窟入侵、武道崛起，方平为生存与守护踏上武道之路。",
+      "cover": "amber",
+      "file": "global-martial-arts.txt",
+      "url": "/books/global-martial-arts.txt",
+      "size": 18649683,
+      "version": "b648dafb01d1"
     },
     {
       "id": "journey-under-the-midnight-sun",
@@ -21,6 +32,17 @@
       "url": "/books/journey-under-the-midnight-sun.txt",
       "size": 935843,
       "version": "803868aff235"
+    },
+    {
+      "id": "lord-of-the-mysteries",
+      "title": "诡秘之主",
+      "author": "爱潜水的乌贼",
+      "description": "在蒸汽机械与非凡力量交织的世界中，揭开历史与命运的迷雾。",
+      "cover": "slate",
+      "file": "lord-of-the-mysteries.txt",
+      "url": "/books/lord-of-the-mysteries.txt",
+      "size": 9533451,
+      "version": "62616ec0acd6"
     },
     {
       "id": "rich-dad-poor-dad",
@@ -54,6 +76,17 @@
       "url": "/books/three-body.txt",
       "size": 2679323,
       "version": "8be9d8a921a5"
+    },
+    {
+      "id": "xian-ni",
+      "title": "仙逆",
+      "author": "耳根",
+      "description": "平凡少年王林踏入修真世界，逆境求道的仙侠长篇。",
+      "cover": "slate",
+      "file": "xian-ni.txt",
+      "url": "/books/xian-ni.txt",
+      "size": 21333153,
+      "version": "7bbdd052d3be"
     },
     {
       "id": "yang-shen",

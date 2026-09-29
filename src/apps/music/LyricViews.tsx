@@ -66,7 +66,7 @@ export function LyricView({
             disabled={!Number.isFinite(line.start)}
             onClick={() => seek(line.start)}
           >
-            <LyricText line={line} time={index === i ? time : line.start - 1} />
+            {index === i ? <LyricText line={line} time={time} /> : line.text || "♪"}
           </button>
         ))}
         {!lyrics.lines.length && (

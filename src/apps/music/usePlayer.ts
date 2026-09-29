@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Preferences, Track } from "./model";
+import { connectMediaSession, publishMediaTrack } from "./mediaSession";
 import {
   addListeningTime,
   ListeningMeter,
@@ -135,11 +136,22 @@ export function usePlayer(
     }
     void play(ids[(next + ids.length) % ids.length]);
   }
-  const actionRef = useRef({ step, onError });
-  actionRef.current = { step, onError };
+  const actionRef = useRef({ step, play, pause, seek, onError });
+  actionRef.current = { step, play, pause, seek, onError };
+  const selected = tracks.find((track) => track.id === id);
+  useEffect(() => {
+    if (selected) return publishMediaTrack(navigator.mediaSession, selected);
+  }, [selected?.id, selected?.title, selected?.artist, selected?.album, selected?.cover]);
   useEffect(() => {
     const a = new Audio();
     audio.current = a;
+    const disconnectMediaSession = connectMediaSession(a, navigator.mediaSession, {
+      play: () => { if (current.current) void actionRef.current.play(current.current); },
+      pause: () => actionRef.current.pause(),
+      previous: () => actionRef.current.step(-1),
+      next: () => actionRef.current.step(1),
+      seek: (value) => actionRef.current.seek(value),
+    });
     const meter = new ListeningMeter();
     let advancing = false;
     let sinceFlush = 0;
@@ -187,8 +199,13 @@ export function usePlayer(
     const pageHide = () => persist();
     window.addEventListener("pagehide", pageHide);
     let frame = 0;
-    const tick = () => {
-      setTime(a.currentTime);
+    const compact = matchMedia("(max-width: 680px), (max-width: 932px) and (pointer: coarse)");
+    let lastPaint = 0;
+    const tick = (now: number) => {
+      if (!compact.matches || now - lastPaint >= 50) {
+        setTime(a.currentTime);
+        lastPaint = now;
+      }
       frame = requestAnimationFrame(tick);
     };
     a.onplay = () => {
@@ -238,6 +255,7 @@ export function usePlayer(
       a.pause();
       a.removeAttribute("src");
       a.load();
+      disconnectMediaSession();
       audio.current = null;
       if (url.current) URL.revokeObjectURL(url.current);
       current.current = null;

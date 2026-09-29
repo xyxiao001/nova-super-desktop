@@ -4,6 +4,34 @@ import path from "node:path";
 
 const booksDirectory = path.resolve("public/books");
 const curated = {
+  "global-martial-arts.txt": {
+    id: "global-martial-arts",
+    title: "全球高武",
+    author: "老鹰吃小鸡",
+    description: "地窟入侵、武道崛起，方平为生存与守护踏上武道之路。",
+    cover: "amber",
+  },
+  "lord-of-the-mysteries.txt": {
+    id: "lord-of-the-mysteries",
+    title: "诡秘之主",
+    author: "爱潜水的乌贼",
+    description: "在蒸汽机械与非凡力量交织的世界中，揭开历史与命运的迷雾。",
+    cover: "slate",
+  },
+  "coiling-dragon.txt": {
+    id: "coiling-dragon",
+    title: "盘龙",
+    author: "我吃西红柿",
+    description: "少年林雷从乌山镇出发，在魔法与斗气的世界中追寻强者之路。",
+    cover: "jade",
+  },
+  "xian-ni.txt": {
+    id: "xian-ni",
+    title: "仙逆",
+    author: "耳根",
+    description: "平凡少年王林踏入修真世界，逆境求道的仙侠长篇。",
+    cover: "slate",
+  },
   "three-body.txt": {
     id: "three-body",
     title: "三体",
@@ -31,13 +59,6 @@ const curated = {
     author: "罗伯特·T·清崎",
     description: "从两种截然不同的金钱观出发，重新理解资产、负债与财务选择。",
     cover: "amber",
-  },
-  "fortress-besieged.txt": {
-    id: "fortress-besieged",
-    title: "围城",
-    author: "钱钟书",
-    description: "在机锋与讽刺之间，观察婚姻、知识分子与人生困局。",
-    cover: "jade",
   },
   "strongest-sect.txt": {
     id: "strongest-sect",

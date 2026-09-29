@@ -344,7 +344,7 @@ export default function MusicApp() {
   ];
   return (
     <div
-      className={`nova-music nm-${prefs.theme} nm-glass`}
+      className={`nova-music nm-${prefs.theme} nm-glass${page === "now" ? " nm-page-now" : ""}`}
       style={{
         "--nm-cover-image": ambientCoverUrl ? `url("${ambientCoverUrl}")` : "none",
       } as CSSProperties}

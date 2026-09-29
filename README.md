@@ -251,6 +251,17 @@ docs/images/                   # README 截图
 
 Vercel 构建中，YouTD 2 的 `index.pck` 和 `index.side.wasm` 通过 `vercel.json` 转发至 GitHub LFS 媒体地址，不重复上传至静态构建输出。Fork 后如需使用自己的资源仓库，请同步修改这两条转发地址。
 
+小说资源独立部署在 Cloudflare Pages 项目 `nova-books`（`https://nova-books.pages.dev`）。Vercel 将 `/books/*` 同源转发至 Pages，构建输出移除 `books/`；本地开发继续使用 `public/books/` 中的源文件。下载内容与阅读进度仍由阅读器保存到设备本地。
+
+更新书库时，将 TXT 放入 `public/books/`，在 `scripts/generate-book-catalog.mjs` 中填写书籍信息并运行 `npm run books:catalog`。将 `books/` 目录（包含 `catalog.json`）作为部署根目录下的子目录，上传到该 Pages 项目的新生产部署；部署根目录的 `_headers` 文件使用以下内容，让目录更新立即可见：
+
+```text
+/books/catalog.json
+  Cache-Control: no-store
+```
+
+单个文件不得超过 Pages 的 25 MiB 限制。`public/books/` 保留为书库源文件；更新资源需要单独部署 Pages，推送 NOVA 代码不会上传小说。
+
 浏览器本地数据按网站域名隔离。部署到新域名后，原域名下的桌面文件、阅读进度和游戏存档不会自动迁移。
 
 当前在线版本：[nova-super-desktop.vercel.app](https://nova-super-desktop.vercel.app/)

@@ -1,4 +1,4 @@
-import { stat, unlink } from "node:fs/promises";
+import { rm, stat, unlink } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const proxiedAssets = [
@@ -15,4 +15,6 @@ for (const asset of proxiedAssets) {
   await unlink(assetUrl);
 }
 
-console.log(`Prepared ${proxiedAssets.length} proxied YouTD 2 assets for Vercel`);
+await rm(new URL("../dist-vercel/books", import.meta.url), { recursive: true });
+
+console.log(`Prepared ${proxiedAssets.length} proxied YouTD 2 assets and the Pages-hosted book library for Vercel`);

@@ -2044,19 +2044,224 @@
     padding: 24px 22px 16px;
   }
 }
-@media (max-width: 620px) {
+@media (max-width: 680px), (max-width: 932px) and (pointer: coarse) {
   .nova-music.nm-glass {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 0;
     padding: 0;
-    gap: 6px;
+  }
+  /* Static surfaces avoid large, repeatedly composited blurred cover layers. */
+  .nm-glass::before,
+  .nm-glass .nm-cover-atmosphere {
+    display: none;
+  }
+  .nm-glass :is(.nm-sidebar, .nm-main, .nm-player) {
+    background: var(--nm-bg);
+    backdrop-filter: none;
+    border-radius: 0;
   }
   .nm-glass .nm-sidebar {
-    padding: 16px 4px;
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 14px;
+    padding: 8px 16px 0;
+    min-height: 0;
+    overflow: visible;
+    border-bottom: 1px solid var(--nm-line);
+  }
+  .nm-sidebar .nm-brand,
+  .nm-sidebar .nm-nav-label,
+  .nm-sidebar .nm-playlist-heading,
+  .nm-sidebar-bottom > small {
+    display: none;
+  }
+  .nm-glass .nm-search {
+    display: flex;
+    grid-row: 1;
+    grid-column: 1;
+    min-width: 0;
+    margin: 0;
+    min-height: 40px;
+  }
+  .nm-glass .nm-sidebar-bottom {
+    grid-row: 1;
+    grid-column: 2;
+    padding: 0;
+    margin: 0;
+  }
+  .nm-glass .nm-themes {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .nm-sidebar nav {
+    display: flex;
+    flex-direction: row;
+    grid-column: 1 / -1;
+    min-width: 0;
+    overflow-x: auto;
+    gap: 6px;
+    scrollbar-width: none;
+  }
+  .nm-sidebar nav:empty {
+    display: none;
+  }
+  .nm-sidebar nav > button {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+    margin: 0;
+    border-radius: 10px 10px 0 0;
+  }
+  .nm-sidebar nav svg {
+    width: 16px;
+    height: 16px;
+  }
+  .nm-sidebar nav small {
+    display: none;
+  }
+  .nm-page-now .nm-search,
+  .nm-page-now .nm-sidebar-bottom {
+    display: none;
+  }
+  .nm-glass .nm-main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .nm-topbar {
+    height: 44px;
+    padding: 0 16px;
+  }
+  .nm-topbar > span {
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+  .nm-topbar .nm-secondary {
+    min-height: 40px;
+    font-size: 11px;
+  }
+  .nm-content {
+    padding: 16px;
+  }
+  .nm-library-hero {
+    min-height: 150px;
   }
   .nm-glass .nm-player {
-    padding: 12px;
+    grid-column: 1;
+    grid-row: 3;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
+    gap: 6px 12px;
+    border-top: 1px solid var(--nm-line);
   }
+  .nm-playing-track {
+    min-height: 40px;
+  }
+  .nm-playing-track .nm-art {
+    width: 36px;
+    height: 36px;
+  }
+  .nm-playing-track strong { font-size: 13px; }
+  .nm-playing-track small { font-size: 11px; margin-top: 3px; }
+  .nm-player-right {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 4px;
+  }
+  .nm-player-right button { width: 40px; height: 40px; }
+  .nm-player-right > input,
+  .nm-player-right > svg { display: none; }
+  .nm-player-center {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: stretch;
+  }
+  .nm-playback-buttons {
+    height: 44px;
+    margin: 0;
+    gap: 20px;
+  }
+  .nm-playback-buttons > button,
+  .nm-playback-buttons > button:first-child,
+  .nm-playback-buttons > button:last-child {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+  }
+  .nm-seek { flex: auto; min-height: 28px; }
+  .nm-seek span { font-size: 10px; }
+  .nm-seek input { min-width: 0; min-height: 28px; }
   .nm-glass .nm-immersive {
-    padding: 20px 16px 14px;
+    height: 100%;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 20px 8px;
   }
+  .nm-immersive .nm-now {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .nm-immersive .nm-now-art,
+  .nm-immersive:not(.nm-spectrum-hidden) .nm-now-art {
+    max-width: none;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 5px 14px;
+    text-align: left;
+  }
+  .nm-now-art .nm-now-eyebrow { display: none; }
+  .nm-immersive .nm-now-art .nm-art {
+    width: 64px;
+    height: 64px;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    box-shadow: none;
+  }
+  .nm-immersive .nm-now-art h1 {
+    grid-column: 2;
+    margin: 3px 0 0;
+    font-size: 20px;
+  }
+  .nm-immersive .nm-now-art p {
+    grid-column: 2;
+    margin: 0;
+    font-size: 12px;
+  }
+  .nm-now-art > div {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .nm-immersive .nm-now-art .nm-secondary { min-height: 40px; }
+  .nm-immersive .nm-offset { font-size: 11px; }
+  .nm-immersive .nm-offset input { min-height: 36px; }
+  .nm-immersive .nm-now-art > small { grid-column: 1 / -1; margin: 0; }
+  .nm-immersive .nm-lyrics-wrap {
+    flex: 1;
+    min-height: 140px;
+    height: auto;
+    width: 100%;
+  }
+  .nm-immersive .nm-lyrics { padding: 50px 0 100px; }
+  .nm-immersive .nm-lyrics > button { font-size: 22px; padding: 12px 0; }
+  .nm-spectrum { margin-top: 4px; padding-top: 0; }
+  .nm-spectrum-toggle { min-height: 36px; }
+  .nm-queue { inset: 0 0 0 auto; width: min(340px, 100%); }
+  .nm-modal-backdrop { padding: 8px; backdrop-filter: none; }
+  .nm-editor { padding: 16px; gap: 12px; max-height: 100%; }
 }

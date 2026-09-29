@@ -76,7 +76,7 @@ export const DEFAULT_READER_PREFERENCES: ReaderPreferences = {
   animation: "page",
 };
 
-const CHAPTER_PATTERN = /^(?:第[零一二三四五六七八九十百千万〇两0-9]+(?:卷(?:\s+第[零一二三四五六七八九十百千万〇两0-9]+章)?|[章节回篇部])[^\n]{0,36}|序(?:章|言)?|前言|楔子|引子|后记|尾声)\s*$/gm;
+const CHAPTER_PATTERN = /^(?:第[零一二三四五六七八九十百千万〇两0-9]+(?:卷(?:\s+第[零一二三四五六七八九十百千万〇两0-9]+章)?|[章节回篇部集])[^\n]{0,36}|序(?:章|言)?|前言|楔子|引子|后记|尾声)\s*$/gm;
 
 export function normalizeReaderText(content: string) {
   return content.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
