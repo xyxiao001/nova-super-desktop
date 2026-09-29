@@ -20,6 +20,11 @@ export type Track = {
 };
 export type LooseLyric = { id: string; name: string; text: string };
 export type Playlist = { id: string; name: string; tracks: string[]; show?: PlaylistShow };
+export type PlaybackBookmark = {
+  trackId: string;
+  time: number;
+  queue: string[];
+};
 export type Preferences = {
   volume: number;
   mode: "order" | "repeat" | "one" | "shuffle";

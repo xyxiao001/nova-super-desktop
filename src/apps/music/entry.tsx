@@ -9,6 +9,7 @@ import {
   type CatalogTrack,
   type LooseLyric,
   type Preferences,
+  type PlaybackBookmark,
   type Track,
 } from "./model";
 import {
@@ -92,6 +93,7 @@ export default function MusicApp() {
   const [loose, setLoose] = useState<LooseLyric[]>([]);
   const [prefs, setPrefs] = useState(initialPreferences);
   const [ready, setReady] = useState(false);
+  const [lastPlayback, setLastPlayback] = useState<PlaybackBookmark>();
   const [catalog, setCatalog] = useState<CatalogTrack[]>([]);
   const [sharedSongId, setSharedSongId] = useState<string | null>(null);
   const sharedDownloadStarted = useRef(false);
@@ -130,6 +132,7 @@ export default function MusicApp() {
   }, [message]);
   const player = usePlayer(tracks, prefs, notify);
   const current = tracks.find((t) => t.id === player.id);
+  const resumeTrack = tracks.find((t) => t.id === lastPlayback?.trackId);
   const ambientCoverUrl = useBlobUrl(current?.cover);
   const parsed = useMemo(
     () => parseLyrics(current?.lyrics ?? "", current?.duration),
@@ -160,6 +163,7 @@ export default function MusicApp() {
           setTracks(d.tracks);
           setLoose(d.lyrics);
           setPrefs(d.prefs);
+          setLastPlayback(d.playback);
           setPage(songId ? "now" : d.tracks.length ? "library" : "catalog");
           setReady(true);
         }
@@ -191,6 +195,7 @@ export default function MusicApp() {
           setTracks(d.tracks);
           setLoose(d.lyrics);
           setPrefs(d.prefs);
+          setLastPlayback(d.playback);
         })
         .catch((e) => notify(e.message));
     };
@@ -281,6 +286,7 @@ export default function MusicApp() {
       setLoose(saved.lyrics);
       setTracks(saved.tracks);
       setPrefs(saved.prefs);
+      setLastPlayback(saved.playback);
       notify(
         `已导入 ${imported.length - saved.mergedCount} 首音乐、${lyrics.length} 份歌词${saved.mergedCount ? `，合并 ${saved.mergedCount} 首重复音乐` : ""}，自动关联 ${matched} 首${ambiguous ? `；${ambiguous} 首有多个候选，请在歌词管理选择` : ""}`,
       );
@@ -336,6 +342,7 @@ export default function MusicApp() {
       setTracks(saved.tracks);
       setLoose(saved.lyrics);
       setPrefs(saved.prefs);
+      setLastPlayback(saved.playback);
       notify(`「${item.title}」与歌词已下载，可离线播放`);
     } catch (e) {
       if (!controller.signal.aborted) notify((e as Error).message);
@@ -412,7 +419,7 @@ export default function MusicApp() {
     );
   const deleteSong = async (t: Track) => {
     if (player.id === t.id) player.stop();
-    await removeTrack(t.id);
+    setLastPlayback(await removeTrack(t.id));
     setTracks((v) => v.filter((a) => a.id !== t.id));
     player.setQueue((q) => q.filter((id) => id !== t.id));
     updatePrefs({
@@ -643,6 +650,15 @@ export default function MusicApp() {
         <main
           className={`nm-content ${page === "now" ? "nm-content-now" : ""}`}
         >
+          {page === "library" && !current && resumeTrack && lastPlayback && (
+            <section className="nm-resume" aria-label="上次听到这里">
+              <Artwork track={resumeTrack} />
+              <div><small>上次听到这里 · {timeLabel(lastPlayback.time)}</small><strong>{resumeTrack.title}</strong><span>{resumeTrack.artist}</span></div>
+              <button className="nm-primary" onClick={() => void player.resume(lastPlayback)}>
+                <Icon name="play" size={17} />继续听
+              </button>
+            </section>
+          )}
           {(["library", "favorites"].includes(page) ||
             selectedPlaylist ||
             (page === "albums" && album !== null)) && (

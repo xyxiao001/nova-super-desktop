@@ -65,7 +65,7 @@ const provider: StorageProvider = {
           0,
         ) +
         new TextEncoder().encode(
-          JSON.stringify({ lyrics: d.lyrics, prefs: d.prefs }),
+          JSON.stringify({ lyrics: d.lyrics, prefs: d.prefs, playback: d.playback }),
         ).length,
     };
   },

@@ -334,6 +334,35 @@
   padding-bottom: 28px;
   border-bottom: 1px solid var(--nm-line);
 }
+.nm-resume {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--nm-line);
+  border-radius: 16px;
+  background: var(--nm-hover);
+}
+.nm-resume > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.nm-resume strong,
+.nm-resume span,
+.nm-resume small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nm-resume small,
+.nm-resume > div > span {
+  color: var(--nm-muted);
+  font-size: 11px;
+}
+.nm-resume > button { flex-shrink: 0; }
 .nm-library-hero p {
   color: var(--nm-muted);
   font-size: 12px;

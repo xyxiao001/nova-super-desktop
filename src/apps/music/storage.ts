@@ -4,17 +4,19 @@ import {
   type Track,
   type Preferences,
   type LooseLyric,
+  type PlaybackBookmark,
 } from "./model";
 import { audioFingerprint, mergeDuplicateTracks } from "./deduplication";
 type MusicLibrary = {
   tracks: Track[];
   lyrics: LooseLyric[];
   prefs: Preferences;
+  playback?: PlaybackBookmark;
 };
 interface MusicDB extends DBSchema {
   tracks: { key: string; value: Track };
   lyrics: { key: string; value: LooseLyric };
-  settings: { key: string; value: Preferences };
+  settings: { key: string; value: Preferences | PlaybackBookmark };
 }
 const db = () =>
   openDB<MusicDB>("nova-music", 1, {
@@ -51,7 +53,8 @@ export async function saveTracks(incoming: Track[]) {
   const tx = d.transaction(["tracks", "settings", "lyrics"], "readwrite");
   const stored = await tx.objectStore("tracks").getAll();
   const prefs =
-    (await tx.objectStore("settings").get("preferences")) ?? initialPreferences;
+    (await tx.objectStore("settings").get("preferences") as Preferences | undefined) ?? initialPreferences;
+  let playback = await tx.objectStore("settings").get("playback") as PlaybackBookmark | undefined;
   const combined = new Map(
     stored.map((track) => [
       track.id,
@@ -72,12 +75,21 @@ export async function saveTracks(incoming: Track[]) {
     for (const lyric of merged.extraLyrics) tx.objectStore("lyrics").put(lyric);
   }
   const lyrics = await tx.objectStore("lyrics").getAll();
+  if (playback && merged.aliases.size) {
+    playback = {
+      ...playback,
+      trackId: merged.aliases.get(playback.trackId) ?? playback.trackId,
+      queue: [...new Set(playback.queue.map((id) => merged.aliases.get(id) ?? id))],
+    };
+    tx.objectStore("settings").put(playback, "playback");
+  }
   await tx.done;
   d.close();
   return {
     tracks: merged.tracks,
     lyrics,
     prefs: merged.prefs,
+    playback,
     mergedCount: merged.aliases.size,
   };
 }
@@ -95,7 +107,23 @@ export async function savePreferences(prefs: Preferences) {
 }
 export async function removeTrack(id: string) {
   const d = await db();
-  await d.delete("tracks", id);
+  const tx = d.transaction(["tracks", "settings"], "readwrite");
+  await tx.objectStore("tracks").delete(id);
+  let playback = await tx.objectStore("settings").get("playback") as PlaybackBookmark | undefined;
+  if (playback?.trackId === id) {
+    playback = undefined;
+    await tx.objectStore("settings").delete("playback");
+  } else if (playback) {
+    playback = { ...playback, queue: playback.queue.filter((trackId) => trackId !== id) };
+    await tx.objectStore("settings").put(playback, "playback");
+  }
+  await tx.done;
+  d.close();
+  return playback;
+}
+export async function savePlayback(playback: PlaybackBookmark) {
+  const d = await db();
+  await d.put("settings", playback, "playback");
   d.close();
 }
 export async function replaceLibrary(
@@ -108,6 +136,7 @@ export async function replaceLibrary(
   for (const t of value.tracks) tx.objectStore("tracks").put(t);
   for (const l of value.lyrics) tx.objectStore("lyrics").put(l);
   tx.objectStore("settings").put(value.prefs, "preferences");
+  if (value.playback) tx.objectStore("settings").put(value.playback, "playback");
   await tx.done;
   d.close();
 }

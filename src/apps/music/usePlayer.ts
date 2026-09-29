@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Preferences, Track } from "./model";
+import type { PlaybackBookmark, Preferences, Track } from "./model";
+import { savePlayback } from "./storage";
+import { createPlaybackResume } from "./playbackResume";
 import { connectMediaSession, publishMediaTrack } from "./mediaSession";
 import { createListeningEffects, type SoundPreset } from "./listeningEffects";
 import { scheduleShowGain, type ActiveShow } from "./show";
@@ -19,6 +21,7 @@ export function usePlayer(
 ) {
   const instance = useWindowInstance();
   const audio = useRef<HTMLAudioElement | null>(null);
+  const resumePosition = useRef<ReturnType<typeof createPlaybackResume> | null>(null);
   const graph = useRef<{
     context: AudioContext;
     gain: GainNode;
@@ -77,7 +80,7 @@ export function usePlayer(
   const [queue, setQueue] = useState<string[]>([]);
   const latest = useRef({ tracks, prefs, queue });
   latest.current = { tracks, prefs, queue };
-  async function play(trackId: string, ids?: string[], fromShow = false) {
+  async function play(trackId: string, ids?: string[], fromShow = false, startAt?: number) {
     const a = audio.current;
     if (!a) return;
     const track = latest.current.tracks.find((t) => t.id === trackId);
@@ -85,10 +88,10 @@ export function usePlayer(
     clearIntervalTimer();
     if (ids && !fromShow) stopShow();
     setShowFinished(false);
-    if (ids) setQueue(ids);
     const token = ++intent.current;
     if (current.current !== trackId) {
       a.pause();
+      resumePosition.current?.clear();
       if (url.current) URL.revokeObjectURL(url.current);
       url.current = URL.createObjectURL(track.audio);
       a.src = url.current;
@@ -96,6 +99,14 @@ export function usePlayer(
       setId(trackId);
       setTime(0);
       setDuration(track.duration);
+    }
+    if (ids) {
+      latest.current.queue = ids;
+      setQueue(ids);
+    }
+    if (startAt !== undefined) {
+      resumePosition.current?.seekWhenReady(startAt);
+      setTime(startAt);
     }
     try {
       if (!graph.current) {
@@ -126,6 +137,7 @@ export function usePlayer(
     clearIntervalTimer();
     setShowFinished(false);
     if (audio.current) {
+      resumePosition.current?.clear();
       audio.current.currentTime = value;
       setTime(value);
     }
@@ -138,6 +150,7 @@ export function usePlayer(
   function stop() {
     stopShow();
     pause();
+    resumePosition.current?.clear();
     current.current = null;
     setId(null);
     setTime(0);
@@ -201,6 +214,16 @@ export function usePlayer(
   useEffect(() => {
     const a = new Audio();
     audio.current = a;
+    const resume = createPlaybackResume(a);
+    resumePosition.current = resume;
+    const persistPlayback = () => {
+      if (!current.current) return;
+      void savePlayback({
+        trackId: current.current,
+        time: resume.position(),
+        queue: [...latest.current.queue],
+      }).catch((error) => actionRef.current.onError(`播放位置保存失败：${error.message}`));
+    };
     const disconnectMediaSession = connectMediaSession(a, navigator.mediaSession, {
       play: () => { if (current.current) void actionRef.current.play(current.current); },
       pause: () => actionRef.current.pause(),
@@ -225,6 +248,7 @@ export function usePlayer(
     sampleListening.current = capture;
     const persist = () => {
       sinceFlush = 0;
+      persistPlayback();
       void flushListening().catch((error) =>
         actionRef.current.onError(`听歌记录保存失败：${error.message}`),
       );
@@ -236,6 +260,7 @@ export function usePlayer(
       persist();
     };
     a.onplaying = () => {
+      persistPlayback();
       scheduleEnvelope();
       meter.reset(Date.now(), a.currentTime);
       advancing = true;
@@ -283,6 +308,7 @@ export function usePlayer(
       setTime(a.currentTime);
       meter.reset(Date.now(), a.currentTime);
       advancing = !a.paused;
+      persistPlayback();
     };
     a.onended = () => {
       halt();
@@ -298,6 +324,8 @@ export function usePlayer(
       unsubscribe();
       halt();
       sampleListening.current = () => {};
+      resume.dispose();
+      resumePosition.current = null;
       window.removeEventListener("pagehide", pageHide);
       window.removeEventListener("nova-music-history-changed", resetHistory);
       a.onplaying = null;
@@ -363,6 +391,7 @@ export function usePlayer(
     queue,
     setQueue,
     play,
+    resume: (bookmark: PlaybackBookmark) => play(bookmark.trackId, bookmark.queue, false, bookmark.time),
     pause,
     stop,
     seek,
