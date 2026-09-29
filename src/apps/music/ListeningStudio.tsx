@@ -18,6 +18,9 @@ export function ListeningStudio({ score, onChange, onSave, track, cover, lyrics,
   show: ActiveShow | null; showFinished: boolean; onStopShow: () => void;
 }) {
   const { view } = score;
+  const cameraNames = view.scene === "concert" ? ["前排", "看台", "全景"]
+    : view.scene === "vinyl" ? ["特写", "唱机", "全貌"]
+    : view.scene === "space" ? ["近地", "月面", "远眺"] : ["近景", "窗边", "远景"];
   const changeView = (patch: Partial<StageView>) => onChange({ view: { ...view, ...patch } });
 
   return <div className="nm-listening-studio">
@@ -26,13 +29,13 @@ export function ListeningStudio({ score, onChange, onSave, track, cover, lyrics,
         {Object.entries(sceneLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
       </select>
       <div className="nm-studio-cameras" role="group" aria-label="舞台机位">
-        {cameras.map((camera) => <button key={camera.id} aria-pressed={view.camera === camera.id} onClick={() => changeView({ camera: camera.id })}>{camera.label}</button>)}
+        {cameras.map((camera, index) => <button key={camera.id} aria-pressed={view.camera === camera.id} onClick={() => changeView({ camera: camera.id })}>{cameraNames[index]}</button>)}
       </div>
       <details className="nm-studio-settings">
         <summary>氛围设置</summary>
         <div className="nm-studio-settings-panel">
-          <header><strong>让此刻更合心意</strong><small>灯色与声音</small></header>
-          <label>灯色<select aria-label="舞台灯色" value={view.palette} onChange={(e) => changeView({ palette: e.target.value as StageView["palette"] })}>
+          <header><strong>让此刻更合心意</strong><small>{view.scene === "concert" ? "灯色与声音" : "光色与声音"}</small></header>
+          <label>{view.scene === "concert" ? "灯色" : "光色"}<select aria-label="舞台灯色" value={view.palette} onChange={(e) => changeView({ palette: e.target.value as StageView["palette"] })}>
             <option value="ice">冰蓝</option><option value="violet">紫夜</option><option value="rose">玫瑰</option>
           </select></label>
           <label>声音空间<select aria-label="声音空间" value={sound} onChange={(e) => onSoundChange(e.target.value as SoundPreset)}>{Object.entries(soundLabels).map(([id,label]) => <option key={id} value={id}>{label}</option>)}</select></label>

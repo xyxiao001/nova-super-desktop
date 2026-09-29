@@ -1,36 +1,42 @@
-import { useRef, type CSSProperties } from "react";
+import { lazy, Suspense } from "react";
 import { activeLine, type Lyrics } from "./lyrics";
 import { LyricText } from "./LyricViews";
-import { useStageAudio } from "./ConcertStage";
 import { sceneLabels, type StageView } from "./performance";
+
+const PlaceCanvas = lazy(() => import("./PlaceCanvas"));
+const editions = { concert: "", train: "01 / COASTAL EXPRESS", rain: "02 / SLOW HOURS", vinyl: "03 / THE LISTENING ARCHIVE", space: "04 / LUNAR TRANSMISSION" };
+const invitations = { concert: "", train: "下一站，日落。", rain: "为这一首，留一盏灯。", vinyl: "SIDE A — 33⅓ RPM", space: "来自地球的声音" };
 
 export function ListeningRoom({ view, analyser, playing, title, artist, cover, lyrics, time }: {
   view: StageView; analyser: AnalyserNode | null; playing: boolean;
   title: string; artist: string; cover: string; lyrics: Lyrics; time: number;
 }) {
-  const root = useRef<HTMLElement>(null);
-  useStageAudio(root, analyser, playing);
   const index = activeLine(lyrics.lines, time);
   const line = lyrics.lines[index];
-  return <section ref={root} className="nm-room" data-scene={view.scene} data-camera={view.camera} data-palette={view.palette} data-playing={playing} aria-label={sceneLabels[view.scene]}>
-    <header><small>NOVA / LISTENING PLACES</small><span>{sceneLabels[view.scene]}</span></header>
-    <div className="nm-room-landscape" aria-hidden="true">
-      <div className="nm-room-moon" />
-      <div className="nm-room-skyline">
-        {Array.from({length: 22}, (_, i) => <i key={i} style={{"--building-height": `${20 + (i * 31 % 65)}%`, "--building-width": `${20 + i % 3 * 10}px`} as CSSProperties} />)}
-      </div>
-      <div className="nm-room-stars">{Array.from({length: 52}, (_, i) => <i key={i} style={{left:`${i * 37 % 101}%`,top:`${i * 23 % 97}%`,"--delay":`${-i * .7}s`} as CSSProperties} />)}</div>
-      <div className="nm-room-rain">{Array.from({length: 32}, (_, i) => <i key={i} style={{left:`${i * 29 % 100}%`,"--delay":`${-i * .37}s`,"--duration":`${1.4 + i % 7 * .4}s`} as CSSProperties} />)}</div>
-      <div className="nm-room-window" /><div className="nm-room-rail" />
-      <div className="nm-room-lamp"><i /></div>
-      <div className="nm-room-record"><div className="nm-room-record-disc">{cover && <img src={cover} alt="" />}</div><i className="nm-room-tonearm" /></div>
-      <div className="nm-room-speaker left" /><div className="nm-room-speaker right" />
-      <div className="nm-room-nebula" /><div className="nm-room-table" />
-    </div>
-    <div className="nm-room-caption">
-      <small>{view.scene === "train" ? "NEXT STOP · 下一站，音乐" : view.scene === "vinyl" ? "SIDE A · 正在转动的时光" : "此刻，只管听歌"}</small>
+  const canvas = <Suspense fallback={null}><PlaceCanvas view={view} cover={view.scene === "vinyl" ? cover : ""} analyser={analyser} playing={playing} /></Suspense>;
+  const places = {
+    concert: null,
+    train: <div className="nm-place-art nm-coastal-art" aria-hidden="true">
+      <div className="nm-coastal-window">{canvas}<i className="nm-coastal-divider" /><i className="nm-coastal-glass" /></div>
+      <div className="nm-coastal-seat left" /><div className="nm-coastal-seat right" />
+      <div className="nm-coastal-table"><i /></div><div className="nm-coastal-ticket"><span>NOVA RAIL</span><b>只带上耳机就出发</b><i /></div>
+    </div>,
+    rain: <div className="nm-place-art nm-cafe-art" aria-hidden="true">
+      {canvas}<div className="nm-cafe-frame" /><div className="nm-cafe-table" />
+      <div className="nm-cafe-cup"><i className="nm-cafe-steam one" /><i className="nm-cafe-steam two" /><i className="nm-cafe-saucer" /><i className="nm-cafe-handle" /><i className="nm-cafe-vessel" /><i className="nm-cafe-coffee" /></div>
+      <div className="nm-cafe-note">此刻，不必赶路。</div>
+    </div>,
+    vinyl: <div className="nm-place-art nm-archive-art" aria-hidden="true">{canvas}<div className="nm-archive-rule"><i /><span>STEREO / LONG PLAY</span></div></div>,
+    space: <div className="nm-place-art nm-lunar-art" aria-hidden="true">{canvas}<div className="nm-lunar-coordinate"><i /><span>EARTH ↗<br />384,400 KM FROM HOME</span></div></div>,
+  };
+  return <section className="nm-room" data-scene={view.scene} data-camera={view.camera} data-palette={view.palette} data-playing={playing} aria-label={sceneLabels[view.scene]}>
+    {places[view.scene]}
+    <header className="nm-place-heading"><small>{editions[view.scene]}</small><span><i />{playing ? "正在聆听" : "已暂停"}</span></header>
+    <div className="nm-place-caption" data-length={(line?.text || title).length > 26 ? "long" : "short"}>
+      <small>{invitations[view.scene]}</small>
       <p>{line?.text ? <LyricText line={line} time={time} /> : title}</p>
       <span>{index >= 0 ? lyrics.lines[index + 1]?.text : artist}</span>
     </div>
+    <footer className="nm-place-footer"><strong>{sceneLabels[view.scene]}</strong><span>{view.scene === "train" ? "把远方，听成日常。" : view.scene === "rain" ? "窗外很远，此刻很近。" : view.scene === "vinyl" ? "一张唱片，一整个下午。" : "STILL HERE, STILL LISTENING."}</span></footer>
   </section>;
 }
