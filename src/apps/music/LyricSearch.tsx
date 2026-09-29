@@ -10,14 +10,12 @@ type SearchState =
 
 export function LyricSearch({
   title,
-  artist,
   onPreview,
 }: {
   title: string;
-  artist: string;
   onPreview: (text: string) => void;
 }) {
-  const [query, setQuery] = useState(`${title} ${artist}`.trim());
+  const [query, setQuery] = useState(title.trim());
   const [state, setState] = useState<SearchState>({ status: "idle" });
   const request = useRef<AbortController | null>(null);
 

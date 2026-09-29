@@ -26,6 +26,7 @@ import { useMusicShortcuts } from "./useMusicShortcuts";
 import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import { FloatingLyrics, LyricView } from "./LyricViews";
 import { LyricSearch } from "./LyricSearch";
+import { findTrackLyrics } from "./lrclib";
 import { PosterStudio } from "./PosterStudio";
 import { ImmersiveStage } from "./ImmersiveStage";
 import { MonthlyReport } from "./MonthlyReport";
@@ -97,6 +98,8 @@ export default function MusicApp() {
   const [queueOpen, setQueueOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [lyricSearchId, setLyricSearchId] = useState<string | null>(null);
+  const searchedLyrics = useRef(new Set<string>());
   const [playlistName, setPlaylistName] = useState("");
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [album, setAlbum] = useState<string | null>(null);
@@ -105,6 +108,11 @@ export default function MusicApp() {
   library.current = { tracks, loose, prefs };
   const controllers = useRef(new Map<string, AbortController>());
   const notify = useCallback((text: string) => setMessage(text), []);
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), 2000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
   const player = usePlayer(tracks, prefs, notify);
   const current = tracks.find((t) => t.id === player.id);
   const ambientCoverUrl = useBlobUrl(current?.cover);
@@ -172,6 +180,37 @@ export default function MusicApp() {
     await saveTracks([track]);
     setTracks((items) => items.map((t) => (t.id === track.id ? track : t)));
   };
+  useEffect(() => {
+    setLyricSearchId(null);
+    const track = library.current.tracks.find((t) => t.id === player.id);
+    if (!track || track.lyrics.trim() || !player.playing || searchedLyrics.current.has(track.id)) return;
+    const controller = new AbortController();
+    let finished = false;
+    searchedLyrics.current.add(track.id);
+    setLyricSearchId(track.id);
+    void findTrackLyrics(track, controller.signal)
+      .then(async (result) => {
+        if (controller.signal.aborted || !result) return;
+        const latest = library.current.tracks.find((t) => t.id === track.id);
+        if (!latest || latest.lyrics.trim()) return;
+        await updateTrack({
+          ...latest,
+          lyrics: result.syncedLyrics?.trim() ? result.syncedLyrics : result.plainLyrics!,
+          lyricName: `LRCLIB · ${result.trackName} · ${result.artistName}`,
+        });
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) notify(`歌词搜索失败：${error.message}`);
+      })
+      .finally(() => {
+        finished = true;
+        if (!controller.signal.aborted) setLyricSearchId(null);
+      });
+    return () => {
+      controller.abort();
+      if (!finished) searchedLyrics.current.delete(track.id);
+    };
+  }, [player.id, player.playing, current?.lyrics, notify]);
   async function importFiles(files: File[]) {
     setBusy(true);
     try {
@@ -861,6 +900,7 @@ export default function MusicApp() {
                 </div>
                 <LyricView
                   lyrics={parsed}
+                  searching={lyricSearchId === current.id}
                   time={lyricTime}
                   seek={(t) =>
                     player.seek(Math.max(0, t - parsed.offset - current.offset))
@@ -1124,7 +1164,6 @@ export default function MusicApp() {
             <LyricSearch
               key={editId}
               title={tracks.find((t) => t.id === editId)!.title}
-              artist={tracks.find((t) => t.id === editId)!.artist}
               onPreview={setDraft}
             />
             <label>

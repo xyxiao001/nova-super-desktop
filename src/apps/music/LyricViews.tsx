@@ -26,10 +26,12 @@ export function LyricView({
   lyrics,
   time,
   seek,
+  searching = false,
 }: {
   lyrics: Lyrics;
   time: number;
   seek: (value: number) => void;
+  searching?: boolean;
 }) {
   const index = activeLine(lyrics.lines, time);
   const container = useRef<HTMLDivElement>(null);
@@ -70,10 +72,10 @@ export function LyricView({
           </button>
         ))}
         {!lyrics.lines.length && (
-          <div className="nm-empty">
+          <div className="nm-empty" role="status">
             <Icon name="lyrics" size={40} />
-            <h3>让歌词陪你一起听</h3>
-            <p>导入或关联一份歌词，即可开始同步。</p>
+            <h3>{searching ? "歌词搜索中…" : "让歌词陪你一起听"}</h3>
+            <p>{searching ? "正在寻找最匹配的歌词" : "导入或关联一份歌词，即可开始同步。"}</p>
           </div>
         )}
       </div>
