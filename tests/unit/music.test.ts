@@ -77,10 +77,10 @@ describe("music lyrics", () => {
       parseLyrics("[1000,2000]你(1000,500)好(1500,1500)").lines[0].words[1],
     ).toEqual({ start: 1.5, end: 3, text: "好" });
   });
-  it("keeps plain text untimed and supports long supplied word lyrics", async () => {
+  it("keeps plain text untimed and supports long word lyrics", async () => {
     expect(parseLyrics("第一行\n第二行").timed).toBe(false);
-    for (const name of ["chongbai", "gangganghao"]) {
-      const source = await readFile(`public/music/${name}.lrc`, "utf8");
+    {
+      const source = await readFile("tests/fixtures/music/word-lyrics.lrc", "utf8");
       expect(source.length).toBeGreaterThan(4000);
       const p = parseLyrics(source);
       expect(p.lines.length).toBeLessThan(150);
@@ -90,8 +90,8 @@ describe("music lyrics", () => {
       ).toBe(true);
     }
   });
-  it("parses the supplied ordinary LRC as rows", async () => {
-    const p = parseLyrics(await readFile("public/music/geng.lrc", "utf8"));
+  it("parses ordinary LRC as rows", async () => {
+    const p = parseLyrics("[00:01.200]第一行\n[00:05.400]第二行");
     expect(p.timed).toBe(true);
     expect(p.lines.every((l) => !l.words.length)).toBe(true);
   });
@@ -129,14 +129,15 @@ describe("matching and true audio metadata", () => {
       lyricCandidates(track, [{ id: "3", name: "崇拜.lrc", text: "" }]),
     ).toHaveLength(0);
   });
-  it("extracts the real cover and duration from the supplied MP3", async () => {
-    const bytes = await readFile("public/music/gangganghao.mp3");
+  it("extracts the real cover and duration from an encoded audio fixture", async () => {
+    const bytes = await readFile("tests/fixtures/music/metadata.mp3");
     const t = await importMusic(
-      new File([bytes], "薛之谦 - 刚刚好.mp3", { type: "audio/mpeg" }),
+      new File([bytes], "测试歌手 - 测试歌曲.mp3", { type: "audio/mpeg" }),
     );
-    expect(t.title).toContain("刚刚好");
-    expect(t.duration).toBeGreaterThan(200);
-    expect(t.cover?.size).toBeGreaterThan(1000);
+    expect(t.title).toBe("测试歌曲");
+    expect(t.duration).toBeGreaterThanOrEqual(0.25);
+    expect(t.duration).toBeLessThan(0.4);
+    expect(t.cover?.size).toBeGreaterThan(100);
     expect(t.audio.size).toBe(bytes.length);
   });
 });

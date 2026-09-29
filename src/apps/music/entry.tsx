@@ -131,6 +131,7 @@ export default function MusicApp() {
           setTracks(d.tracks);
           setLoose(d.lyrics);
           setPrefs(d.prefs);
+          setPage(d.tracks.length ? "library" : "catalog");
           setReady(true);
         }
       })
@@ -265,7 +266,7 @@ export default function MusicApp() {
     controllers.current.set(item.id, controller);
     setDownloads((d) => ({ ...d, [item.id]: 0 }));
     try {
-      const response = await fetch(item.audio, { signal: controller.signal });
+      const response = await fetch(new URL(item.audio, "https://nova-books.pages.dev"), { signal: controller.signal });
       if (!response.ok) throw new Error(`音频下载失败 (${response.status})`);
       const reader = response.body!.getReader();
       const chunks: Uint8Array<ArrayBuffer>[] = [];
@@ -783,20 +784,15 @@ export default function MusicApp() {
                   const exists = catalogTrackInLibrary(t, tracks);
                   return (
                     <article key={t.id}>
-                      <div className={`nm-catalog-cover palette-${i}`}>
-                        {t.cover ? (
-                          <img src={t.cover} alt={`${t.title} 专辑封面`} />
-                        ) : (
-                          <Icon name="music" size={70} />
-                        )}
-                        <span>0{i + 1} / SELECTED</span>
+                      <span className="nm-catalog-index" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                      <div className="nm-catalog-info">
+                        <h2 title={t.title}>{t.title}</h2>
+                        <p title={`${t.artist} · ${t.album}`}>
+                          {t.artist} <span>· {t.album}</span>
+                        </p>
                       </div>
-                      <h2>{t.title}</h2>
-                      <p>
-                        {t.artist} <span>· {t.album}</span>
-                      </p>
                       <small>
-                        音频 + {i === 2 ? "逐行" : "逐字"}歌词 ·{" "}
+                        音频 + 逐字歌词 ·{" "}
                         {(t.bytes / 1024 / 1024).toFixed(1)} MB
                       </small>
                       {exists ? (

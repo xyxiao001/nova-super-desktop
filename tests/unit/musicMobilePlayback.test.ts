@@ -8,23 +8,23 @@ import { connectMediaSession, publishMediaTrack } from "../../src/apps/music/med
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-it("renders word gradients only for the current line of 刚刚好", () => {
-  const source = readFileSync("public/music/gangganghao.lrc", "utf8");
+it("renders word gradients only for the current line of a long lyric", () => {
+  const source = readFileSync("tests/fixtures/music/word-lyrics.lrc", "utf8");
   const lyrics = parseLyrics(source, 250.5);
-  const line = lyrics.lines.find((row) => row.text.includes("如果有人在灯塔"))!;
+  const line = lyrics.lines[5];
   const html = renderToStaticMarkup(createElement(LyricView, {
     lyrics, time: line.start + 0.1, seek: () => {},
   }));
   expect(lyrics.lines.reduce((count, row) => count + row.words.length, 0)).toBeGreaterThan(300);
   expect(html.match(/class="nm-word"/g)).toHaveLength(line.words.length);
   expect(html.match(/<button/g)).toHaveLength(lyrics.lines.length);
-  expect(html).toContain("拨弄她的头发");
+  expect(html).toContain("这一行用来验证逐字歌词渲染");
 
   const before = renderToStaticMarkup(createElement(LyricView, {
     lyrics, time: -1, seek: () => {},
   }));
   expect(before).not.toContain('class="nm-word"');
-  expect(before).toContain("如果有人在灯塔");
+  expect(before).toContain("这一行用来验证逐字歌词渲染");
 });
 
 function fakeSession() {

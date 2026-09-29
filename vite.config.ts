@@ -15,6 +15,10 @@ const crossOriginIsolationHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "require-corp",
 };
+const mediaProxy = {
+  "/books": { target: "https://nova-books.pages.dev", changeOrigin: true },
+  "/music": { target: "https://nova-books.pages.dev", changeOrigin: true },
+};
 const crossOriginIsolation = (): Plugin => {
   const applyHeaders = (
     request: IncomingMessage,
@@ -80,11 +84,12 @@ export default defineConfig(async () => {
       strictPort: true,
       host: "0.0.0.0",
       headers: crossOriginIsolationHeaders,
+      proxy: mediaProxy,
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),
     },
-    preview: { port: 3000, strictPort: true, headers: crossOriginIsolationHeaders },
+    preview: { port: 3000, strictPort: true, headers: crossOriginIsolationHeaders, proxy: mediaProxy },
     plugins: [
       crossOriginIsolation(),
       vinext(),

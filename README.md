@@ -251,16 +251,20 @@ docs/images/                   # README 截图
 
 Vercel 构建中，YouTD 2 的 `index.pck` 和 `index.side.wasm` 通过 `vercel.json` 转发至 GitHub LFS 媒体地址，不重复上传至静态构建输出。Fork 后如需使用自己的资源仓库，请同步修改这两条转发地址。
 
-小说资源独立部署在 Cloudflare Pages 项目 `nova-books`（`https://nova-books.pages.dev`）。Vercel 将 `/books/*` 同源转发至 Pages，构建输出移除 `books/`；本地开发继续使用 `public/books/` 中的源文件。下载内容与阅读进度仍由阅读器保存到设备本地。
+书籍、音频、封面和逐字歌词独立部署在 Cloudflare Pages 项目 `nova-books`（`https://nova-books.pages.dev`）。Vercel 与本地 Vite 将 `/books/*`、`/music/*` 转发至 Pages，为目录、封面和歌词保留同源入口；大音频和小说正文由浏览器通过 CORS 直接从 Pages 下载，避免经过 Node 或 Vercel 二次传输。仓库和前端构建输出不再包含完整书籍或音乐资源。下载内容、播放记录和阅读进度仍保存在访问者设备本地。
 
-更新书库时，将 TXT 放入 `public/books/`，在 `scripts/generate-book-catalog.mjs` 中填写书籍信息并运行 `npm run books:catalog`。将 `books/` 目录（包含 `catalog.json`）作为部署根目录下的子目录，上传到该 Pages 项目的新生产部署；部署根目录的 `_headers` 文件使用以下内容，让目录更新立即可见：
+当前静态书库为 9 本，曲库为 41 首。曲库包含 192 kbps MP3 与逐字歌词，其中网易云 22 首、QQ 音乐 12 首、用户提供的周杰伦本地逐字 LRC 7 首。歌词匹配工具见 [本地音乐资源准备](scripts/music/README.md)，通过 `npm run lyrics:serve` 启动，固定端口 `3310`。该服务只用于开发电脑准备资源，不是线上播放依赖。
+
+资源保存在项目外的 `NOVA-resources` 目录，源文件与准备记录不上传到应用仓库。更新书库时将 TXT 放在外部 `books/` 目录，在 `scripts/generate-book-catalog.mjs` 填写书籍信息后执行 `npm run books:catalog -- /absolute/path/books`。更新曲库使用 `npm run music:prepare -- 清单路径 匹配结果目录 输出music目录`。
+
+每次 Pages 部署都上传完整 `books/`、`music/` 及以下 `_headers`，单个文件不超过 25 MiB。准备清单、原音频和本地服务不放入部署包。推送 NOVA 代码不会上传媒体文件。
 
 ```text
 /books/catalog.json
   Cache-Control: no-store
+/music/catalog.json
+  Cache-Control: no-store
 ```
-
-单个文件不得超过 Pages 的 25 MiB 限制。`public/books/` 保留为书库源文件；更新资源需要单独部署 Pages，推送 NOVA 代码不会上传小说。
 
 浏览器本地数据按网站域名隔离。部署到新域名后，原域名下的桌面文件、阅读进度和游戏存档不会自动迁移。
 

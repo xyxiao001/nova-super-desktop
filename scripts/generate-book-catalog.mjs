@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const booksDirectory = path.resolve("public/books");
+const booksDirectory = path.resolve(process.argv[2]);
 const curated = {
   "global-martial-arts.txt": {
     id: "global-martial-arts",

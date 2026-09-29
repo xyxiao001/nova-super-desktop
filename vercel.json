@@ -5,6 +5,10 @@
   "outputDirectory": "dist-vercel",
   "rewrites": [
     {
+      "source": "/music/:path*",
+      "destination": "https://nova-books.pages.dev/music/:path*"
+    },
+    {
       "source": "/books/:path*",
       "destination": "https://nova-books.pages.dev/books/:path*"
     },

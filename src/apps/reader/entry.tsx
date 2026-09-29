@@ -551,7 +551,7 @@ export default function ReaderApp() {
         const controller = new AbortController();
         downloadControllersRef.current.set(book.id, controller);
         setDownloadProgress((current) => ({ ...current, [book.id]: 0 }));
-        const response = await fetch(book.url, { signal: controller.signal });
+        const response = await fetch(new URL(book.url, "https://nova-books.pages.dev"), { signal: controller.signal });
         if (!response.ok) throw new Error(String(response.status));
         const result = await processBookText({ buffer: await readDownload(response, book) });
         stored = {
