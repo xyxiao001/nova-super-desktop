@@ -594,6 +594,42 @@ export default function MusicApp() {
               <Icon name="plus" size={17} />
               {busy ? "正在导入…" : "导入音乐 / 歌词"}
             </button>
+            {page === "now" && current && !concert && (
+              <details className="nm-now-more">
+                <summary aria-label="歌曲更多操作">••• 更多</summary>
+                <div className="nm-song-menu">
+                  {currentShareSong && <button onClick={() => openSongShare(currentShareSong)}>分享歌曲 ↗</button>}
+                  <button onClick={() => openEditor(current)}>
+                    <Icon name="edit" size={16} />
+                    搜索 / 替换歌词
+                  </button>
+                  <label className="nm-offset">
+                    歌词偏移
+                    <input
+                      aria-label="歌词偏移秒数"
+                      type="number"
+                      step="0.1"
+                      value={current.offset}
+                      onChange={(e) =>
+                        void updateTrack({
+                          ...current,
+                          offset: +e.target.value,
+                        }).catch((e) => notify(e.message))
+                      }
+                    />
+                    秒
+                  </label>
+                  <small>
+                    {parsed.lines.some((l) => l.words.length)
+                      ? "逐字同步"
+                      : parsed.timed
+                        ? "逐行同步"
+                        : "纯文本歌词"}{" "}
+                    · 点击歌词跳转
+                  </small>
+                </div>
+              </details>
+            )}
           </div>
         </header>
         {message && (
@@ -947,47 +983,13 @@ export default function MusicApp() {
                 <div className="nm-now-art">
                   <span className="nm-now-eyebrow">正在聆听</span>
                   <Artwork track={current} size="large" />
-                  <h1>{current.title}</h1>
+                  <h1>
+                    <span>{current.title}</span>
+                    <FavoriteButton title={current.title} favorite={current.favorite} onToggle={() => toggleFavorite(current)} />
+                  </h1>
                   <p>
                     {current.artist} <span>· {current.album}</span>
                   </p>
-                  <div className="nm-now-actions">
-                    <FavoriteButton title={current.title} favorite={current.favorite} onToggle={() => toggleFavorite(current)} />
-                    <details className="nm-now-more">
-                      <summary aria-label="歌曲更多操作">••• 更多</summary>
-                      <div className="nm-song-menu">
-                        {currentShareSong && <button onClick={() => openSongShare(currentShareSong)}>分享歌曲 ↗</button>}
-                        <button onClick={() => openEditor(current)}>
-                          <Icon name="edit" size={16} />
-                          搜索 / 替换歌词
-                        </button>
-                        <label className="nm-offset">
-                          歌词偏移
-                          <input
-                            aria-label="歌词偏移秒数"
-                            type="number"
-                            step="0.1"
-                            value={current.offset}
-                            onChange={(e) =>
-                              void updateTrack({
-                                ...current,
-                                offset: +e.target.value,
-                              }).catch((e) => notify(e.message))
-                            }
-                          />
-                          秒
-                        </label>
-                      </div>
-                    </details>
-                  </div>
-                  <small>
-                    {parsed.lines.some((l) => l.words.length)
-                      ? "逐字同步"
-                      : parsed.timed
-                        ? "逐行同步"
-                        : "纯文本歌词"}{" "}
-                    · 点击歌词跳转
-                  </small>
                 </div>
                 <LyricView
                   lyrics={parsed}
