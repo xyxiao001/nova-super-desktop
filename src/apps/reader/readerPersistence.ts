@@ -6,6 +6,8 @@ import {
   type ReaderPreferences,
 } from "./readerCore";
 
+import type { EpubBookmark, EpubLocation } from "./epubCore";
+
 const PREFERENCES_KEY = "nova-reader-preferences";
 const ACTIVITY_KEY = "nova-reader-activity";
 const BOOKMARKS_KEY = "nova-reader-bookmarks";
@@ -131,23 +133,23 @@ export function saveReaderActivity(entry: ReaderActivity[string]) {
   return activity;
 }
 
-export function readReaderBookmarks(bookId: string) {
+export function readReaderBookmarks<T extends ReaderBookmark | EpubBookmark = ReaderBookmark>(bookId: string) {
   try {
     const saved = localStorage.getItem(BOOKMARKS_KEY);
-    if (!saved) return [] as ReaderBookmark[];
-    const parsed = JSON.parse(saved) as { version?: number; value?: Record<string, ReaderBookmark[]> };
+    if (!saved) return [] as T[];
+    const parsed = JSON.parse(saved) as { version?: number; value?: Record<string, T[]> };
     return parsed.version === READER_DATA_VERSION ? parsed.value?.[bookId] ?? [] : [];
   } catch {
     localStorage.removeItem(BOOKMARKS_KEY);
-    return [] as ReaderBookmark[];
+    return [] as T[];
   }
 }
 
-export function saveReaderBookmarks(bookId: string, bookmarks: ReaderBookmark[]) {
-  let value: Record<string, ReaderBookmark[]> = {};
+export function saveReaderBookmarks<T extends ReaderBookmark | EpubBookmark>(bookId: string, bookmarks: T[]) {
+  let value: Record<string, T[]> = {};
   try {
     const saved = localStorage.getItem(BOOKMARKS_KEY);
-    if (saved) value = (JSON.parse(saved) as { version?: number; value?: Record<string, ReaderBookmark[]> }).value ?? {};
+    if (saved) value = (JSON.parse(saved) as { version?: number; value?: Record<string, T[]> }).value ?? {};
   } catch {
     value = {};
   }
@@ -162,4 +164,13 @@ export function removeReaderBookData(bookId: string) {
   localStorage.setItem(ACTIVITY_KEY, JSON.stringify({ version: READER_DATA_VERSION, value: activity }));
   const bookmarks = readReaderBookmarks(bookId);
   if (bookmarks.length) saveReaderBookmarks(bookId, []);
+}
+
+export function readEpubLocation(bookId: string): EpubLocation | null {
+  const saved = localStorage.getItem(progressKey(bookId));
+  return saved ? JSON.parse(saved) as EpubLocation : null;
+}
+
+export function saveEpubLocation(bookId: string, location: EpubLocation) {
+  localStorage.setItem(progressKey(bookId), JSON.stringify(location));
 }

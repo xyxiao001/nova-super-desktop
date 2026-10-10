@@ -13,7 +13,7 @@
 .reader-shelf { padding: 14px 5% 38px; display: grid; grid-template-columns: repeat(auto-fit,minmax(255px,1fr)); gap: 19px; }.reader-local-shelf { padding-bottom:8px; }
 .reader-book-card { position:relative; min-height:185px; overflow:hidden; border:1px solid #9b806227; border-radius:8px; background:#fffaf4; color:inherit; box-shadow:0 10px 28px #61442010; transition:transform .18s ease,box-shadow .18s ease; }.reader-book-card:hover { transform:translateY(-3px); box-shadow:0 17px 36px #61442022; }.reader-book-open { width:100%; min-height:185px; padding:15px 42px 15px 15px; border:0; display:flex; gap:15px; background:transparent; color:inherit; text-align:left; }.reader-book-open:disabled { opacity:.72; cursor:wait; }.reader-book-delete { position:absolute; top:10px; right:10px; width:26px; height:26px; padding:0; border:1px solid #b99c8755; border-radius:50%; display:none; background:#fffaf0dd; color:#806c5c; font-size:16px; line-height:1; }.reader-library.editing .reader-book-delete,.reader-book-delete.cancel-download { display:block; }.reader-book-delete:hover { border-color:#c95d3c; background:#fff; color:#c74726; }.reader-book-delete:disabled { opacity:.35; }
 .reader-cover { position: relative; width: 105px; min-width: 105px; height: 148px; padding: 18px 12px; overflow: hidden; border-radius: 4px 9px 9px 4px; display: flex; flex-direction: column; box-shadow: inset 5px 0 8px #0002,0 9px 18px #3e2b1b35; color: #fff; }
-.reader-cover::before { content:""; position:absolute; inset:0; background: linear-gradient(125deg,#fff4,transparent 32%,#0002); }.reader-cover i,.reader-cover strong,.reader-cover small { position:relative; }.reader-cover i { font: 700 8px/1 sans-serif; letter-spacing:.16em; opacity:.7; }.reader-cover strong { margin-top:auto; font:600 17px/1.35 Georgia,"Songti SC",serif; }.reader-cover small { margin-top:7px; font-size:8px; opacity:.76; }
+.reader-cover::before { content:""; position:absolute; inset:0; background: linear-gradient(125deg,#fff4,transparent 32%,#0002); }.reader-cover i,.reader-cover strong,.reader-cover small { position:relative; }.reader-cover i { align-self:flex-start; padding:4px 5px; border:1px solid #ffffff40; border-radius:3px; background:#ffffff12; font:700 8px/1 sans-serif; letter-spacing:.08em; opacity:.85; }.reader-cover strong { margin-top:auto; font:600 17px/1.35 Georgia,"Songti SC",serif; }.reader-cover small { margin-top:7px; font-size:8px; opacity:.76; }
 .cover-amber { background: linear-gradient(145deg,#8f522b,#d98d42); }.cover-jade { background: linear-gradient(145deg,#173d36,#437a67); }.cover-indigo { background: linear-gradient(145deg,#20284f,#5964a8); }.cover-slate { background: linear-gradient(145deg,#3d4852,#7c8a95); }
 .reader-book-info { min-width:0; display:flex; flex-direction:column; }.reader-book-info > strong { margin-top:3px; overflow:hidden; font:600 15px/1.3 Georgia,"Songti SC",serif; text-overflow:ellipsis; white-space:nowrap; }.reader-book-info > small { margin-top:5px; color:#8c7b6c; font-size:10px; }.reader-book-info p { margin:13px 0 8px; color:#75695d; font-size:10px; line-height:1.6; }.reader-book-info em { margin-top:auto; font-style:normal; font-size:10px; }.reader-book-info em.downloaded { color:#2e7d5c; }.reader-book-info em.cloud { color:#c35c31; }
 .reader-state { min-height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:#8b7c6d; font-size:12px; }.reader-state i { width:28px; height:28px; border:2px solid #d8c9b8; border-top-color:#d55f32; border-radius:50%; animation:readerSpin .8s linear infinite; }.reader-state button { height:30px; padding:0 12px; border:1px solid #bca995; border-radius:5px; background:#fff; color:#5b4d40; }.reader-message { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); padding:9px 14px; border-radius:7px; background:#3e3229e8; color:#fff; font-size:11px; }
@@ -208,4 +208,22 @@
   .reader-companion { right:14px; bottom:calc(80px + env(safe-area-inset-bottom)); }
   .reader-statistics-popover > summary { min-height:36px; }
   .reader-reading.chrome-hidden .reader-statistics-popover:not([open]) { visibility:hidden; }
+}
+
+.reader-epub { --reader-page:#f8f3e9; --reader-text:#3b332c; }
+.reader-epub.theme-green { --reader-page:#e3eddd; --reader-text:#293b2c; }
+.reader-epub.theme-night { --reader-page:#242726; --reader-text:#d2d5ca; }
+.reader-epub > .reader-toolbar { background:var(--reader-page); }
+.reader-epub > .reader-toolbar button { border-color:transparent; }
+.reader-epub > .reader-toolbar button:hover:not(:disabled) { background:var(--reader-border); }
+.reader-epub-stage { position:relative; flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; background:var(--reader-page); }
+.reader-epub-stage iframe { display:block; flex:1; width:100%; min-height:0; border:0; }
+.reader-epub-navigation { display:flex; flex:none; align-items:center; justify-content:center; gap:24px; padding:5px 12px; color:var(--reader-muted); font-size:12px; }
+.reader-epub-navigation button { width:44px; height:32px; border:0; border-radius:5px; background:transparent; color:var(--reader-text); }
+.reader-epub-navigation button:hover:not(:disabled) { background:var(--reader-border); }
+.reader-epub-loading { position:absolute; inset:0; display:grid; place-items:center; background:var(--reader-page); color:var(--reader-muted); }
+@media(max-width:680px),(max-width:932px) and (pointer:coarse) {
+  .reader-epub > .reader-toolbar { position:relative!important; flex:none; }
+  .reader-epub > .reader-mobile-toolbar { position:relative; flex:none; grid-template-columns:repeat(5,1fr); }
+  .reader-epub-navigation { padding-block:3px; }
 }

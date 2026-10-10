@@ -47,7 +47,8 @@ self.NOVA_RESOURCE_PACKAGES = [
   {
     "id": "books",
     "pathPrefixes": [
-      "/books/"
+      "/books/",
+      "/reader/"
     ],
     "exactPaths": [],
     "destinations": [],

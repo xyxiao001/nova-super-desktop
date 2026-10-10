@@ -30,6 +30,7 @@ export function summarizeStoredBook(book: StoredBook): StoredBookSummary {
     downloadedAt: book.downloadedAt,
     source: book.source,
     readerVersion: book.readerVersion,
+    ...(book.format ? { format: book.format } : {}),
   };
 }
 

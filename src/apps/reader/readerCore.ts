@@ -1,6 +1,7 @@
 import type { ReaderExcerptSource } from "../../../app/readerExcerptSource";
 
 export type CatalogBook = {
+  format?: "txt" | "epub";
   id: string;
   title: string;
   author: string;
@@ -22,6 +23,7 @@ export type ReaderChapter = {
 };
 
 export type StoredBook = CatalogBook & {
+  // TXT stores plain text; EPUB stores the original archive as base64 for JSON backups.
   content: string;
   downloadedAt: number;
   source?: "cloud" | "local";

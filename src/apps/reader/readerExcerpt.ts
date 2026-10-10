@@ -2,6 +2,7 @@ import type { ReaderExcerptSource } from "../../../app/readerExcerptSource";
 import { chapterParagraphs, READER_DATA_VERSION, type ReaderChapter, type ReaderLocation, type StoredBook } from "./readerCore";
 
 export function excerptLocation(book: StoredBook, chapters: ReaderChapter[], source: ReaderExcerptSource): ReaderLocation | null {
+  if (source.format === "epub") return null;
   if (book.id !== source.bookId || book.version !== source.bookVersion) return null;
   const chapterIndex = chapters.findIndex((chapter) => chapter.id === source.chapterId);
   if (chapterIndex < 0) return null;

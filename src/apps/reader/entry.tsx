@@ -2,7 +2,7 @@
 
 import "./reader.css";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useWindowRuntime } from "../../platform/windows/WindowRuntime";
 import {
   chapterParagraphs,
@@ -49,12 +49,16 @@ import {
   readingMilestoneForProgress,
 } from "../../../app/activityEvents";
 import { captureReaderExcerpt, excerptLocation } from "./readerExcerpt";
-import type { ReaderExcerptSource } from "../../../app/readerExcerptSource";
+import type { EpubExcerptSource, ReaderExcerptSource } from "../../../app/readerExcerptSource";
 import ReaderFlipBook from "./ReaderFlipBook";
 import ReaderCompanion from "./ReaderCompanion";
 import ReaderWorker from "./reader.worker?worker";
 import { useAppLaunchIntent } from "../../platform/launch/LaunchRuntime";
 import { useWorkspaceRuntime } from "../../platform/workspace/WorkspaceRuntime";
+
+import { encodeEpub, isEpubBook } from "./epubCore";
+
+const EpubReader = lazy(() => import("./EpubReader"));
 
 type DownloadMetadata = Record<string, { version: string; downloadedAt: number }>;
 type ReaderWorkerResult = { content: string; chapters: ReaderChapter[] };
@@ -93,6 +97,7 @@ export default function ReaderApp() {
   const [shelfEditing, setShelfEditing] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<{ id: string; type: "local" | "cloud" } | null>(null);
   const [activeBook, setActiveBook] = useState<StoredBook | null>(null);
+  const [epubSource, setEpubSource] = useState<EpubExcerptSource>();
   const [chapters, setChapters] = useState<ReaderChapter[]>([]);
   const [chapterIndex, setChapterIndex] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
@@ -424,6 +429,20 @@ export default function ReaderApp() {
   }, [activeBook, chapter, chapterIndex, locationJumpToken, preferences.fontSize, preferences.lineHeight, preferences.readingMode]);
 
   const activateBook = (book: StoredBook, parsed: ReaderChapter[], source?: ReaderExcerptSource) => {
+    if (isEpubBook(book)) {
+      if (source && (source.format !== "epub" || source.bookId !== book.id || source.bookVersion !== book.version)) {
+        setMessage("摘录来源位置已失效，原文稿仍保留；请从书架手动查找。");
+        return;
+      }
+      setEpubSource(source);
+      setLocationJumpToken((current) => current + 1);
+      setChapters([]);
+      setActiveBook(book);
+      setSearchOpen(false);
+      setMessage("");
+      publishNovaActivityEvent("reading-started", "reader", { localResourceId: book.id });
+      return;
+    }
     const position = source ? excerptLocation(book, parsed, source) : readReaderLocation(book.id, parsed);
     if (!position) {
       setMessage("摘录来源位置已失效，原文稿仍保留；请从书架手动查找。");
@@ -467,6 +486,10 @@ export default function ReaderApp() {
     try {
       const stored = "content" in book ? book : await getStoredBook(book.id);
       if (!stored) throw new Error("书籍不存在");
+      if (isEpubBook(stored)) {
+        if (requestedBookRef.current === book.id) activateBook(stored, [], source);
+        return;
+      }
       let prepared = stored;
       let parsed = stored.chapterIndex;
       if (stored.readerVersion !== READER_DATA_VERSION || !parsed?.length) {
@@ -553,9 +576,13 @@ export default function ReaderApp() {
         setDownloadProgress((current) => ({ ...current, [book.id]: 0 }));
         const response = await fetch(new URL(book.url, "https://nova-books.pages.dev"), { signal: controller.signal });
         if (!response.ok) throw new Error(String(response.status));
-        const result = await processBookText({ buffer: await readDownload(response, book) });
+        const buffer = await readDownload(response, book);
+        const result = isEpubBook(book)
+          ? { content: encodeEpub(buffer), chapters: [] }
+          : await processBookText({ buffer });
         stored = {
           ...book,
+          ...(isEpubBook(book) ? { format: "epub" as const } : {}),
           content: result.content,
           downloadedAt: timestamp(),
           source: "cloud",
@@ -617,15 +644,17 @@ export default function ReaderApp() {
 
   const importBook = async (file?: File) => {
     if (!file) return;
-    if (file.type !== "text/plain" && !file.name.toLowerCase().endsWith(".txt")) {
-      setMessage("目前仅支持导入 TXT 书籍");
+    const epub = file.name.toLowerCase().endsWith(".epub") || file.type === "application/epub+zip";
+    if (!epub && file.type !== "text/plain" && !file.name.toLowerCase().endsWith(".txt")) {
+      setMessage("目前支持导入 TXT 和 EPUB 书籍");
       return;
     }
     setMessage("");
     try {
-      const result = await processBookText({ buffer: await file.arrayBuffer() });
-      const title = file.name.replace(/\.txt$/i, "") || "未命名书籍";
-      const book: StoredBook = { id: `local:${crypto.randomUUID()}`, title, author: "本地导入", description: `来自 ${file.name}`, cover: "slate", file: file.name, url: "", size: file.size, version: "local", content: result.content, downloadedAt: timestamp(), source: "local", readerVersion: READER_DATA_VERSION, chapterIndex: result.chapters };
+      const buffer = await file.arrayBuffer();
+      const result = epub ? { content: encodeEpub(buffer), chapters: [] } : await processBookText({ buffer });
+      const title = file.name.replace(/\.(txt|epub)$/i, "") || "未命名书籍";
+      const book: StoredBook = { ...(epub ? { format: "epub" as const } : {}), id: `local:${crypto.randomUUID()}`, title, author: "本地导入", description: `来自 ${file.name}`, cover: "slate", file: file.name, url: "", size: file.size, version: "local", content: result.content, downloadedAt: timestamp(), source: "local", readerVersion: READER_DATA_VERSION, chapterIndex: result.chapters };
       await storeBook(book);
       setLocalBooks((current) => [summarizeStoredBook(book), ...current]);
       requestedBookRef.current = book.id;
@@ -696,7 +725,7 @@ export default function ReaderApp() {
   }, [chapterIndex, resetScroll]);
 
   useEffect(() => {
-    if (!active || !activeBook) return;
+    if (!active || !activeBook || isEpubBook(activeBook)) return;
     const keyboard = (event: KeyboardEvent) => {
       if (settingsOpen) return;
       const target = event.target as HTMLElement | null;
@@ -999,28 +1028,33 @@ export default function ReaderApp() {
   ));
 
   if (!activeBook) return <div className={`reader-library ${shelfEditing ? "editing" : ""}`}>
-    <header className="reader-library-header"><div><span className="reader-brand">阅</span><div><strong>NOVA 阅读</strong><small>{shelfEditing ? "管理书架" : `${localBooks.length + Object.keys(downloads).length} 本已存储`}</small></div></div><div className="reader-library-actions">{shelfEditing ? <button className="reader-library-done" aria-label="完成管理书架" title="完成" onClick={() => { setShelfEditing(false); setDeleteCandidate(null); }}><span aria-hidden="true">✓</span></button> : <><button className="reader-manage-button" onClick={() => setShelfEditing(true)}>管理</button><label className="reader-import-button">＋ 导入 TXT<input ref={importRef} aria-label="选择要导入的TXT书籍" type="file" accept=".txt,text/plain" onChange={(event) => { void importBook(event.target.files?.[0]); event.target.value = ""; }}/></label><button className="reader-refresh-button" aria-label="检查云端书库" title="检查云端书库" onClick={loadCatalog}>↻</button></>}</div></header>
+    <header className="reader-library-header"><div><span className="reader-brand">阅</span><div><strong>NOVA 阅读</strong><small>{shelfEditing ? "管理书架" : `${localBooks.length + Object.keys(downloads).length} 本已存储`}</small></div></div><div className="reader-library-actions">{shelfEditing ? <button className="reader-library-done" aria-label="完成管理书架" title="完成" onClick={() => { setShelfEditing(false); setDeleteCandidate(null); }}><span aria-hidden="true">✓</span></button> : <><button className="reader-manage-button" onClick={() => setShelfEditing(true)}>管理</button><label className="reader-import-button">＋ 导入书籍<input ref={importRef} aria-label="选择要导入的 TXT 或 EPUB 书籍" type="file" accept=".txt,.epub,text/plain,application/epub+zip" onChange={(event) => { void importBook(event.target.files?.[0]); event.target.value = ""; }}/></label><button className="reader-refresh-button" aria-label="检查云端书库" title="检查云端书库" onClick={loadCatalog}>↻</button></>}</div></header>
     <ReaderCompanion key="library-statistics" />
     <section className="reader-library-tools">
       <label className="reader-library-search"><span aria-hidden="true">⌕</span><input value={shelfQuery} onChange={(event) => setShelfQuery(event.target.value)} aria-label="搜索书架" placeholder="搜索书名、作者"/></label>
       <div className="reader-library-filters">{(["all", "downloaded", "local", "cloud"] as ShelfFilter[]).map((filter) => <button key={filter} className={shelfFilter === filter ? "active" : ""} onClick={() => setShelfFilter(filter)}>{filter === "all" ? "全部" : filter === "downloaded" ? "已下载" : filter === "local" ? "本地" : "云端"}</button>)}</div>
       <span>{storageUsage === null ? "本地存储" : `已使用 ${formatSize(storageUsage)}`}</span>
     </section>
-    {recentBook && recentActivity && <section className="reader-continue"><span className={`reader-cover cover-${recentBook.cover}`}><i>RECENT</i><strong>{recentBook.title}</strong><small>{recentBook.author}</small></span><div><small>最近阅读</small><strong>{recentBook.title}</strong><p>{recentActivity.progress}% · {new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(recentActivity.lastReadAt)}</p><i><span style={{ width: `${recentActivity.progress}%` }}/></i></div><button onClick={() => void openBook(recentBook)}>继续阅读</button></section>}
-    {!!visibleLocalBooks.length && <><header className="reader-shelf-title"><strong>本地书籍</strong><span>{visibleLocalBooks.length} 本</span></header><section className="reader-shelf reader-local-shelf">{visibleLocalBooks.map((book) => <article className="reader-book-card manageable" key={book.id} onPointerDown={(event) => beginShelfPress(event, book.id, true)} onPointerMove={updateShelfPress} onPointerUp={finishShelfPress} onPointerCancel={finishShelfPress}><button className="reader-book-open" disabled={openingBookId === book.id} onClick={() => handleShelfOpen(book.id, () => void openBook(book))}><span className={`reader-cover cover-${book.cover}`}><i>LOCAL</i><strong>{book.title}</strong><small>{book.author}</small></span><span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className="downloaded">{openingBookId === book.id ? "正在整理章节…" : `继续阅读 · ${formatSize(book.size)}`}</em></span></button><button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}`} title="删除本地书籍" onClick={() => setDeleteCandidate({ id: book.id, type: "local" })}>×</button>{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>移除这本书？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeLocalBook(book)}>删除</button></aside>}</article>)}</section></>}
+    {recentBook && recentActivity && <section className="reader-continue"><span className={`reader-cover cover-${recentBook.cover}`}><i>{isEpubBook(recentBook) ? "EPUB" : "TXT"}</i><strong>{recentBook.title}</strong><small>{recentBook.author}</small></span><div><small>最近阅读</small><strong>{recentBook.title}</strong><p>{recentActivity.progress}% · {new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(recentActivity.lastReadAt)}</p><i><span style={{ width: `${recentActivity.progress}%` }}/></i></div><button onClick={() => void openBook(recentBook)}>继续阅读</button></section>}
+    {!!visibleLocalBooks.length && <><header className="reader-shelf-title"><strong>本地书籍</strong><span>{visibleLocalBooks.length} 本</span></header><section className="reader-shelf reader-local-shelf">{visibleLocalBooks.map((book) => <article className="reader-book-card manageable" key={book.id} onPointerDown={(event) => beginShelfPress(event, book.id, true)} onPointerMove={updateShelfPress} onPointerUp={finishShelfPress} onPointerCancel={finishShelfPress}><button className="reader-book-open" disabled={openingBookId === book.id} onClick={() => handleShelfOpen(book.id, () => void openBook(book))}><span className={`reader-cover cover-${book.cover}`}><i>{isEpubBook(book) ? "EPUB" : "TXT"}</i><strong>{book.title}</strong><small>{book.author}</small></span><span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className="downloaded">{openingBookId === book.id ? "正在整理章节…" : `继续阅读 · ${formatSize(book.size)}`}</em></span></button><button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}`} title="删除本地书籍" onClick={() => setDeleteCandidate({ id: book.id, type: "local" })}>×</button>{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>移除这本书？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeLocalBook(book)}>删除</button></aside>}</article>)}</section></>}
     {(shelfFilter === "all" || shelfFilter === "cloud" || shelfFilter === "downloaded") && <><header className="reader-shelf-title"><strong>{shelfFilter === "downloaded" ? "已下载书籍" : "云端书库"}</strong><span>{visibleCatalog.length} 本</span></header>
     {catalogState === "loading" ? <div className="reader-state"><i/><strong>正在查看云端书库</strong></div> : catalogState === "error" ? <div className="reader-state"><strong>云端书库暂时不可用</strong><button onClick={loadCatalog}>重新检查</button></div> : <section className="reader-shelf">{visibleCatalog.map((book) => {
       const downloaded = downloads[book.id];
       const current = downloaded?.version === book.version;
       const percent = downloadProgress[book.id];
       return <article className={`reader-book-card ${downloaded ? "manageable" : ""}`} key={book.id} onPointerDown={(event) => beginShelfPress(event, book.id, !!downloaded)} onPointerMove={updateShelfPress} onPointerUp={finishShelfPress} onPointerCancel={finishShelfPress}><button className="reader-book-open" onClick={() => handleShelfOpen(book.id, () => void downloadOrOpen(book))} disabled={downloading.has(book.id) || openingBookId === book.id}>
-          <span className={`reader-cover cover-${book.cover}`}><i>NOVA</i><strong>{book.title}</strong><small>{book.author}</small></span>
+          <span className={`reader-cover cover-${book.cover}`}><i>{isEpubBook(book) ? "EPUB" : "TXT"}</i><strong>{book.title}</strong><small>{book.author}</small></span>
           <span className="reader-book-info"><strong>{book.title}</strong><small>{book.author}</small><p>{book.description}</p><em className={current ? "downloaded" : "cloud"}>{downloading.has(book.id) ? `正在下载 ${percent ?? 0}%` : openingBookId === book.id ? "正在整理章节…" : current ? `继续阅读 · ${formatSize(book.size)}` : downloaded ? "发现云端更新" : `云端 · ${formatSize(book.size)}`}</em></span>
         </button>{downloading.has(book.id) ? <button className="reader-book-delete cancel-download" aria-label={`取消下载${book.title}`} title="取消下载" onClick={() => cancelDownload(book.id)}>×</button> : downloaded && <button className="reader-book-delete" disabled={openingBookId === book.id} aria-label={`删除${book.title}下载`} title="删除下载" onClick={() => setDeleteCandidate({ id: book.id, type: "cloud" })}>×</button>}{deleteCandidate?.id === book.id && <aside className="reader-delete-confirm"><strong>删除本地下载？</strong><button onClick={() => setDeleteCandidate(null)}>取消</button><button onClick={() => void removeCloudDownload(book)}>删除</button></aside>}</article>;
     })}</section>}</>}
     {!visibleLocalBooks.length && !visibleCatalog.length && catalogState === "ready" && <div className="reader-state"><strong>没有匹配的书籍</strong><button onClick={() => { setShelfQuery(""); setShelfFilter("all"); }}>清除筛选</button></div>}
     {message && <div className="reader-message">{message}</div>}
   </div>;
+
+  if (isEpubBook(activeBook)) return <Suspense fallback={<div className="reader-state">正在打开 EPUB…</div>}>
+    <EpubReader key={`${activeBook.id}:${locationJumpToken}`} book={activeBook} source={epubSource} active={active}
+      preferences={preferences} onPreferences={setPreferences} onBack={goLibrary} onCreateExcerpt={onCreateExcerpt} />
+  </Suspense>;
 
   return <div className={`reader-reading theme-${preferences.theme} mode-${preferences.readingMode} ${immersive ? "immersive" : ""} ${chromeHidden ? "chrome-hidden" : ""}`} onPointerDown={revealChrome} onPointerMove={revealChrome}>
     <div className="reader-device-status" aria-label={`当前时间 ${clock.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false })}${battery ? `，电量 ${Math.round(battery.level * 100)}%` : ""}`}>

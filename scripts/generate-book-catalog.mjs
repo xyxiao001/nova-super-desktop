@@ -4,6 +4,20 @@ import path from "node:path";
 
 const booksDirectory = path.resolve(process.argv[2]);
 const curated = {
+  "斗罗大陆II绝世唐门.epub": {
+    id: "epub-douluo-dalu-2",
+    title: "斗罗大陆II绝世唐门",
+    author: "唐家三少",
+    description: "本地提供的 EPUB 版本，保留原书章节与排版。",
+    cover: "indigo",
+  },
+  "佛本是道.epub": {
+    id: "epub-fo-ben-shi-dao",
+    title: "佛本是道",
+    author: "梦入神机",
+    description: "本地提供的 EPUB 版本，保留原书图文与目录。",
+    cover: "jade",
+  },
   "global-martial-arts.txt": {
     id: "global-martial-arts",
     title: "全球高武",
@@ -69,18 +83,20 @@ const curated = {
   },
 };
 
-const files = (await readdir(booksDirectory)).filter((name) => name.endsWith(".txt")).sort();
+const files = (await readdir(booksDirectory)).filter((name) => name.endsWith(".txt") || /\.epub$/i.test(name)).sort();
 const books = await Promise.all(files.map(async (file) => {
+  const epub = /\.epub$/i.test(file);
   const metadata = curated[file] ?? {
-    id: file.replace(/\.txt$/i, "").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-"),
-    title: file.replace(/\.txt$/i, ""),
+    id: (epub ? `epub-${file.replace(/\.epub$/i, "")}` : file.replace(/\.txt$/i, "")).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-"),
+    title: file.replace(/\.(txt|epub)$/i, ""),
     author: "未知作者",
-    description: "云端 TXT 书籍",
+    description: epub ? "云端 EPUB 书籍" : "云端 TXT 书籍",
     cover: "slate",
   };
   const [content, info] = await Promise.all([readFile(path.join(booksDirectory, file)), stat(path.join(booksDirectory, file))]);
   return {
     ...metadata,
+    ...(epub ? { format: "epub" } : {}),
     file,
     url: `/books/${encodeURIComponent(file)}`,
     size: info.size,
