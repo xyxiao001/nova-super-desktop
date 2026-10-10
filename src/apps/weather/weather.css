@@ -43,3 +43,6 @@
 .weather-card-footer a { color:#668998; font-size:8px; text-decoration:none; }
 .weather-card-footer button { display:grid; place-items:center; width:24px; height:24px; border:0; border-radius:50%; background:#ffffff30; color:inherit; cursor:pointer; }
 .weather-widget button:focus-visible,.weather-widget input:focus-visible { outline:2px solid #367b95; outline-offset:3px; }
+.weather-widget-content h2.weather-location-name { max-width:135px; font-size:15px; line-height:1.45; overflow-wrap:anywhere; }
+.weather-card-footer > div { display:grid; gap:4px; }
+.weather-location-name > span { display:block; }.weather-location-name > span + span { margin-top:3px; font-size:10px; font-weight:400; opacity:.75; }

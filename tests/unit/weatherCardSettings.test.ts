@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { currentWeatherLocation, readWeatherCardSettings, saveWeatherCardSettings } from "../../src/apps/weather/weatherCardSettings";
+import { currentWeatherLocation, readWeatherCardSettings, resolveWeatherLocation, saveWeatherCardSettings } from "../../src/apps/weather/weatherCardSettings";
 import { WEATHER_CARD_STORAGE_KEY } from "../../src/platform/desktop/widgetSettings";
 import { clearLocalStorageCategory } from "../../src/platform/storage/providers/localSettings";
 
@@ -26,8 +26,26 @@ describe("standalone desktop weather", () => {
   it("uses the requested coordinates without substituting a default city", async () => {
     const getCurrentPosition = vi.fn((success: PositionCallback) => success({ coords: { latitude: 30.27, longitude: 120.15 } } as GeolocationPosition));
     vi.stubGlobal("navigator", { geolocation: { getCurrentPosition } });
-    await expect(currentWeatherLocation()).resolves.toEqual({ name: "当前位置", latitude: 30.27, longitude: 120.15, timezone: "auto" });
+    const fetchPlace = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ features: [{ properties: { name: "拱墅区", city: "杭州市" } }] }) });
+    vi.stubGlobal("fetch", fetchPlace);
+    await expect(currentWeatherLocation()).resolves.toEqual({ name: "杭州市 · 拱墅区", latitude: 30.27, longitude: 120.15, timezone: "auto", placeSource: "photon" });
+    const url = new URL(fetchPlace.mock.calls[0][0]);
+    expect(url.searchParams.get("lat")).toBe("30.27");
+    expect(url.searchParams.get("lon")).toBe("120.15");
+    expect(url.searchParams.getAll("layer")).toEqual(["city", "district"]);
     expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves an already pinned location without replacing its coordinates", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ features: [{ properties: { name: "杭州市", city: "杭州市" } }] }) }));
+    await expect(resolveWeatherLocation({ name: "当前位置", latitude: 30.27, longitude: 120.15, timezone: "auto" })).resolves.toEqual({ name: "杭州市", latitude: 30.27, longitude: 120.15, timezone: "auto", placeSource: "photon" });
+  });
+
+  it("reports a failed name lookup without substituting a location or retrying", async () => {
+    const fetchPlace = vi.fn().mockResolvedValue({ ok: false, status: 503 });
+    vi.stubGlobal("fetch", fetchPlace);
+    await expect(resolveWeatherLocation({ name: "当前位置", latitude: 30.27, longitude: 120.15, timezone: "auto" })).rejects.toThrow("HTTP 503");
+    expect(fetchPlace).toHaveBeenCalledTimes(1);
   });
 
   it("propagates a denied location permission without retrying or selecting another place", async () => {

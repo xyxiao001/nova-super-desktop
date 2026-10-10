@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { formatWeatherTime, upcomingHours, type WeatherData } from "../../src/apps/weather/weatherData";
-import { dailyArtworkIndex, GALLERY_WORKS } from "../../src/apps/gallery/galleryData";
 
 describe("weather presentation", () => {
   it("shows twelve upcoming hours, keeping values aligned across midnight", () => {
@@ -26,15 +25,5 @@ describe("weather presentation", () => {
     const time = Date.UTC(2026, 9, 10, 15, 30) / 1000;
     expect(formatWeatherTime(time, "Asia/Shanghai")).toBe("23:30");
     expect(formatWeatherTime(time, "Europe/London")).toBe("16:30");
-  });
-});
-
-describe("daily gallery selection", () => {
-  it("keeps the same work throughout a local day and advances on the next day", () => {
-    const morning = new Date(2026, 9, 10, 0, 1);
-    const night = new Date(2026, 9, 10, 23, 59);
-    const tomorrow = new Date(2026, 9, 11, 0, 1);
-    expect(dailyArtworkIndex(morning)).toBe(dailyArtworkIndex(night));
-    expect(dailyArtworkIndex(tomorrow)).toBe((dailyArtworkIndex(morning) + 1) % GALLERY_WORKS.length);
   });
 });

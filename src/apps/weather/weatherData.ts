@@ -16,7 +16,7 @@ export const WEATHER_CODES: Record<number, { label: string; kind: WeatherKind }>
   80: { label: "小阵雨", kind: "rain" }, 81: { label: "阵雨", kind: "rain" }, 82: { label: "强阵雨", kind: "rain" }, 85: { label: "阵雪", kind: "snow" }, 86: { label: "强阵雪", kind: "snow" },
   95: { label: "雷雨", kind: "storm" }, 96: { label: "雷雨伴冰雹", kind: "storm" }, 99: { label: "强雷雨伴冰雹", kind: "storm" },
 };
-export type WeatherLocation = Pick<City, "name" | "latitude" | "longitude" | "timezone">;
+export type WeatherLocation = Pick<City, "name" | "latitude" | "longitude" | "timezone"> & { placeSource?: "photon" };
 export function weatherUrl(city: WeatherLocation) {
   const params = new URLSearchParams({ latitude: String(city.latitude), longitude: String(city.longitude), timezone: city.timezone, timeformat: "unixtime", forecast_days: "7", current: "temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m", hourly: "temperature_2m,precipitation_probability,weather_code,is_day", daily: "weather_code,temperature_2m_max,temperature_2m_min" });
   return `https://api.open-meteo.com/v1/forecast?${params}`;
