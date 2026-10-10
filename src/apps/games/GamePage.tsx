@@ -17,7 +17,7 @@ export default function GamePage({gameId}: {gameId: GameId}) {
  const open=(app:WindowAppId,target?:WindowInstanceTarget)=>{const next=singletonWindowInstanceId(app);dispatch({type:'open',id:next,app,target});return next;};
  const close=(target:WindowInstanceId)=>{notifyWindowClosing(target);location.href='/';};
  if(!playing)return <GameLanding gameId={gameId} onStart={()=>setPlaying(true)}/>;
- return <WindowRuntimeProvider value={{instances:manager.instances,focused:manager.focused,openApp:open,openNewWindow:open,openResource:open,
+ return <WindowRuntimeProvider value={{instances:manager.instances,focused:manager.focused,desktopSurface:null,minimizeInstance:id=>dispatch({type:'minimize',id}),openApp:open,openNewWindow:open,openResource:open,
   retargetInstance:(id,target)=>{dispatch({type:'retarget',id,target});return id;},focusInstance:id=>dispatch({type:'focus',id}),closeInstance:close,
   isAppOpen:app=>app===gameId,isAppActive:app=>app===gameId,isInstanceActive:target=>target===id,
   setWindowTitle:(id,title)=>dispatch({type:'update',id,patch:{title}})}}>

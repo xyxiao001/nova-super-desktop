@@ -11,6 +11,7 @@ import type {
 export type WindowRuntimeValue = {
   instances: WindowInstanceMap;
   focused: "desktop" | WindowInstanceId;
+  desktopSurface: HTMLDivElement | null;
   openApp: (app: WindowAppId) => WindowInstanceId;
   openNewWindow: (app: WindowAppId) => WindowInstanceId;
   openResource: (
@@ -22,6 +23,7 @@ export type WindowRuntimeValue = {
     target?: WindowInstanceTarget,
   ) => WindowInstanceId;
   focusInstance: (id: WindowInstanceId) => void;
+  minimizeInstance: (id: WindowInstanceId) => void;
   closeInstance: (id: WindowInstanceId) => void;
   isAppOpen: (app: WindowAppId) => boolean;
   isAppActive: (app: WindowAppId) => boolean;

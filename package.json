@@ -24,6 +24,7 @@
     "@algorithm.ts/gomoku": "^4.0.5",
     "chess.js": "^1.4.0",
     "drizzle-orm": "0.45.2",
+    "hls.js": "1.7.3",
     "idb": "^8.0.3",
     "lunar-typescript": "1.8.6",
     "music-metadata": "^11.16.1",

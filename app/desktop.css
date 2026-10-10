@@ -82,6 +82,8 @@
 @keyframes wallpaperRay { from{opacity:.35;transform:rotate(4deg) translateX(-4vw)} to{opacity:.7;transform:rotate(9deg) translateX(5vw)} }
 @keyframes wallpaperCreature { 0%,8%{opacity:0;transform:translateX(0) scale(.82)} 16%{opacity:.5} 78%{opacity:.34} 88%,100%{opacity:0;transform:translateX(-145vw) scale(1.08)} }
 
+.desktop-widget-surface { position:absolute; z-index:6; inset:16px 16px 76px; pointer-events:none; }
+
 .desktop-files {
   position: absolute;
   z-index: 2;
@@ -813,3 +815,5 @@
 .music-shortcut { font-size:35px; line-height:1; border-radius:15px; }
 .music-glyph,.start-music { font-size:23px; }
 .task-app.music-app > span { font-size:21px; }
+
+.radio-shortcut,.radio-glyph,.start-radio,.task-app.radio-app > span { color:#fff0d4; background:linear-gradient(145deg,#df936d,#b95336); text-shadow:0 1px 2px #78352255; }
