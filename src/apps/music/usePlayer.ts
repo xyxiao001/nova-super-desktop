@@ -18,8 +18,11 @@ export function usePlayer(
   tracks: Track[],
   prefs: Preferences,
   onError: (message: string) => void,
+  keepPlayingOnClose: boolean,
 ) {
   const instance = useWindowInstance();
+  const keepPlaying = useRef(keepPlayingOnClose);
+  keepPlaying.current = keepPlayingOnClose;
   const audio = useRef<HTMLAudioElement | null>(null);
   const resumePosition = useRef<ReturnType<typeof createPlaybackResume> | null>(null);
   const graph = useRef<{
@@ -317,7 +320,7 @@ export function usePlayer(
     a.onerror = () =>
       actionRef.current.onError(`无法解码此音频：${a.error?.message}`);
     const unsubscribe = subscribeWindowClosing(instance.id, () => {
-      a.pause();
+      if (!keepPlaying.current) a.pause();
     });
     return () => {
       clearIntervalTimer();

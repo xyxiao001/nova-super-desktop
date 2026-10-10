@@ -68,3 +68,47 @@
 @media(max-width:600px) { .radio-mini { right:0; top:8px; } }
 @container(max-width:560px) { .radio-pin { padding:7px 8px; font-size:10px!important; }.radio-brand small { letter-spacing:.6px; font-size:7px; }.radio-header { gap:10px; } }
 @media(prefers-reduced-motion:reduce) { .radio-mini * { transition:none!important; } }
+
+.radio-header-actions { display:flex; align-items:center; gap:8px; }
+.radio-share { position:relative; font:11px/1.5 "Avenir Next","PingFang SC",sans-serif; }
+.radio-share-panel { position:absolute; z-index:10; right:0; top:calc(100% + 12px); width:min(310px,calc(100vw - 48px)); padding:20px; box-sizing:border-box; border:1px solid #d7cbb5; border-radius:14px; color:#434b3c; background:#faf6ec; box-shadow:0 16px 45px #30291c35; text-align:left; }
+.radio-share-panel header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; color:#8e8069; font-size:10px; }
+.radio-share-panel button { cursor:pointer; }
+.radio-share-panel header button { border:0; background:none; color:#847459; font-size:22px; }
+.radio-share-panel > strong { display:block; font-size:20px; font-weight:600; }
+.radio-share-panel > small { display:block; margin-top:6px; color:#8a8d7d; font-size:10px; }
+.radio-share-panel p { font-size:11px; line-height:1.8; color:#818573; margin:16px 0; }
+.radio-share-panel input { width:100%; box-sizing:border-box; padding:10px; border:1px solid #d6d6c5; border-radius:6px; background:#fffdf7; color:#69705f; font:10px/1.6 ui-monospace,monospace; }
+.radio-share-panel footer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 0 0; }
+.radio-share-panel a { color:#8d643e; text-decoration:none; font-size:11px; }
+.radio-share-panel footer button { border:0; border-radius:6px; padding:8px 12px; color:#fffaf0; background:#4a5445; font-size:11px; }
+.radio-mini { overflow:visible; }
+.radio-mini > footer .radio-pin { border:0; padding:0; background:transparent; font-size:10px; color:#fff0d5; }
+.radio-mini .radio-share-panel { top:calc(100% + 12px); }
+.radio-share :is(button,input,a):focus-visible { outline:2px solid #a94c2d; outline-offset:3px; }
+@container(max-width:600px) { .radio-header { padding-inline:16px; gap:10px; }.radio-header-actions { gap:5px; }.radio-header-actions .radio-pin { padding-inline:8px; font-size:10px; }.radio-brand small { display:none; } }
+
+.radio-mini { border-radius:26px; }
+.radio-card-style { display:flex; align-items:center; justify-content:space-between; padding-top:10px; color:#ffe3c6; }
+.radio-card-style > span { font:7px ui-monospace,monospace; letter-spacing:2px; opacity:.7; }
+.radio-mini .media-card-themes button { width:24px; height:24px; padding:3px; border:1px solid transparent; border-radius:50%; background:transparent; }
+.radio-mini .media-card-themes button[aria-pressed="true"] { border-color:currentColor; }
+.radio-card-night { color:#f3edff; border-color:#ccc0ff33; background:radial-gradient(ellipse at 0 0,#50485f,transparent 70%),linear-gradient(145deg,#292939,#191f2e); box-shadow:0 16px 40px #0b102955,inset 0 1px #fff2; }
+.radio-card-night::before,.radio-card-night::after { background:#242331; }
+.radio-card-night .radio-mini-display { border-color:#67617b55; background:linear-gradient(140deg,#202130,#151c29); box-shadow:inset 0 2px 7px #0004; }
+.radio-card-night .radio-mini-display h2 { color:#f0e9ff; }
+.radio-card-night :is(.radio-mini-display p,.radio-mini-meta,.radio-card-style,.radio-mini-grip,footer) { color:#b7afca; }
+.radio-card-night .radio-mini-dial { background:repeating-linear-gradient(90deg,#88809d90 0 1px,transparent 1px 10px); }
+.radio-card-night .radio-mini-speaker { background:radial-gradient(circle,#121724 1px,#8f7dac50 1.5px,transparent 2px) 0 0 / 5px 5px; }
+.radio-card-night button.radio-mini-play { border-color:#d8cdef; background:linear-gradient(145deg,#f5efff,#c8b5e2); box-shadow:0 4px 12px #0004; }
+.radio-card-glass { color:#244b59; border-color:#fff9; background:linear-gradient(140deg,#f5fcffb8,#d5ecf16e); backdrop-filter:blur(28px) saturate(1.4); box-shadow:0 16px 40px #1d3c5130,inset 0 1px #fff; }
+.radio-card-glass::before,.radio-card-glass::after { display:none; }
+.radio-card-glass .radio-mini-display { border-color:#ffffff65; background:linear-gradient(140deg,#f7ffff80,#d5e8ef50); box-shadow:inset 0 1px #fff8; }
+.radio-card-glass .radio-mini-display h2 { color:#264a55; }
+.radio-card-glass :is(.radio-mini-display p,.radio-mini-meta,.radio-card-style,.radio-mini-grip,footer) { color:#507c89; }
+.radio-card-glass .radio-mini-dial { background:repeating-linear-gradient(90deg,#59818b90 0 1px,transparent 1px 10px); }
+.radio-card-glass .radio-mini-dial i { background:#328aa0; box-shadow:0 0 6px #328aa050; }
+.radio-card-glass .radio-mini-speaker { background:radial-gradient(circle,#4b7a8680 1px,#ffffff50 1.5px,transparent 2px) 0 0 / 5px 5px; }
+.radio-card-glass button.radio-mini-play { border-color:#fff9; background:linear-gradient(145deg,#fff,#cee7ef); box-shadow:0 4px 12px #33667726; }
+.radio-card-glass > footer .radio-pin { color:#376b7b; }
+.radio-card-night .radio-mini-action:hover,.radio-card-glass .radio-mini-action:hover { background:#ffffff30!important; }

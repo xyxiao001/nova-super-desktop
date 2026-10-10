@@ -1,0 +1,8 @@
+.media-card-themes { display:flex; align-items:center; gap:6px; }
+.media-card-themes button { display:grid; place-items:center; width:24px; height:24px; padding:3px; border:1px solid transparent; border-radius:50%; background:transparent; cursor:pointer; }
+.media-card-themes button[aria-pressed="true"] { border-color:currentColor; }
+.media-card-themes button span { width:14px; height:14px; border:1px solid #ffffff50; border-radius:50%; box-shadow:0 1px 3px #0002; }
+.media-theme-warm span { background:linear-gradient(135deg,#f5dfb7,#cb8159); }
+.media-theme-night span { background:linear-gradient(135deg,#78769d,#202638); }
+.media-theme-glass span { background:linear-gradient(135deg,#edfbff,#a0c4ce); }
+.media-card-themes button:focus-visible { outline:2px solid currentColor; outline-offset:2px; }

@@ -1,27 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { createPortal } from "react-dom";
-import { useWindowInstance, useWindowRuntime } from "../../platform/windows/WindowRuntime";
-import RadioMini from "./RadioMini";
+import { useState, type CSSProperties } from "react";
 import { RADIO_STATIONS } from "./stations";
+import { radioSession, useRadioSession, STATUS_LABELS } from "./radioSession";
+import RadioShare from "./RadioShare";
 import "./radio.css";
 
-type PlaybackStatus = "idle" | "connecting" | "playing" | "paused" | "error";
-const STATUS_LABELS: Record<PlaybackStatus, string> = {
-  idle: "等待收听", connecting: "正在连接", playing: "正在直播", paused: "已暂停", error: "暂时无法播放此电台",
-};
 const CATEGORIES = ["全部", "音乐", "新闻", "生活"] as const;
 
 export default function RadioApp() {
-  const { desktopSurface, minimizeInstance, focusInstance } = useWindowRuntime();
-  const { id: instanceId } = useWindowInstance();
-  const [pinned, setPinned] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [stationIndex, setStationIndex] = useState(0);
-  const [requested, setRequested] = useState(false);
-  const [status, setStatus] = useState<PlaybackStatus>("idle");
-  const [volume, setVolume] = useState(70);
+  const { stationIndex, requested, status, volume, pinned } = useRadioSession();
+  const { tune, togglePlayback } = radioSession;
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<typeof CATEGORIES[number]>("全部");
   const station = RADIO_STATIONS[stationIndex];
@@ -29,67 +18,11 @@ export default function RadioApp() {
     (category === "全部" || item.category === category) &&
     `${item.name} ${item.location}`.includes(query.trim()),
   );
-
-  useEffect(() => {
-    const audio = audioRef.current!;
-    if (!requested) return;
-    let cancelled = false;
-    let stopHls: (() => void) | undefined;
-    const fail = () => {
-      if (!cancelled) {
-        setStatus("error");
-        setRequested(false);
-      }
-    };
-    const play = () => { audio.play().catch(fail); };
-    if (station.format === "hls") {
-      import("./hlsPlayback").then(({ startHlsPlayback }) => {
-        if (!cancelled) stopHls = startHlsPlayback(audio, station.url, play, fail);
-      }).catch(fail);
-    } else {
-      audio.src = station.url;
-      play();
-    }
-    return () => {
-      cancelled = true;
-      stopHls?.();
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
-    };
-  }, [station.url, station.format, requested]);
-
-  useEffect(() => {
-    audioRef.current!.volume = volume / 100;
-  }, [volume]);
-
-  function tune(index: number) {
-    setStationIndex(index);
-    if (index !== stationIndex || !requested) {
-      setStatus("connecting");
-      setRequested(true);
-    }
-  }
-
-  function togglePlayback() {
-    setStatus(requested ? "paused" : "connecting");
-    setRequested(!requested);
-  }
-
-  const unpin = () => { setPinned(false); focusInstance(instanceId); };
-
-  return <><main className="nova-radio" aria-label="NOVA 收音机">
-    <audio ref={audioRef} crossOrigin="anonymous" preload="none"
-      onPlaying={() => setStatus("playing")}
-      onWaiting={() => { if (requested) setStatus("connecting"); }}
-      onError={() => { setStatus("error"); setRequested(false); }}
-      onEnded={() => { setStatus("paused"); setRequested(false); }} />
+  return <main className="nova-radio" aria-label="NOVA 收音机">
     <header className="radio-header">
       <div className="radio-brand"><span className="radio-brand-mark" aria-hidden="true">◉</span><div><strong>NOVA <span>收音机</span></strong><small>A LITTLE SIGNAL. A LITTLE COMPANY.</small></div></div>
-      <button className="radio-pin" aria-pressed={pinned} onClick={() => {
-        if (pinned) unpin();
-        else { setPinned(true); minimizeInstance(instanceId); }
-      }}><span aria-hidden="true">⌖</span>{pinned ? "取消桌面固定" : "钉到桌面"}</button>
+      <div className="radio-header-actions"><RadioShare key={station.id} station={station} />
+      <button className="radio-pin" aria-pressed={pinned} onClick={() => radioSession.update({ pinned: !pinned })}><span aria-hidden="true">⌖</span>{pinned ? "取消桌面固定" : "钉到桌面"}</button></div>
     </header>
     <div className="radio-workspace">
       <aside className="radio-library" aria-label="电台目录">
@@ -128,16 +61,9 @@ export default function RadioApp() {
         <div className="radio-player-bar">
           <div className="radio-playback-status" role="status"><span className={`radio-status-dot ${status === "playing" ? "on" : ""}`} /><span>{STATUS_LABELS[status]}</span></div>
           <div className="radio-skip"><button aria-label="上一个电台" disabled={stationIndex === 0} onClick={() => tune(stationIndex - 1)}>‹</button><span>切换电台</span><button aria-label="下一个电台" disabled={stationIndex === RADIO_STATIONS.length - 1} onClick={() => tune(stationIndex + 1)}>›</button></div>
-          <label className="radio-volume"><span>音量</span><input type="range" min="0" max="100" aria-label="音量" value={volume} style={{ "--radio-volume": `${volume}%` } as CSSProperties} onChange={event => setVolume(Number(event.target.value))} /><output>{volume}</output></label>
+          <label className="radio-volume"><span>音量</span><input type="range" min="0" max="100" aria-label="音量" value={volume} style={{ "--radio-volume": `${volume}%` } as CSSProperties} onChange={event => radioSession.update({ volume: Number(event.target.value) })} /><output>{volume}</output></label>
         </div>
       </section>
     </div>
-  </main>
-    {pinned && desktopSurface && createPortal(<RadioMini
-      station={station} stationIndex={stationIndex} requested={requested}
-      playing={status === "playing"} statusLabel={STATUS_LABELS[status]}
-      onToggle={togglePlayback} onTune={tune}
-      onOpen={() => focusInstance(instanceId)} onUnpin={unpin}
-    />, desktopSurface)}
-  </>;
+  </main>;
 }

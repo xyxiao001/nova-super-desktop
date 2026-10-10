@@ -94,7 +94,7 @@ import {
   type WindowInstanceTarget,
 } from "../platform/windows/windowInstanceState";
 import AppHost from "../platform/apps/AppHost";
-import { WeatherDesktopCard } from "../platform/desktop/lazyWidgets";
+import { MusicPlaybackHost, RadioSession, WeatherDesktopCard } from "../platform/desktop/lazyWidgets";
 import { WEATHER_CARD_STORAGE_KEY } from "../platform/desktop/widgetSettings";
 import {
   LaunchRuntimeProvider,
@@ -154,6 +154,12 @@ export default function DesktopRoot({ initialApp = null }: { initialApp?: Window
   const [launchIntents,setLaunchIntents]=useState<Partial<Record<WindowInstanceId,AppLaunchIntent>>>({}),[systemPanelOpen,setSystemPanelOpen]=useState(false),[notifications,setNotifications]=useState<DesktopNotification[]>([]),[calendarMonth,setCalendarMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
   const [systemMoment,setSystemMoment]=useState<NovaSystemMoment|null>(null);
   const [settings,setSettings]=useState<NovaSettings>(readNovaSettings),[systemDark,setSystemDark]=useState(false);
+  const musicWindowOpen=allWindowInstances(windowInstances).some(instance=>instance.app==="music");
+  const [musicSessionStarted,setMusicSessionStarted]=useState(initialApp==="music");
+  useEffect(()=>{if(musicWindowOpen)setMusicSessionStarted(true)},[musicWindowOpen]);
+  const radioWindowOpen=allWindowInstances(windowInstances).some(instance=>instance.app==="radio");
+  const [radioSessionStarted,setRadioSessionStarted]=useState(initialApp==="radio");
+  useEffect(()=>{if(radioWindowOpen)setRadioSessionStarted(true)},[radioWindowOpen]);
   const [weatherCardVisible,setWeatherCardVisible]=useState(false);
   useEffect(()=>{setWeatherCardVisible(localStorage.getItem(WEATHER_CARD_STORAGE_KEY)!==null)},[]);
   const showWeatherCard=()=>{setWeatherCardVisible(true);setContextMenu(null);focusDesktop()};
@@ -437,6 +443,8 @@ export default function DesktopRoot({ initialApp = null }: { initialApp?: Window
       <DesktopCreativeObjects entries={displayedDesktopObjects} selectedIds={selectedIds} onSelect={selectItem} onOpen={(itemId)=>{const item=visibleItems.find((entry)=>entry.id===itemId);if(item)openItem(item)}} onMove={(itemId,position)=>setDesktopObjects((current)=>moveDesktopObject(current,itemId,position))} onResize={(itemId,size)=>setDesktopObjects((current)=>resizeDesktopObject(current,itemId,size))} onContextMenu={(itemId,x,y)=>{const item=visibleItems.find((entry)=>entry.id===itemId);if(item)openItemMenu(item,x,y)}}/>
     </section>
     <div className="desktop-widget-surface" ref={setDesktopSurface}/>
+    {musicSessionStarted&&<Suspense fallback={null}><MusicPlaybackHost/></Suspense>}
+    {radioSessionStarted&&<Suspense fallback={null}><RadioSession/></Suspense>}
     {weatherCardVisible&&<Suspense fallback={null}><WeatherDesktopCard onRemove={()=>{localStorage.removeItem(WEATHER_CARD_STORAGE_KEY);setWeatherCardVisible(false)}}/></Suspense>}
     <DesktopPetLayer desktopActive={focused==="desktop"} maximizedWindow={taskbarAutoHide} windowOpen={mobileWindowOpen}/>
     {contextMenu&&<div className="desktop-menu" style={{left:contextMenu.x,top:contextMenu.y}}>{contextApp?<>{contextApp.key==="weather"&&<button onClick={showWeatherCard}>添加天气卡片</button>}<button onClick={contextApp.open}>打开 {contextApp.label}</button>{APP_REGISTRY[contextApp.key].window.instancePolicy==="multiple"&&<button className="desktop-new-window-command" onClick={()=>openNewWindow(contextApp.key)}>新建窗口</button>}</>:contextItem?<>{contextTargets.length===1?<><button onClick={()=>openItem(contextItem)}>打开</button>{desktopObjectIds.has(contextItem.id)?<><button onClick={()=>restoreDesktopObject(contextItem)}>恢复为文件图标</button><DesktopObjectThemePicker object={desktopObjects[contextItem.id]} onChange={(theme)=>{setDesktopObjects((current)=>setDesktopObjectTheme(current,contextItem.id,theme));setContextMenu(null)}}/></>:contextItem.parentId===null&&contextItem.type==="image"?<button onClick={()=>displayAsDesktopObject(contextItem)}>显示为照片卡片</button>:contextItem.parentId===null&&contextItem.type==="text"?<button onClick={()=>displayAsDesktopObject(contextItem)}>显示为文字便笺</button>:null}{contextItem.type==="folder"&&<button className="desktop-new-window-command" onClick={()=>openFolderWindow(contextItem)}>在新窗口中打开</button>}{fileOpenOptions(contextItem.type).filter((option)=>!option.primary).map((option)=><button key={option.app} onClick={()=>openItemWith(contextItem,option.app)}>使用{option.label}打开</button>)}<button onClick={()=>beginRename(contextItem)}>重命名</button>{contextItem.type==="folder"&&<><button onClick={()=>createFolder(contextItem.id)}>在文件夹中新建文件夹</button><button onClick={()=>createText(contextItem.id)}>在文件夹中新建文本</button>{fileClipboard&&<button onClick={()=>pasteClipboard(contextItem.id)}>粘贴到此文件夹</button>}</>}{contextItem.type!=="folder"&&<button onClick={()=>downloadItem(contextItem)}>保存到下载</button>}<span/></>:<p className="menu-summary">已选择 {contextTargets.length} 个项目</p>}<button onClick={()=>setClipboard("move",contextTargets.map((item)=>item.id))}>剪切</button><button onClick={()=>setClipboard("copy",contextTargets.map((item)=>item.id))}>复制</button><button className="danger" onClick={()=>moveManyToRecycleBin(contextTargets.map((item)=>item.id))}>移到回收站</button><button className="danger" onClick={()=>permanentlyDeleteMany(contextTargets.map((item)=>item.id))}>直接删除</button></>:<><button onClick={showWeatherCard}>添加天气卡片</button><button onClick={()=>createFolder()}>新建文件夹</button><button onClick={()=>createText()}>新建文本文稿</button>{fileClipboard&&<button onClick={()=>pasteClipboard(null)}>粘贴</button>}<button onClick={()=>{desktopUploadRef.current?.click();setContextMenu(null)}}>上传图片或 TXT</button>{fileUndo&&<button onClick={undoFileOperation}>撤销“{fileUndo.label}”</button>}<span/><button onClick={()=>arrangeIcons("name")}>按名称排序</button><button onClick={()=>arrangeIcons("type")}>按类型排序</button><button onClick={()=>arrangeIcons("clean")}>整理图标</button></>}</div>}

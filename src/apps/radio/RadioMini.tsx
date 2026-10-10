@@ -1,5 +1,7 @@
 import { useRef, useState, type PointerEvent } from "react";
 import { clampDesktopObjectPosition } from "../../../app/desktopObjects";
+import MediaCardThemes, { type MediaCardTheme } from "../../platform/desktop/MediaCardThemes";
+import RadioShare from "./RadioShare";
 import { RADIO_STATIONS, type RadioStation } from "./stations";
 
 type RadioMiniProps = {
@@ -17,6 +19,7 @@ type RadioMiniProps = {
 export default function RadioMini({
   station, stationIndex, requested, playing, statusLabel, onToggle, onTune, onOpen, onUnpin,
 }: RadioMiniProps) {
+  const [theme, setTheme] = useState<MediaCardTheme>("warm");
   const cardRef = useRef<HTMLElement>(null);
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -33,7 +36,7 @@ export default function RadioMini({
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
-  return <section ref={cardRef} className="radio-mini" aria-label="桌面迷你收音机"
+  return <section ref={cardRef} className={`radio-mini radio-card-${theme}`} aria-label="桌面迷你收音机"
     style={position ? { left: position.x, top: position.y, right: "auto" } : undefined}
     onPointerDown={event => event.stopPropagation()}
     onClick={event => event.stopPropagation()}
@@ -63,7 +66,7 @@ export default function RadioMini({
           moveTo(card.offsetLeft + dx, card.offsetTop + dy);
         }}><strong>nova<span>radio</span></strong><span className="radio-mini-grip" aria-hidden="true">⠿</span></button>
       <button className="radio-mini-action" aria-label="打开完整收音机" title="打开完整收音机" onClick={onOpen}>↗</button>
-      <button className="radio-mini-action" aria-label="取消桌面固定" title="取消固定，返回窗口" onClick={onUnpin}>×</button>
+      <button className="radio-mini-action" aria-label="取消桌面固定" title="移除桌面收音机" onClick={onUnpin}>×</button>
     </header>
     <div className="radio-mini-display">
       <div className="radio-mini-meta"><span className={`radio-signal ${playing ? "on" : ""}`}><i /> LIVE RADIO</span><span>CH {String(stationIndex + 1).padStart(2, "0")}</span></div>
@@ -77,6 +80,7 @@ export default function RadioMini({
       <button className="radio-mini-play" aria-label={requested ? "暂停播放" : "播放电台"} onClick={onToggle}><span className={requested ? "radio-pause-symbol" : "radio-play-symbol"} aria-hidden="true" /></button>
       <button className="radio-mini-skip" aria-label="下一个电台" disabled={stationIndex === RADIO_STATIONS.length - 1} onClick={() => onTune(stationIndex + 1)}>›</button>
     </div>
-    <footer><span role="status">{statusLabel}</span><span>一点声音，一点陪伴。</span></footer>
+    <footer><span role="status">{statusLabel}</span><RadioShare key={station.id} station={station} /></footer>
+    <div className="radio-card-style"><span>CARD EDITION</span><MediaCardThemes label="收音机卡片主题" value={theme} onChange={setTheme} /></div>
   </section>;
 }
