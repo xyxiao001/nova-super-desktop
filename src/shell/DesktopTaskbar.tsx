@@ -9,6 +9,8 @@ import type {
 } from "../platform/windows/windowInstanceState";
 import { allWindowInstances } from "../platform/windows/windowInstanceState";
 
+import AppIcon from "./AppIcon";
+
 export type TaskbarMenuState = { app: WindowAppId; x: number };
 
 type DesktopTaskbarProps = {
@@ -247,7 +249,7 @@ export default function DesktopTaskbar({
                   aria-label={`打开${label}`}
                   title={label}
                 >
-                  <span>{app.taskbarIcon ?? app.icon}</span>
+                  <AppIcon name={app.id} />
                 </button>
                 {state && previewApp === app.id && (
                   <aside
@@ -263,9 +265,7 @@ export default function DesktopTaskbar({
                       return (
                         <section className="taskbar-preview-item" key={instance.id}>
                           <header>
-                            <span className={`app-glyph ${app.id}-glyph`}>
-                              {app.windowIcon ?? app.icon}
-                            </span>
+                            <AppIcon name={app.id} />
                             <strong>{instanceLabel}</strong>
                             <button aria-label={`关闭${instanceLabel}`} onClick={() => onClose(instance.id)}>
                               ×
@@ -286,9 +286,7 @@ export default function DesktopTaskbar({
                                   ? "已最大化"
                                   : "正在运行"}
                             </span>
-                            <i className={`${app.kind}-preview-mark`}>
-                              {app.windowIcon ?? app.icon}
-                            </i>
+                            <AppIcon name={app.id} />
                           </button>
                         </section>
                       );

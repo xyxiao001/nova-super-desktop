@@ -31,6 +31,7 @@ export const localStorageCategory = (key: string): LocalCategoryId => {
     || key === "nova-calendar-almanac-enabled"
     || key === "nova-desktop-positions"
     || key === "nova-desktop-objects"
+    || key === "nova-desktop-weather"
     || key.startsWith("nova-window-geometry:")
   ) return "settings";
   return "other";

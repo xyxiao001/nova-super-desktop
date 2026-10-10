@@ -1,0 +1,11 @@
+.nova-desktop-widget { position:absolute; width:min(var(--widget-width),100%); right:min(var(--widget-right),max(0px,calc(100% - var(--widget-width)))); top:var(--widget-top); box-sizing:border-box; pointer-events:auto; border:1px solid #fff8; border-radius:20px; box-shadow:0 16px 40px #1d293b33,0 2px 4px #1d293b12; overflow:hidden; font-family:"Avenir Next","PingFang SC",sans-serif; }
+.desktop-widget-toolbar { display:flex; align-items:center; gap:5px; padding:10px 12px; color:inherit; }
+.desktop-widget-toolbar button { width:26px; height:26px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:#ffffff30; color:inherit; cursor:pointer; font:inherit; font-size:16px; line-height:1; }
+.desktop-widget-toolbar button:hover { background:#ffffff70; }
+.desktop-widget-toolbar .desktop-widget-handle { flex:1; width:auto; display:flex; gap:7px; justify-content:flex-start; border-radius:6px; background:transparent; font-size:11px; letter-spacing:1px; touch-action:none; cursor:grab; }
+.desktop-widget-handle:active { cursor:grabbing; }
+.desktop-widget-toolbar button:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.desktop-pin-button { display:flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid #70756733; border-radius:9px; background:#ffffff65; color:inherit; font:inherit; font-weight:500; font-size:11px; line-height:1.4; cursor:pointer; white-space:nowrap; }
+.desktop-pin-button span { font-size:18px; line-height:1; }
+.desktop-pin-button[aria-pressed="true"] { background:#e0e7d5; color:#42513b; }
+@media(max-width:600px) { .nova-desktop-widget { top:min(var(--widget-top),300px); } }

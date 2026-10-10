@@ -1,0 +1,38 @@
+.windows-desktop .nova-app-icon { --icon-ink:#607b8a; --icon-paper:#edf2f1; --icon-edge:#c8d5d8; width:var(--app-icon-size,54px); height:var(--app-icon-size,54px); flex:none; position:relative; display:inline-grid; place-items:center; box-sizing:border-box; overflow:hidden; padding:0; border:1px solid #ffffffbc; border-radius:26%; color:var(--icon-ink); background:radial-gradient(ellipse at 28% 12%,#fffffff2,transparent 80%),linear-gradient(155deg,var(--icon-paper) 40%,var(--icon-edge)); box-shadow:inset 0 1px 1px #fff,inset 0 -2px 2px #233a4514,0 3px 2px #16283818,0 7px 13px #152a4226; font-style:normal; text-shadow:none; vertical-align:middle; transition:transform .16s ease,box-shadow .16s ease; }
+.windows-desktop .nova-app-icon svg { width:77%; height:77%; display:block; overflow:visible; filter:drop-shadow(0 1px 0 #ffffffaa); }
+.windows-desktop .icon-music { --icon-ink:#bc5b50; --icon-paper:#f8e9df; --icon-edge:#e6c1aa; }
+.windows-desktop .icon-radio { --icon-ink:#a65b3b; --icon-paper:#f5e9d9; --icon-edge:#dcc5a4; }
+.windows-desktop .icon-weather { --icon-ink:#dfa749; --icon-paper:#eaf5f7; --icon-edge:#c1dce5; }
+.windows-desktop .icon-gallery { --icon-ink:#8c7650; --icon-paper:#f4eedc; --icon-edge:#dbcfaa; }
+.windows-desktop .icon-photo { --icon-ink:#8575a5; --icon-paper:#f0edf8; --icon-edge:#d4c9e6; }
+.windows-desktop .icon-explorer,.windows-desktop .icon-folder,.windows-desktop .icon-folder-file { --icon-ink:#bb9045; --icon-paper:#fff2d4; --icon-edge:#e9d6a2; }
+.windows-desktop .icon-notes,.windows-desktop .icon-text-file { --icon-ink:#748c83; --icon-paper:#eff5e9; --icon-edge:#c7d8bf; }
+.windows-desktop .icon-viewer { --icon-ink:#608a9b; --icon-paper:#ecf2ef; --icon-edge:#bcd4cd; }
+.windows-desktop .icon-reader { --icon-ink:#b07355; --icon-paper:#f8ecde; --icon-edge:#e6cbb2; }
+.windows-desktop .icon-calendar { --icon-ink:#c2786b; --icon-paper:#f7eeeb; --icon-edge:#e6c9c2; }
+.windows-desktop .icon-games { --icon-ink:#648c80; --icon-paper:#e9f3e6; --icon-edge:#bfd7bc; }
+.windows-desktop .icon-cybercity { --icon-ink:#6b759c; --icon-paper:#e9ecf7; --icon-edge:#c1c8e1; }
+.windows-desktop .icon-settings { --icon-ink:#778b99; --icon-paper:#edf1f3; --icon-edge:#c8d5dd; }
+.windows-desktop .icon-recycle { --icon-ink:#679b9e; --icon-paper:#e5f2f0; --icon-edge:#bfd9d4; }
+.windows-desktop .icon-calculator { --icon-ink:#617c8f; --icon-paper:#e8eff4; --icon-edge:#c0d1e0; }
+.windows-desktop .icon-drawing { --icon-ink:#6b8eb2; --icon-paper:#edf2f7; --icon-edge:#c6d7e6; }
+.windows-desktop .icon-focus { --icon-ink:#b08462; --icon-paper:#f6efdf; --icon-edge:#e1cdab; }
+.windows-desktop .icon-mines,.windows-desktop .icon-tower { --icon-ink:#8f7782; --icon-paper:#f4eced; --icon-edge:#d8c4cd; }
+.windows-desktop .icon-chess,.windows-desktop .icon-youtd2 { --icon-ink:#6b8977; --icon-paper:#edf0e8; --icon-edge:#c6d3bb; }
+.windows-desktop .icon-gomoku,.windows-desktop .icon-wolfslot { --icon-ink:#a08251; --icon-paper:#f8efdc; --icon-edge:#e3d0a7; }
+.windows-desktop .desktop-shortcut > .nova-app-icon { margin-top:2px; }
+.windows-desktop .desktop-shortcut:hover > .nova-app-icon { transform:translateY(-3px); box-shadow:inset 0 1px #fff,0 4px 3px #16283818,0 11px 19px #152a4233; }
+.windows-desktop .task-app > .nova-app-icon { --app-icon-size:33px; margin:auto; }
+.windows-desktop .window-identity .nova-app-icon,.windows-desktop .taskbar-preview header .nova-app-icon { --app-icon-size:23px; box-shadow:inset 0 1px #fff,0 1px 2px #152a4226; }
+.windows-desktop .start-apps .nova-app-icon { --app-icon-size:43px; }
+.windows-desktop .start-results .nova-app-icon { --app-icon-size:34px; }
+.windows-desktop .start-all-list .nova-app-icon { --app-icon-size:34px; }
+.windows-desktop .window-switcher .nova-app-icon { --app-icon-size:42px; }
+.windows-desktop .future-app-card > .nova-app-icon { --app-icon-size:52px; }
+.windows-desktop .future-window-resume > .nova-app-icon { --app-icon-size:60px; }
+.windows-desktop .taskbar-preview-body > .nova-app-icon { --app-icon-size:58px; position:absolute; right:16px; bottom:9px; opacity:.6; }
+.windows-desktop .taskbar-preview-body.live > .nova-app-icon { display:none; }
+.desktop-file-thumbnail { display:grid; place-items:center; width:54px; height:54px; flex:none; box-sizing:border-box; padding:5px 5px 9px; background:linear-gradient(145deg,#fffef9,#e9e5db); border:1px solid #fff; border-radius:8px; box-shadow:0 3px 2px #16283818,0 7px 13px #152a4226; transform:rotate(-3deg); }
+.desktop-file-thumbnail img { width:100%; height:100%; min-height:0; object-fit:cover; border-radius:3px; }
+@media(max-width:600px) { .windows-desktop .desktop-shortcut > .nova-app-icon,.windows-desktop .desktop-item > .nova-app-icon { --app-icon-size:62px; margin-top:0; }.desktop-file-thumbnail { width:62px; height:62px; }.windows-desktop .window-identity .nova-app-icon { --app-icon-size:28px; } }
+@media(prefers-reduced-motion:reduce) { .windows-desktop .nova-app-icon { transition:none; } }

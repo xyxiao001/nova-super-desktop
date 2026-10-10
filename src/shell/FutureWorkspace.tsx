@@ -1,3 +1,4 @@
+import AppIcon from "./AppIcon";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { APP_REGISTRY, LAUNCHER_APPS, START_APP_GROUPS, type WindowAppId } from "../platform/apps/appRegistry";
 import { allWindowInstances, type WindowInstanceId, type WindowInstanceMap } from "../platform/windows/windowInstanceState";
@@ -61,7 +62,7 @@ export default function FutureWorkspace({ view, overview, instances, focused, on
         <div className="future-app-grid">{LAUNCHER_APPS.filter((app) => app.startGroup === group.id).map((app) => {
           const count = windows.filter((instance) => instance.app === app.id).length;
           return <button className="future-app-card" key={app.id} onPointerMove={trackCardLight} onClick={() => count > 1 ? changeView("windows") : onLaunch(app.id)}>
-            <i className={`shortcut-icon ${app.kind}-shortcut`} aria-hidden="true">{app.icon}</i>
+            <AppIcon name={app.id} />
             <span><strong>{app.label}</strong><small>{count > 1 ? `${count} 个窗口 · 选择窗口` : count === 1 ? "1 个窗口 · 继续" : "打开应用"}</small></span>
             <b aria-hidden="true">↗</b>
           </button>;
@@ -78,7 +79,7 @@ export default function FutureWorkspace({ view, overview, instances, focused, on
           return <article className={`future-window-card ${focused === instance.id ? "is-focused" : ""} ${pairWindow?.id === instance.id ? "is-pair-source" : ""}`} key={instance.id} onPointerMove={trackCardLight}>
             <button className="future-window-resume" onClick={() => resume(instance.id)} aria-label={`${instance.minimized ? "恢复" : "切换到"} ${title}`}>
               <span className="future-window-status">{instance.minimized ? "已最小化" : focused === instance.id ? "当前窗口" : "已打开"}</span>
-              <i className={`shortcut-icon ${app.kind}-shortcut`} aria-hidden="true">{app.icon}</i>
+              <AppIcon name={app.id} />
               <strong>{title}</strong><small>{app.label}</small>
             </button>
             <footer>

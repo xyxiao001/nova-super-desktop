@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { START_APP_GROUPS, type StartAppGroup } from "../src/platform/apps/appRegistry";
 
+import AppIcon, { type AppIconName } from "../src/shell/AppIcon";
+
 export type StartMenuAppEntry = {
   key: string;
   label: string;
@@ -73,7 +75,7 @@ export default function StartMenu({
     buttons[Math.max(0, Math.min(buttons.length - 1, index + offset))]?.focus();
   };
   const renderIcon = (app: StartMenuAppEntry) => (
-    <i className={`start-${app.kind}`} aria-hidden="true">{app.icon}</i>
+    <AppIcon name={app.kind as AppIconName} />
   );
 
   return <section className={`start-menu ${mode === "search" ? "mobile-search-mode" : ""}`} role="dialog" aria-label={mode === "search" ? "搜索" : "开始菜单"}>
@@ -127,7 +129,7 @@ export default function StartMenu({
           className={index === searchIndex ? "active" : ""}
           onPointerEnter={() => onSearchIndexChange(index)}
           onClick={() => onRunSearchResult(index)}
-        ><i aria-hidden="true">{result.icon}</i><span><strong>{result.label}</strong><small>{result.detail}</small></span></button>)}
+        ><>{result.key.startsWith("app:") ? <AppIcon name={result.key.slice(4) as AppIconName} /> : <i aria-hidden="true">{result.icon}</i>}</><span><strong>{result.label}</strong><small>{result.detail}</small></span></button>)}
         {!searchResults.length && <p>没有找到“{searchQuery}”</p>}
       </div> : view === "pinned" ? <section className="start-pinned-view">
         <header className="start-section-header">

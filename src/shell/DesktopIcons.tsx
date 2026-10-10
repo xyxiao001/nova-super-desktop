@@ -15,6 +15,8 @@ import {
 } from "../../app/desktopIconInteraction";
 import { hasDesktopFileDrag, type DesktopItem } from "../../app/desktopFiles";
 
+import AppIcon, { type AppIconName } from "./AppIcon";
+
 export type IconPosition = { x: number; y: number };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -150,7 +152,6 @@ type DesktopShortcutProps = {
 export function DesktopShortcut({
   id,
   label,
-  icon,
   kind,
   position,
   order,
@@ -180,7 +181,7 @@ export function DesktopShortcut({
         if (event.key === "Enter") open();
       }}
     >
-      <span className={`shortcut-icon ${kind}-shortcut`}>{icon}</span>
+      <AppIcon name={kind as AppIconName} />
       <strong>{label}</strong>
     </button>
   );
@@ -266,18 +267,11 @@ export function DesktopFile({
       }}
     >
       {item.type === "folder" ? (
-        <span className="folder-icon">
-          <i />
-        </span>
+        <AppIcon name="folder-file" />
       ) : item.type === "text" ? (
-        <span className="text-icon">
-          <b>TXT</b>
-          <i />
-          <i />
-          <i />
-        </span>
+        <AppIcon name="text-file" />
       ) : (
-        <span className="image-icon" style={{ backgroundImage: `url(${item.content})` }} />
+        <span className="desktop-file-thumbnail"><img src={item.content} alt="" draggable={false} /></span>
       )}
       <strong>{item.name}</strong>
     </button>

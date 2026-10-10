@@ -9,6 +9,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import AppIcon from "./AppIcon";
 import AppLoadBoundary from "../../app/AppLoadBoundary";
 import { APP_REGISTRY } from "../platform/apps/appRegistry";
 import AppShareButton from "../platform/apps/AppShareButton";
@@ -93,7 +94,6 @@ export default function WindowFrame({
   instanceId,
   app,
   title,
-  icon,
   minimized,
   maximized,
   snapMode,
@@ -484,7 +484,7 @@ export default function WindowFrame({
         }}
       >
         <div className="window-identity">
-          <span className={`app-glyph ${app}-glyph`}>{icon}</span>
+          <AppIcon name={app} />
           <strong>{title}</strong>
         </div>
         <div className="window-controls windows-controls">
